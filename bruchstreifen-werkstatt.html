@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bruchstreifen-Werkstatt — Erweitern &amp; Kürzen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  h1 .hl2{color:var(--accent)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .tools{display:flex;gap:8px;align-items:center}
+
+  .ctl{display:none}
+  .ctl.on{display:block}
+
+  /* Aufgaben-Zeile */
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:14px}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .tlab.ok{color:var(--good);border-color:#3f6f5c}
+
+  /* Bruch-Anzeige */
+  .fracrow{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:6px 0 4px}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;font-family:var(--mono);font-weight:680;line-height:1.05}
+  .frac .z{font-size:30px;color:#eaf1ff;padding:0 8px}
+  .frac .bar{height:2.5px;background:#cbd6ea;width:100%;min-width:34px;margin:2px 0}
+  .frac .n{font-size:30px;color:#eaf1ff;padding:0 8px}
+  .frac.big .z,.frac.big .n{font-size:36px}
+  .fraclbl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:center;margin-top:4px}
+  .eqsign{font-family:var(--mono);font-size:30px;color:var(--muted)}
+  .frac.gA .z,.frac.gA .n{color:#9cc4ff}
+  .frac.gB .z,.frac.gB .n{color:#7be0bb}
+
+  /* Streifen-SVG */
+  .stripwrap{margin:12px 0 6px}
+  svg.strip,svg.nl{width:100%;height:auto;display:block}
+
+  /* Antwort-Buttons (Wahl) */
+  .choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0 4px}
+  .choices button{font:inherit;font-family:var(--mono);font-size:18px;font-weight:680;color:#e8edf6;background:var(--panel2);
+    border:1.5px solid var(--line);border-radius:13px;padding:13px 17px;cursor:pointer;transition:.14s;min-width:92px;min-height:52px}
+  .choices button.txt{font-family:var(--sans);font-size:14px;font-weight:560;line-height:1.3;max-width:300px}
+  .choices button:hover{border-color:#3d4d70;color:#fff}
+  .choices button.pick{background:#21345c;border-color:var(--accent);color:#fff}
+  .choices button.right{background:var(--goodDim);border-color:var(--good);color:#bff0d8}
+  .choices button.wrong{background:var(--badDim);border-color:var(--bad);color:#ffb4b4}
+  .choices button:disabled{cursor:default}
+
+  /* Buttons / Werkzeuge */
+  .btn{font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 17px;cursor:pointer;transition:.14s}
+  .btn:hover{background:#284273}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .btn.ghost:hover{border-color:#3d4d70;color:#fff}
+  .btn.warn{background:var(--badDim);border-color:#6b3a44;color:#ffb4b4}
+  .btn.warn:hover{background:#4a2a36}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .rowc{justify-content:center}
+
+  /* Schieber / Stepper */
+  .stepper{display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0 8px;flex-wrap:wrap}
+  .stepper .lbl{font-size:12px;color:var(--muted);letter-spacing:.5px}
+  .stepbtn{font:inherit;font-family:var(--mono);font-size:22px;font-weight:680;color:#e8edf6;background:var(--panel2);
+    border:1.5px solid var(--line);border-radius:11px;width:48px;height:48px;cursor:pointer;transition:.12s;display:flex;align-items:center;justify-content:center}
+  .stepbtn:hover{border-color:#3d4d70}
+  .stepbtn:disabled{opacity:.35;cursor:default}
+  .stepval{font-family:var(--mono);font-size:22px;font-weight:680;min-width:40px;text-align:center;color:#eaf1ff}
+
+  .feedback{min-height:22px;text-align:center;font-size:14px;margin-top:14px;color:var(--muted);transition:.2s;line-height:1.45}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+  .feedback b{color:#fff}
+
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+
+  @media (max-width:520px){
+    .frac .z,.frac .n{font-size:26px}
+    .frac.big .z,.frac.big .n{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 6 · Brüche</div>
+    <h1>Bruchstreifen-Werkstatt <span class="hl">▰</span><span class="hl2">▰</span></h1>
+    <div class="sub">Erweitern und Kürzen — der Anteil bleibt, nur die Striche ändern sich.</div>
+  </header>
+
+  <div class="thesis">
+    Erweitern heißt: denselben Anteil <b>feiner schneiden</b>. Kürzen heißt: <b>gröber</b> schneiden.
+    Die gefärbte Länge und der Punkt auf der Zahlengeraden bleiben dabei <b>genau stehen</b>.
+    Wandert der Punkt, war der Zug kein echtes Erweitern oder Kürzen — die Gerade ist hier der <b>Schiedsrichter</b>.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="bauen">Bruch bauen <span class="st"></span></button>
+    <button class="tab" data-mode="erweitern">Erweitern <span class="st"></span></button>
+    <button class="tab" data-mode="punkt">Gleicher Punkt? <span class="st"></span></button>
+    <button class="tab" data-mode="kuerzen">Kürzen <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <!-- ===================== MODUS 1 — BRUCH BAUEN ===================== -->
+    <div class="ctl on" id="ctl-bauen">
+      <div class="task" id="baTask"></div>
+
+      <!-- Bau-Stepper (nur in der freien Bau-Aufgabe sichtbar) -->
+      <div id="baControls">
+        <div class="stepper">
+          <span class="lbl">Nenner (Teile)</span>
+          <button class="stepbtn" id="baNdown">−</button>
+          <span class="stepval" id="baNval">4</span>
+          <button class="stepbtn" id="baNup">+</button>
+        </div>
+        <div class="stepper">
+          <span class="lbl">Zähler (gefärbt)</span>
+          <button class="stepbtn" id="baZdown">−</button>
+          <span class="stepval" id="baZval">1</span>
+          <button class="stepbtn" id="baZup">+</button>
+        </div>
+      </div>
+
+      <!-- Zielbild (nur in der freien Bau-Aufgabe sichtbar) -->
+      <div class="stripwrap" id="baTargetWrap" style="display:none"><svg class="strip" id="baTarget" viewBox="0 0 700 56" role="img" aria-label="Zielbild"></svg></div>
+
+      <div class="fracrow" id="baFrac"></div>
+      <div class="stripwrap"><svg class="strip" id="baStrip" viewBox="0 0 700 90" role="img" aria-label="Bruchstreifen"></svg></div>
+      <div class="stripwrap"><svg class="nl" id="baNL" viewBox="0 0 700 110" role="img" aria-label="Zahlengerade 0 bis 1"></svg></div>
+
+      <!-- Wahl-Aufgaben (Konfrontation / Bedeutung) -->
+      <div class="choices" id="baChoices"></div>
+
+      <div class="feedback" id="baFeedback"></div>
+      <div class="row rowc" style="margin-top:8px">
+        <button class="btn" id="baCheck" style="display:none">Prüfen ✓</button>
+        <button class="btn ghost" id="baNext" style="display:none">Nächste →</button>
+      </div>
+    </div>
+
+    <!-- ===================== MODUS 2 — ERWEITERN ===================== -->
+    <div class="ctl" id="ctl-erweitern">
+      <div class="task" id="ewTask"></div>
+
+      <!-- Vorhersage zuerst -->
+      <div class="choices" id="ewPredict"></div>
+
+      <div class="fracrow" id="ewFrac"></div>
+      <div class="stripwrap"><svg class="strip" id="ewStrip" viewBox="0 0 700 90" role="img" aria-label="Bruchstreifen"></svg></div>
+      <div class="stripwrap"><svg class="nl" id="ewNL" viewBox="0 0 700 110" role="img" aria-label="Zahlengerade 0 bis 1"></svg></div>
+
+      <div class="row rowc" style="margin-top:6px" id="ewTools">
+        <button class="btn" id="ewFiner">feiner schneiden ×2 ▷</button>
+        <button class="btn ghost" id="ewReset">zurück</button>
+      </div>
+
+      <div class="feedback" id="ewFeedback"></div>
+      <div class="row rowc" style="margin-top:8px"><button class="btn ghost" id="ewNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- ===================== MODUS 3 — GLEICHER PUNKT? ===================== -->
+    <div class="ctl" id="ctl-punkt">
+      <div class="task" id="puTask"></div>
+
+      <div class="fracrow" id="puFrac"></div>
+
+      <!-- Vorhersage -->
+      <div class="choices" id="puPredict"></div>
+
+      <div class="stripwrap"><svg class="nl" id="puNL" viewBox="0 0 700 130" role="img" aria-label="Zahlengerade 0 bis 1 mit zwei Punkten"></svg></div>
+
+      <div class="feedback" id="puFeedback"></div>
+      <div class="row rowc" style="margin-top:8px"><button class="btn ghost" id="puNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- ===================== MODUS 4 — KÜRZEN ===================== -->
+    <div class="ctl" id="ctl-kuerzen">
+      <div class="task" id="kuTask"></div>
+
+      <div class="fracrow" id="kuFrac"></div>
+      <div class="stripwrap"><svg class="strip" id="kuStrip" viewBox="0 0 700 90" role="img" aria-label="Bruchstreifen"></svg></div>
+      <div class="stripwrap"><svg class="nl" id="kuNL" viewBox="0 0 700 110" role="img" aria-label="Zahlengerade 0 bis 1"></svg></div>
+
+      <div class="row rowc" style="margin-top:6px" id="kuTools">
+        <button class="btn" id="kuCoarser">gröber ÷ ▷</button>
+        <button class="btn warn" id="kuHalfZ">nur Zähler halbieren</button>
+        <button class="btn ghost" id="kuReset">zurück</button>
+      </div>
+
+      <div class="feedback" id="kuFeedback"></div>
+      <div class="row rowc" style="margin-top:8px"><button class="btn ghost" id="kuNext" style="display:none">Nächste →</button></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   BRUCHSTREIFEN-WERKSTATT — Darstellung, Erweitern, Kürzen (Jg. 6)
+   Ehrliche Mechanik: gefärbte Länge + Punkt auf der Zahlengeraden (0..1).
+   Richtiges Erweitern/Kürzen ändert NUR die Strichzahl — der Punkt bleibt.
+   Falsche Züge lassen den Punkt sichtbar WANDERN. Komplett offline, KEIN eval.
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+/* ---------- Ton (offline) ---------- */
+let actx=null, soundOn=false;
+function ding(ok){ if(!soundOn)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type='sine'; o.connect(g); g.connect(actx.destination);
+  const n=actx.currentTime; g.gain.value=0.0001; g.gain.exponentialRampToValueAtTime(0.12,n+0.02); g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+  o.frequency.setValueAtTime(ok?660:300,n); if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13); o.start(n); o.stop(n+0.32);
+}catch(e){} }
+
+/* ---------- Bruch-Anzeige (HTML) ---------- */
+function fracHTML(z,n,cls){
+  cls=cls?(" "+cls):"";
+  return "<span class='frac"+cls+"'><span class='z'>"+z+"</span><span class='bar'></span><span class='n'>"+n+"</span></span>";
+}
+
+/* ==========================================================================
+   STREIFEN-SVG  — Rechteck-Balken in n gleiche Teile, k gefärbt.
+   viewBox 700x90. Gefärbte Länge = k/n der Balkenbreite (immer exakt).
+   ========================================================================== */
+function drawStrip(svgId, k, n, color){
+  color = color || "#5aa0ff";
+  const W=700, padL=18, padR=18, top=14, h=46;
+  const inW = W - padL - padR;
+  const cell = inW / n;
+  let s="";
+  // gefärbter Teil als ein Block (exakte Länge k/n) — Länge ist die Botschaft
+  const fillW = cell * k;
+  s += '<rect x="'+padL+'" y="'+top+'" width="'+fillW.toFixed(2)+'" height="'+h+'" fill="'+color+'" opacity="0.30"/>';
+  // Rahmen des ganzen Balkens
+  s += '<rect x="'+padL+'" y="'+top+'" width="'+inW+'" height="'+h+'" fill="none" stroke="#46506b" stroke-width="2" rx="4"/>';
+  // Trennstriche zwischen den n Teilen
+  for(let i=1;i<n;i++){
+    const x = padL + cell*i;
+    const isFillEdge = (i===k);
+    s += '<line x1="'+x.toFixed(2)+'" y1="'+top+'" x2="'+x.toFixed(2)+'" y2="'+(top+h)+'" stroke="'+(isFillEdge?color:"#33405c")+'" stroke-width="'+(isFillEdge?2.4:1.4)+'"/>';
+  }
+  // dicke Kante am Ende des gefärbten Bereichs (die "Anteilsgrenze")
+  if(k>0 && k<n){
+    const xe = padL + fillW;
+    s += '<line x1="'+xe.toFixed(2)+'" y1="'+(top-4)+'" x2="'+xe.toFixed(2)+'" y2="'+(top+h+4)+'" stroke="'+color+'" stroke-width="2.6"/>';
+  }
+  // Beschriftung: k von n Teilen
+  s += '<text x="'+padL+'" y="'+(top+h+22)+'" fill="#8ea2c4" font-size="12.5" font-family="ui-monospace,Menlo,Consolas,monospace">'
+     + k+' von '+n+' Teilen gefärbt · jedes Teil = ein '+ordinal(n)+'</text>';
+  $(svgId).innerHTML=s;
+}
+
+/* Ziel-/Vorlagenstreifen (gestrichelt) — zeigt im Bau-Modus, wie es aussehen soll */
+function drawTargetStrip(svgId, k, n){
+  const W=700, padL=18, padR=18, top=20, h=26, inW=W-padL-padR, cell=inW/n, fillW=cell*k;
+  let s="";
+  s += '<text x="'+padL+'" y="13" fill="#8ea2c4" font-size="11" letter-spacing="1.4" font-family="ui-monospace,Menlo,Consolas,monospace">ZIEL — so soll dein Streifen aussehen</text>';
+  s += '<rect x="'+padL+'" y="'+top+'" width="'+fillW.toFixed(2)+'" height="'+h+'" fill="#5aa0ff" opacity="0.16"/>';
+  for(let i=1;i<n;i++){ const x=padL+cell*i;
+    s += '<line x1="'+x.toFixed(2)+'" y1="'+top+'" x2="'+x.toFixed(2)+'" y2="'+(top+h)+'" stroke="#33405c" stroke-width="1"/>'; }
+  if(k>0 && k<n){ const xe=padL+fillW;
+    s += '<line x1="'+xe.toFixed(2)+'" y1="'+(top-3)+'" x2="'+xe.toFixed(2)+'" y2="'+(top+h+3)+'" stroke="#5aa0ff" stroke-width="2" stroke-dasharray="3 2"/>'; }
+  s += '<rect x="'+padL+'" y="'+top+'" width="'+inW+'" height="'+h+'" fill="none" stroke="#5a6b8f" stroke-width="1.6" stroke-dasharray="5 3" rx="4"/>';
+  $(svgId).innerHTML=s;
+}
+
+/* Ungleich geteilter Streifen (für die Konfrontation in Modus 1) */
+function drawStripUneven(svgId, parts, filledIndex, color){
+  color = color || "#5aa0ff";
+  const W=700, padL=18, padR=18, top=14, h=46;
+  const inW = W - padL - padR;
+  const total = parts.reduce((a,b)=>a+b,0);
+  let s="", x=padL;
+  parts.forEach((p,idx)=>{
+    const w = inW * (p/total);
+    if(idx===filledIndex){
+      s += '<rect x="'+x.toFixed(2)+'" y="'+top+'" width="'+w.toFixed(2)+'" height="'+h+'" fill="'+color+'" opacity="0.30"/>';
+    }
+    x += w;
+  });
+  s += '<rect x="'+padL+'" y="'+top+'" width="'+inW+'" height="'+h+'" fill="none" stroke="#46506b" stroke-width="2" rx="4"/>';
+  x=padL;
+  for(let i=0;i<parts.length-1;i++){
+    x += inW*(parts[i]/total);
+    s += '<line x1="'+x.toFixed(2)+'" y1="'+top+'" x2="'+x.toFixed(2)+'" y2="'+(top+h)+'" stroke="#33405c" stroke-width="1.4"/>';
+  }
+  s += '<text x="'+padL+'" y="'+(top+h+22)+'" fill="#f4b740" font-size="12.5" font-family="ui-monospace,Menlo,Consolas,monospace">'
+     + parts.length+' Teile — aber NICHT gleich groß</text>';
+  $(svgId).innerHTML=s;
+}
+
+function ordinal(n){
+  const m={2:"Halb",3:"Drittel",4:"Viertel",5:"Fünftel",6:"Sechstel",7:"Siebtel",8:"Achtel",9:"Neuntel",10:"Zehntel",11:"Elftel",12:"Zwölftel",13:"Dreizehntel",14:"Vierzehntel",15:"Fünfzehntel",16:"Sechzehntel",17:"Siebzehntel",18:"Achtzehntel",19:"Neunzehntel",20:"Zwanzigstel",21:"Einundzwanzigstel",22:"Zweiundzwanzigstel",23:"Dreiundzwanzigstel",24:"Vierundzwanzigstel"};
+  return m[n] || (n+"-tel");
+}
+
+/* ==========================================================================
+   ZAHLENGERADE 0..1  — Punkt bei x = Bruchwert (k/n). Das ist die Wahrheit.
+   marks=[{val(0..1), lbl, col, below}]. opts.ticks = Nennerteilung (optional).
+   ========================================================================== */
+function drawNL01(svgId, marks, opts){
+  opts = opts || {};
+  const W=700, padL=34, padR=34, y=54;
+  const x = t => padL + t*(W-padL-padR);
+  let s="";
+  // Achse
+  s += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#46506b" stroke-width="2"/>';
+  // Endmarken 0 und 1
+  [[0,"0"],[1,"1"]].forEach(([t,lbl])=>{
+    const px=x(t);
+    s += '<line x1="'+px+'" y1="'+(y-12)+'" x2="'+px+'" y2="'+(y+12)+'" stroke="#e8edf6" stroke-width="2.2"/>';
+    s += '<text x="'+px+'" y="'+(y+30)+'" fill="#e8edf6" font-size="14" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">'+lbl+'</text>';
+  });
+  // optionale Nenner-Teilstriche (zeigt die Stückgröße)
+  if(opts.ticks && opts.ticks>1){
+    for(let i=1;i<opts.ticks;i++){
+      const px=x(i/opts.ticks);
+      s += '<line x1="'+px+'" y1="'+(y-7)+'" x2="'+px+'" y2="'+(y+7)+'" stroke="#3a455f" stroke-width="1.3"/>';
+    }
+  }
+  // Punkte
+  (marks||[]).forEach(m=>{
+    const px=x(m.val); const col=m.col||"#5aa0ff"; const r=m.big?9:7.5;
+    s += '<circle cx="'+px.toFixed(2)+'" cy="'+y+'" r="'+r+'" fill="'+col+'" stroke="#0e1320" stroke-width="2"/>';
+    if(m.lbl!=null){
+      const ly = m.below ? (y+48) : (y-20);
+      s += '<text x="'+px.toFixed(2)+'" y="'+ly+'" fill="'+col+'" font-size="14" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">'+m.lbl+'</text>';
+    }
+  });
+  $(svgId).innerHTML=s;
+}
+
+const HINTS={
+  bauen:"<b>Bruch bauen:</b> Der Nenner teilt den Streifen in <i>gleich große</i> Teile, der Zähler färbt welche. Der Punkt zeigt den Wert auf der Geraden.",
+  erweitern:'<b>Erweitern:</b> Sag zuerst voraus, was passiert. Dann „feiner schneiden” — die Farbe bleibt gleich lang, nur die Striche werden mehr.',
+  punkt:"<b>Gleicher Punkt?:</b> Urteile zuerst, ob beide Brüche gleich groß sind. Dann zeigt die Gerade beide Punkte — gleich oder verschieden.",
+  kuerzen:'<b>Kürzen:</b> „gröber” fasst Teile zusammen, der Punkt bleibt. Probier auch den roten Fehler-Zug — dann siehst du, was schiefgeht.'
+};
+
+/* ==========================================================================
+   MODUS 1 — BRUCH BAUEN  (Darstellung: gleich große Teile; Nenner = Stückgröße)
+   ========================================================================== */
+/* typ: 'build' freier Bau mit Zielbruch · 'confront' ungleiche Teile · 'meaning' Bedeutungswahl */
+const BAUEN=[
+  {typ:"build", z:3, n:4, task:"Baue den Bruch <b>drei Viertel</b>. Stell Nenner und Zähler so ein, dass der Streifen drei Viertel zeigt.",
+   fb:"Stimmt: 4 gleich große Teile, davon 3 gefärbt — das sind drei Viertel. Der Punkt liegt bei drei Viertel des Weges zur 1."},
+  {typ:"build", z:2, n:3, task:"Baue den Bruch <b>zwei Drittel</b>.",
+   fb:"Genau: der Streifen ist in 3 gleiche Teile geteilt, 2 sind gefärbt. Das ist zwei Drittel."},
+  {typ:"confront", parts:[1,2,2], filled:0, n:3, q:"Hier ist ein Streifen in 3 Teile geteilt. 1 Teil ist gefärbt. Ist das wirklich ein Drittel?",
+   choices:[["Ja, 1 von 3","ja"],["Nein","nein"]], ans:"nein",
+   fb:'Richtig: <b>Nein</b>. „Drittel” heißt drei <b>gleich große</b> Teile. Diese Teile sind verschieden groß — also ist das gefärbte Stück kein Drittel, auch wenn es 1 von 3 ist.'},
+  {typ:"meaning", z:3, n:5, q:"Was bedeutet die <b>5</b> im Bruch drei Fünftel?",
+   choices:[["Die Anzahl der Striche im Streifen","striche"],["Die Größe jedes Stücks: ein Fünftel","groesse"]], ans:"groesse",
+   fb:"Genau: die 5 sagt, wie <b>groß</b> jedes Stück ist — der Streifen ist in Fünftel geteilt, jedes Stück ist ein Fünftel. Es geht um die Stückgröße, nicht um die Zahl der Striche."}
+];
+let baPos=0, baItem=null, baDone=false, progBa=0;
+let baN=4, baZ=3; // Bau-Zustand
+
+function baSetTab(){ document.querySelector('[data-mode="bauen"] .st').textContent = progBa?("✓"+progBa):""; }
+
+function baLoad(){
+  if(baPos>=BAUEN.length) baPos=0;
+  baItem=BAUEN[baPos]; baDone=false;
+  $("baFeedback").textContent=""; $("baFeedback").className="feedback";
+  $("baNext").style.display="none"; $("baChoices").innerHTML="";
+
+  if(baItem.typ==="build"){
+    $("baControls").style.display="";
+    $("baCheck").style.display="";
+    $("baTargetWrap").style.display="";
+    drawTargetStrip("baTarget", baItem.z, baItem.n);
+    $("baTask").innerHTML="<span class='tlab'>Bauen</span> "+baItem.task;
+    baN=4; baZ=1; baRenderBuild();
+  } else {
+    $("baControls").style.display="none";
+    $("baCheck").style.display="none";
+    $("baTargetWrap").style.display="none";
+    $("baFrac").innerHTML="";
+    if(baItem.typ==="confront"){
+      $("baTask").innerHTML="<span class='tlab'>Stimmt das?</span> "+baItem.q;
+      drawStripUneven("baStrip", baItem.parts, baItem.filled, "#5aa0ff");
+      // Zahlengerade: gefärbter Anteil = Anteil des ersten Stücks an der Gesamtlänge
+      const total=baItem.parts.reduce((a,b)=>a+b,0);
+      const realVal=baItem.parts[baItem.filled]/total;
+      drawNL01("baNL",[{val:realVal,lbl:"gefärbt",col:"#5aa0ff",big:true}],{});
+    } else { // meaning
+      $("baTask").innerHTML="<span class='tlab'>Bedeutung</span> "+baItem.q;
+      $("baFrac").innerHTML=fracHTML(baItem.z,baItem.n,"big");
+      drawStrip("baStrip", baItem.z, baItem.n, "#5aa0ff");
+      drawNL01("baNL",[{val:baItem.z/baItem.n,lbl:"",col:"#5aa0ff",big:true}],{ticks:baItem.n});
+    }
+    baBuildChoices();
+  }
+}
+function baRenderBuild(){
+  $("baFrac").innerHTML=fracHTML(baZ,baN,"big");
+  drawStrip("baStrip", baZ, baN, "#5aa0ff");
+  drawNL01("baNL",[{val:baZ/baN,lbl:"",col:"#5aa0ff",big:true}],{ticks:baN});
+  // Stepper-Anzeige synchron zum Zustand halten
+  $("baNval").textContent = baN;
+  $("baZval").textContent = baZ;
+  // Stepper-Grenzen
+  $("baNdown").disabled = baN<=2;
+  $("baNup").disabled   = baN>=12;
+  $("baZdown").disabled = baZ<=0;
+  $("baZup").disabled   = baZ>=baN;
+}
+function baBuildChoices(){
+  const box=$("baChoices"); box.innerHTML="";
+  baItem.choices.forEach(([label,key])=>{
+    const b=document.createElement("button"); b.className="txt"; b.textContent=label; b.dataset.key=key;
+    b.onclick=()=>baAnswerChoice(key); box.appendChild(b);
+  });
+}
+function baAnswerChoice(key){
+  if(baDone) return; baDone=true;
+  const right=(key===baItem.ans);
+  $("baChoices").querySelectorAll("button").forEach(x=>{
+    x.disabled=true;
+    if(x.dataset.key===baItem.ans) x.classList.add("right");
+    else if(x.dataset.key===key) x.classList.add("wrong");
+  });
+  if(right){ progBa++; baSetTab(); $("baFeedback").innerHTML="Richtig. "+baItem.fb; $("baFeedback").className="feedback good"; ding(true); }
+  else { $("baFeedback").innerHTML="Schau genau hin. "+baItem.fb; $("baFeedback").className="feedback bad"; ding(false); }
+  $("baNext").style.display="";
+}
+function baCheckBuild(){
+  if(baDone) return;
+  if(baZ===baItem.z && baN===baItem.n){
+    baDone=true; progBa++; baSetTab();
+    $("baCheck").style.display="none";
+    $("baFeedback").innerHTML="Richtig. "+baItem.fb; $("baFeedback").className="feedback good"; ding(true);
+    $("baNext").style.display="";
+  } else {
+    // gleichwertig gebaut? (z.B. 6/8 statt 3/4) — anerkennen, aber zum Zielbruch führen
+    if(baN>0 && baZ*baItem.n === baItem.z*baN && baZ>0){
+      $("baFeedback").innerHTML="Das ist wertgleich zu <b>"+baItem.z+"/"+baItem.n+"</b> — guter Blick! Für diese Aufgabe stell aber genau "+baItem.z+" Teile von "+baItem.n+" ein.";
+      $("baFeedback").className="feedback think"; ding(false);
+    } else {
+      $("baFeedback").innerHTML="Noch nicht. Vergleiche die gefärbte Länge mit dem Ziel. Stelle Nenner und Zähler nach.";
+      $("baFeedback").className="feedback think"; ding(false);
+    }
+  }
+}
+
+/* ==========================================================================
+   MODUS 2 — ERWEITERN = FEINER SCHNEIDEN  (Werterhalt-Bias: "mal macht größer")
+   Streifen startet z/n. "feiner ×2" -> jedes Teil halbieren. Farbe bleibt, Punkt bleibt.
+   ========================================================================== */
+const ERW=[
+  {z:2, n:3, steps:[2,3], pred:true},   // 2/3 -> 4/6 -> 12/18 (×2 dann ×3 relativ)
+  {z:2, n:3, trap:"nenner", factor:2, pred:true}, // Falle: nur Nenner ×2 -> 2/6, Punkt wandert
+  {z:3, n:4, steps:[2],   pred:false},  // 3/4 -> 6/8
+  {z:1, n:2, steps:[3,4], pred:false}   // 1/2 -> 3/6 -> 12/24
+];
+let ewPos=0, ewItem=null, ewStepIdx=0, ewCurZ=0, ewCurN=0, ewPredicted=false, ewDone=false, progEw=0;
+
+function ewSetTab(){ document.querySelector('[data-mode="erweitern"] .st').textContent = progEw?("✓"+progEw):""; }
+
+function ewLoad(){
+  if(ewPos>=ERW.length) ewPos=0;
+  ewItem=ERW[ewPos]; ewStepIdx=0; ewCurZ=ewItem.z; ewCurN=ewItem.n; ewDone=false;
+  ewPredicted = !ewItem.pred; // nur erste Aufgabe verlangt Vorhersage
+  $("ewFeedback").textContent=""; $("ewFeedback").className="feedback"; $("ewNext").style.display="none";
+  const startFr=frInline(ewItem.z,ewItem.n);
+  if(ewItem.trap){
+    $("ewTask").innerHTML="<span class='tlab'>Erweitern?</span> Tim verdoppelt nur den <b>Nenner</b>: "+startFr+" → "+frInline(ewItem.z,ewItem.n*ewItem.factor)+". Was passiert mit dem <b>Wert</b>?";
+  } else {
+    $("ewTask").innerHTML="<span class='tlab'>Erweitern</span> Start: "+startFr+". Was passiert mit dem Wert, wenn du feiner schneidest?";
+  }
+  // Vorhersage-Buttons nur bei Bedarf
+  const pred=$("ewPredict"); pred.innerHTML="";
+  if(!ewPredicted){
+    [["wird größer","groesser"],["wird kleiner","kleiner"],["bleibt GLEICH","gleich"]].forEach(([label,key])=>{
+      const b=document.createElement("button"); b.className="txt"; b.textContent=label; b.dataset.key=key;
+      b.onclick=()=>ewPredict(key,b); pred.appendChild(b);
+    });
+    $("ewTools").style.display="none";
+  } else {
+    $("ewTools").style.display="";
+  }
+  ewRender();
+  const fin=$("ewFiner"); fin.disabled=false;
+  if(ewItem.trap){ fin.textContent="Tims Zug: nur Nenner ×"+ewItem.factor+" ▷"; fin.classList.add("warn"); }
+  else { fin.textContent="feiner schneiden ×"+ewItem.steps[0]+" ▷"; fin.classList.remove("warn"); }
+}
+function ewPredict(key,btn){
+  ewPredicted=true;
+  const correct = ewItem.trap ? "kleiner" : "gleich";
+  $("ewPredict").querySelectorAll("button").forEach(x=>{ x.disabled=true;
+    if(x.dataset.key===correct) x.classList.add("right");
+    else if(x.dataset.key===key) x.classList.add("wrong");
+  });
+  if(key===correct){
+    $("ewFeedback").innerHTML = ewItem.trap
+      ? "Gute Vorhersage. Drück Tims Zug und schau, wie der Punkt <b>wandert</b>."
+      : "Gute Vorhersage. Jetzt schneide feiner und prüfe es selbst.";
+    $("ewFeedback").className="feedback good"; ding(true);
+  } else {
+    $("ewFeedback").innerHTML="Schauen wir nach. Mach den Zug — beobachte die gefärbte Länge und den Punkt."; $("ewFeedback").className="feedback think"; ding(false);
+  }
+  $("ewTools").style.display="";
+}
+function ewRender(){
+  $("ewFrac").innerHTML = fracHTML(ewCurZ,ewCurN,"big "+(ewStepIdx>0?"gA":""));
+  drawStrip("ewStrip", ewCurZ, ewCurN, "#4fd6a0");
+  drawNL01("ewNL",[{val:ewCurZ/ewCurN,lbl:"Anteil",col:"#4fd6a0",big:true}],{ticks:ewCurN});
+}
+function ewFiner(){
+  if(ewItem.trap){
+    ewCurN*=ewItem.factor; ewRender();
+    if(!ewDone){ ewDone=true; progEw++; ewSetTab(); }
+    $("ewFiner").disabled=true;
+    $("ewFeedback").innerHTML="Der Punkt ist nach <b>links gewandert</b> — der Wert wurde <b>kleiner</b> ("+frInline(ewItem.z,ewItem.n)+" → "+frInline(ewCurZ,ewCurN)+"). Tim hat nur den Nenner verdoppelt. Das ist <b>kein</b> Erweitern: dabei nimmst du Zähler UND Nenner mit <b>derselben Zahl</b> mal.";
+    $("ewFeedback").className="feedback bad"; ding(false);
+    $("ewNext").style.display="";
+    return;
+  }
+  if(ewStepIdx>=ewItem.steps.length){ return; }
+  const factor=ewItem.steps[ewStepIdx];
+  ewCurZ*=factor; ewCurN*=factor; ewStepIdx++;
+  ewRender();
+  const startFr = frInline(ewItem.z,ewItem.n);
+  let msg="Du hast jedes Stück in "+factor+" geteilt: jetzt "+frInline(ewCurZ,ewCurN)+". ";
+  msg+="Die gefärbte Länge ist <b>gleich geblieben</b>, der Punkt steht <b>still</b> — nur die Striche sind mehr geworden.";
+  $("ewFeedback").innerHTML=msg; $("ewFeedback").className="feedback good"; ding(true);
+  if(ewStepIdx>=ewItem.steps.length){
+    $("ewFiner").disabled=true;
+    if(!ewDone){ ewDone=true; progEw++; ewSetTab(); }
+    $("ewFeedback").innerHTML=msg+"<br>So bleibt "+startFr+" = "+frInline(ewCurZ,ewCurN)+" — alles derselbe Anteil. Erweitern macht den Bruch nicht größer.";
+    $("ewNext").style.display="";
+  } else {
+    $("ewFiner").textContent="feiner schneiden ×"+ewItem.steps[ewStepIdx]+" ▷";
+  }
+}
+function ewReset(){
+  ewStepIdx=0; ewCurZ=ewItem.z; ewCurN=ewItem.n; ewRender();
+  const fin=$("ewFiner"); fin.disabled=false;
+  if(ewItem.trap){ fin.textContent="Tims Zug: nur Nenner ×"+ewItem.factor+" ▷"; }
+  else { fin.textContent="feiner schneiden ×"+ewItem.steps[0]+" ▷"; }
+  $("ewFeedback").innerHTML="Zurück auf "+frInline(ewItem.z,ewItem.n)+"."; $("ewFeedback").className="feedback think";
+}
+
+/* ==========================================================================
+   MODUS 3 — GLEICHER PUNKT?  (additives Erweitern + Produkt-Verwechslung entlarven)
+   Vorhersage gleich/nicht. Dann beide Punkte auf DENSELBEN Strahl.
+   ========================================================================== */
+const PUNKT=[
+  {z1:1,n1:2, z2:2,n2:4, ans:"ja",
+   fb:"Beide liegen auf <b>demselben Punkt</b> bei einem Halben. 2/4 ist 1/2 feiner geschnitten — gleicher Anteil."},
+  {z1:2,n1:3, z2:4,n2:6, ans:"ja",
+   fb:"Gleicher Punkt: 4/6 ist 2/3 mit Faktor 2 erweitert (Zähler und Nenner mal 2). Derselbe Anteil."},
+  {z1:3,n1:4, z2:5,n2:6, ans:"nein",
+   fb:'Verschiedene Punkte: 3/4 liegt bei 0,75, 5/6 liegt weiter rechts bei etwa 0,83. „+2 oben und unten” ist <b>kein</b> Erweitern. Beim Erweitern nimmst du Zähler UND Nenner mit <b>derselben Zahl mal</b> (×2, ×3 …).'},
+  {z1:2,n1:3, z2:4,n2:9, ans:"nein",
+   fb:"Verschiedene Punkte: 2/3 (≈ 0,67) und 4/9 (≈ 0,44). Hier wurde der Zähler mal 2, der Nenner mal 3 genommen — <b>verschiedene</b> Zahlen. Erweitern braucht <b>dieselbe</b> Zahl oben und unten."},
+  {z1:3,n1:5, z2:6,n2:10, ans:"ja",
+   fb:"Gleicher Punkt: 6/10 ist 3/5 mit Faktor 2 erweitert. Beide bei drei Fünfteln."}
+];
+let puPos=0, puItem=null, puDone=false, progPu=0;
+
+function puSetTab(){ document.querySelector('[data-mode="punkt"] .st').textContent = progPu?("✓"+progPu):""; }
+
+function puLoad(){
+  if(puPos>=PUNKT.length) puPos=0;
+  puItem=PUNKT[puPos]; puDone=false;
+  $("puFeedback").textContent=""; $("puFeedback").className="feedback"; $("puNext").style.display="none";
+  $("puTask").innerHTML="<span class='tlab'>Gleich groß?</span> Liegen diese beiden Brüche auf <b>demselben</b> Punkt der Zahlengeraden?";
+  $("puFrac").innerHTML = fracHTML(puItem.z1,puItem.n1,"gA") + "<span class='eqsign'>?</span>" + fracHTML(puItem.z2,puItem.n2,"gB");
+  // Vorhersage-Buttons
+  const pred=$("puPredict"); pred.innerHTML="";
+  [["Ja, gleich groß","ja"],["Nein, verschieden","nein"]].forEach(([label,key])=>{
+    const b=document.createElement("button"); b.className="txt"; b.textContent=label; b.dataset.key=key;
+    b.onclick=()=>puAnswer(key,b); pred.appendChild(b);
+  });
+  // Strahl ohne Punkte (nur Achse) bis zur Antwort
+  drawNL01("puNL",[],{});
+}
+function puAnswer(key,btn){
+  if(puDone) return; puDone=true;
+  const right=(key===puItem.ans);
+  $("puPredict").querySelectorAll("button").forEach(x=>{ x.disabled=true;
+    if(x.dataset.key===puItem.ans) x.classList.add("right");
+    else if(x.dataset.key===key) x.classList.add("wrong");
+  });
+  // beide Punkte plotten
+  const v1=puItem.z1/puItem.n1, v2=puItem.z2/puItem.n2;
+  const same=Math.abs(v1-v2)<1e-9;
+  let marks;
+  if(same){
+    marks=[{val:v1,lbl:frInline(puItem.z1,puItem.n1)+" = "+frInline(puItem.z2,puItem.n2),col:"#4fd6a0",big:true}];
+  } else {
+    marks=[
+      {val:v1,lbl:frInline(puItem.z1,puItem.n1),col:"#9cc4ff",big:true},
+      {val:v2,lbl:frInline(puItem.z2,puItem.n2),col:"#7be0bb",big:true,below:true}
+    ];
+  }
+  drawNL01("puNL",marks,{});
+  if(right){ progPu++; puSetTab(); $("puFeedback").innerHTML="Richtig. "+puItem.fb; $("puFeedback").className="feedback good"; ding(true); }
+  else { $("puFeedback").innerHTML="Die Gerade zeigt es: "+puItem.fb; $("puFeedback").className="feedback bad"; ding(false); }
+  $("puNext").style.display="";
+}
+
+/* ==========================================================================
+   MODUS 4 — KÜRZEN — WIE WEIT?  (einseitiges Kürzen; nicht vollständig gekürzt)
+   "gröber ÷" fasst zusammen (durch gemeinsamen Teiler). "nur Zähler halbieren" = Falle.
+   ========================================================================== */
+const KUE=[
+  {z:4, n:8},    // -> 2/4 -> 1/2
+  {z:6, n:9},    // -> 2/3
+  {z:8, n:12},   // -> 4/6 -> 2/3
+  {z:10,n:15}    // -> 2/3
+];
+let kuPos=0, kuItem=null, kuCurZ=0, kuCurN=0, kuDone=false, kuWandered=false, progKu=0;
+
+function kuSetTab(){ document.querySelector('[data-mode="kuerzen"] .st').textContent = progKu?("✓"+progKu):""; }
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a; }
+function smallestFactor(a,b){ // kleinster gemeinsamer Teiler >1 von a und b (für "gröber ÷")
+  const g=gcd(a,b);
+  for(let f=2; f<=g; f++){ if(g%f===0) return f; }
+  return 1;
+}
+function kuLoad(){
+  if(kuPos>=KUE.length) kuPos=0;
+  kuItem=KUE[kuPos]; kuCurZ=kuItem.z; kuCurN=kuItem.n; kuDone=false; kuWandered=false;
+  $("kuFeedback").textContent=""; $("kuFeedback").className="feedback"; $("kuNext").style.display="none";
+  $(“kuTask”).innerHTML='<span class=\'tlab\'>Kürzen</span> Kürze '+frInline(kuItem.z,kuItem.n)+' so weit wie möglich. „gröber” fasst Teile zusammen — der Punkt soll stehen bleiben.';
+  $("kuHalfZ").disabled=false; $("kuCoarser").disabled=false;
+  kuRender();
+}
+function kuRender(){
+  $("kuFrac").innerHTML = fracHTML(kuCurZ,kuCurN,"big");
+  drawStrip("kuStrip", kuCurZ, kuCurN, "#5aa0ff");
+  drawNL01("kuNL",[{val:kuCurZ/kuCurN,lbl:"Anteil",col:"#5aa0ff",big:true}],{ticks:kuCurN});
+  const f=smallestFactor(kuCurZ,kuCurN);
+  $("kuCoarser").textContent = f>1 ? ("gröber ÷"+f+" ▷") : "vollständig gekürzt ✓";
+}
+function kuCoarser(){
+  if(kuWandered){ return; }
+  const f=smallestFactor(kuCurZ,kuCurN);
+  if(f<=1){
+    // schon vollständig gekürzt
+    if(!kuDone){ kuDone=true; progKu++; kuSetTab(); }
+    $("kuFeedback").innerHTML=frInline(kuCurZ,kuCurN)+" lässt sich nicht weiter kürzen — Zähler und Nenner haben keinen gemeinsamen Teiler mehr. <b>Vollständig gekürzt.</b>";
+    $("kuFeedback").className="feedback good"; ding(true);
+    $("kuCoarser").disabled=true; $("kuHalfZ").disabled=true; $("kuNext").style.display="";
+    return;
+  }
+  kuCurZ/=f; kuCurN/=f; kuRender();
+  const fNow=smallestFactor(kuCurZ,kuCurN);
+  if(fNow<=1){
+    if(!kuDone){ kuDone=true; progKu++; kuSetTab(); }
+    $("kuFeedback").innerHTML="Du hast Zähler und Nenner durch "+f+" geteilt: jetzt "+frInline(kuCurZ,kuCurN)+". Der Punkt steht noch genau an derselben Stelle. Jetzt geht es nicht weiter — <b>vollständig gekürzt</b>.";
+    $("kuFeedback").className="feedback good"; ding(true);
+    $("kuCoarser").disabled=true; $("kuHalfZ").disabled=true; $("kuNext").style.display="";
+  } else {
+    $("kuFeedback").innerHTML="Zähler und Nenner beide durch "+f+" geteilt: jetzt "+frInline(kuCurZ,kuCurN)+". Der Punkt bleibt stehen. Geht es noch gröber?";
+    $("kuFeedback").className="feedback good"; ding(true);
+  }
+}
+function kuHalfZ(){
+  if(kuWandered || kuDone){ return; }
+  // Fehler-Zug: nur den Zähler halbieren — nur wenn Zähler gerade ist, sonst Hinweis
+  if(kuCurZ%2!==0){
+    $("kuFeedback").innerHTML="Der Zähler ist ungerade — halbieren geht hier nicht glatt. Aber merk dir: nur oben teilen ist sowieso kein Kürzen.";
+    $("kuFeedback").className="feedback think"; ding(false);
+    return;
+  }
+  const before=kuCurZ/kuCurN;
+  const newZ=kuCurZ/2, newN=kuCurN;
+  kuWandered=true;
+  // zeige Wanderung: alter Punkt grün (Wahrheit), neuer roter Punkt verschoben
+  $("kuFrac").innerHTML = fracHTML(newZ,newN,"big");
+  drawStrip("kuStrip", newZ, newN, "#ff6f6f");
+  drawNL01("kuNL",[
+    {val:before,lbl:"vorher",col:"#4fd6a0",big:true},
+    {val:newZ/newN,lbl:"jetzt "+frInline(newZ,newN),col:"#ff6f6f",big:true,below:true}
+  ],{ticks:newN});
+  $("kuFeedback").innerHTML="Der Punkt ist <b>gewandert</b>! Beim Kürzen teilst du Zähler <b>und</b> Nenner durch dieselbe Zahl. Nur oben teilen verändert den Wert — das ist kein Kürzen.";
+  $("kuFeedback").className="feedback bad"; ding(false);
+  $("kuCoarser").disabled=true; $("kuHalfZ").disabled=true;
+  // Über "zurück" stellt der Schüler den Streifen wieder her und kann den echten Zug üben.
+}
+function kuReset(){
+  kuCurZ=kuItem.z; kuCurN=kuItem.n; kuWandered=false; kuDone=false;
+  $("kuHalfZ").disabled=false; $("kuCoarser").disabled=false; $("kuNext").style.display="none";
+  kuRender();
+  $(“kuFeedback”).innerHTML='Zurück auf '+frInline(kuItem.z,kuItem.n)+'. Probier den echten Kürzen-Zug („gröber”).'; $(“kuFeedback”).className=”feedback think”;
+}
+
+/* ---------- Bruch inline (Mono-Text) ---------- */
+function frInline(z,n){ return "<span style='font-family:var(--mono);font-weight:700;color:#eaf1ff'>"+z+"/"+n+"</span>"; }
+
+/* ==========================================================================
+   MODUS-WECHSEL + Events
+   ========================================================================== */
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  if(m==="bauen") baLoad();
+  if(m==="erweitern") ewLoad();
+  if(m==="punkt") puLoad();
+  if(m==="kuerzen") kuLoad();
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+/* Modus 1 — Bau-Stepper */
+$("baNup").onclick=()=>{ if(baN<12){ baN++; if(baZ>baN)baZ=baN; baRenderBuild(); } };
+$("baNdown").onclick=()=>{ if(baN>2){ baN--; if(baZ>baN)baZ=baN; baRenderBuild(); } };
+$("baZup").onclick=()=>{ if(baZ<baN){ baZ++; baRenderBuild(); } };
+$("baZdown").onclick=()=>{ if(baZ>0){ baZ--; baRenderBuild(); } };
+$("baCheck").onclick=()=>baCheckBuild();
+$("baNext").onclick=()=>{ baPos++; baLoad(); };
+
+/* Modus 2 — Erweitern */
+$("ewFiner").onclick=()=>ewFiner();
+$("ewReset").onclick=()=>ewReset();
+$("ewNext").onclick=()=>{ ewPos++; ewLoad(); };
+
+/* Modus 3 — Gleicher Punkt */
+$("puNext").onclick=()=>{ puPos++; puLoad(); };
+
+/* Modus 4 — Kürzen */
+$("kuCoarser").onclick=()=>kuCoarser();
+$("kuHalfZ").onclick=()=>kuHalfZ();
+$("kuReset").onclick=()=>kuReset();
+$("kuNext").onclick=()=>{ kuPos++; kuLoad(); };
+
+$("tglSound").onclick=()=>{ soundOn=!soundOn; $("tglSound").classList.toggle("on",soundOn); if(soundOn)ding(true); };
+
+/* ---- Start ---- */
+setMode("bauen");
+</script>
+</body>
+</html>

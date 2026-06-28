@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pythagoras-Labor · Vom Sehen zum Beweisen</title>
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+<style>
+  :root{
+    --bg:#0a0e16; --bg2:#0d1320; --panel:#121b2a; --panel2:#0f1825;
+    --line:#1e2c40; --line2:#27384f;
+    --text:#e7ecf4; --muted:#8a9bb4; --dim:#5d6f8a;
+    --cyan:#22d3ee; --cyan-d:#0e7490;
+    --amber:#f6a623; --amber-d:#a86a08;
+    --violet:#a78bfa; --violet-d:#6d28d9;
+    --green:#34d399; --red:#f87171;
+    --mono:'JetBrains Mono','SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  body{
+    background:
+      radial-gradient(1100px 700px at 80% -8%, rgba(167,139,250,.10), transparent 60%),
+      radial-gradient(900px 600px at 6% 108%, rgba(34,211,238,.08), transparent 55%),
+      var(--bg);
+    min-height:100vh; padding:0 0 80px;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+
+  /* ---- Header ---- */
+  header{padding:34px 0 22px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--violet);display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--violet);
+    box-shadow:0 0 0 4px rgba(167,139,250,.14);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.12}
+  h1 .accent{color:var(--violet)}
+  .sub{color:var(--muted);font-size:15.5px;margin-top:10px;max-width:820px}
+  .sub code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;
+    border:1px solid var(--line);font-size:13px}
+  .formula-hero{margin-top:20px;display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:20px;background:var(--panel2);
+    border:1px solid var(--line2);border-radius:12px;padding:13px 22px}
+  .formula-hero .ca{color:var(--cyan)} .formula-hero .cb{color:var(--amber)}
+  .formula-hero .cc{color:var(--violet)} .formula-hero .op{color:var(--dim)}
+
+  /* ---- Act tabs ---- */
+  .acts{display:flex;gap:9px;margin:24px 0 20px;flex-wrap:wrap}
+  .act-tab{flex:1;min-width:215px;text-align:left;cursor:pointer;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:14px 16px;transition:.18s;position:relative}
+  .act-tab:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .act-tab.on{border-color:var(--violet);background:linear-gradient(180deg,rgba(167,139,250,.12),rgba(167,139,250,.02))}
+  .act-tab .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim)}
+  .act-tab.on .n{color:var(--violet)}
+  .act-tab .t{font-size:15.5px;font-weight:700;margin-top:5px}
+  .act-tab .d{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+
+  /* ---- Main grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .card-head .label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted)}
+  .card-head .label b{color:var(--text)}
+  .card-head .mode{font-family:var(--mono);font-size:11px;color:var(--violet)}
+
+  /* stage */
+  .stage{position:relative;background:#fff;min-height:540px}
+  .stage.dark{background:var(--bg2)}
+  #ggb{width:100%;min-height:540px}
+  svg.lab{width:100%;height:540px;display:block}
+  .stagePane{display:none}
+  .stagePane.on{display:block}
+  .ggb-fallback{display:none;position:absolute;inset:0;background:var(--panel2);
+    color:var(--muted);align-items:center;justify-content:center;text-align:center;
+    flex-direction:column;gap:12px;padding:40px}
+  .ggb-fallback.show{display:flex}
+  .ggb-fallback .big{font-size:40px}
+  .ggb-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--panel2);color:var(--dim);font-family:var(--mono);font-size:13px;
+    letter-spacing:.1em;flex-direction:column;gap:14px}
+  .ggb-loading.hide{display:none}
+  .spin{width:30px;height:30px;border:3px solid var(--line2);border-top-color:var(--violet);
+    border-radius:50%;animation:rot .9s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .legend{display:flex;gap:16px;padding:11px 16px;flex-wrap:wrap;border-top:1px solid var(--line);
+    background:var(--panel2);font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:15px;height:11px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.15)}
+
+  /* control panel */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel + .panel{margin-top:14px}
+  .panel h3{font-size:12px;font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .panel h3::before{content:"";width:14px;height:2px;background:var(--violet);border-radius:2px}
+  .ctrlPane{display:none} .ctrlPane.on{display:block}
+
+  .ctrl{margin-bottom:15px}
+  .ctrl:last-child{margin-bottom:0}
+  .ctrl .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .ctrl .name{font-size:13px;color:var(--muted)}
+  .ctrl .val{font-family:var(--mono);font-size:15px;color:var(--violet)}
+  input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:3px;
+    background:var(--line2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+    border-radius:50%;background:var(--violet);cursor:pointer;border:3px solid var(--bg2);
+    box-shadow:0 0 0 1px var(--violet)}
+  input[type=range].cyan{accent-color:var(--cyan)}
+  input[type=range].cyan::-webkit-slider-thumb{background:var(--cyan);box-shadow:0 0 0 1px var(--cyan)}
+  input[type=range].amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+  input[type=range].green::-webkit-slider-thumb{background:var(--green);box-shadow:0 0 0 1px var(--green)}
+
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  button.b{font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+    background:var(--panel2);color:var(--text);border:1px solid var(--line2);
+    border-radius:9px;padding:9px 13px;transition:.15s}
+  button.b:hover{border-color:var(--violet);color:var(--violet)}
+  button.b.primary{background:linear-gradient(180deg,var(--violet),var(--violet-d));
+    color:#fff;border-color:transparent}
+  button.b.primary:hover{filter:brightness(1.1);color:#fff}
+  button.b:disabled{opacity:.4;cursor:default}
+
+  /* readouts */
+  .reads{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .read{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+  .read .k{font-size:11px;color:var(--dim);font-family:var(--mono);letter-spacing:.04em}
+  .read .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:4px}
+  .read.cyan .v{color:var(--cyan)} .read.amber .v{color:var(--amber)} .read.violet .v{color:var(--violet)}
+
+  /* compare box */
+  .cmp-box{margin-top:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line2);border-radius:13px;padding:15px;text-align:center}
+  .cmp-rows{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .cmp-item{flex:1;min-width:96px}
+  .cmp-item .clbl{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.03em}
+  .cmp-item .cval{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:3px}
+  .cmp-item.f .cval{color:var(--cyan)} .cmp-item.a .cval{color:var(--violet)}
+  .cmp-eq{font-family:var(--mono);font-size:26px;color:var(--dim);transition:.2s}
+  .verdict{margin-top:12px;font-size:12.5px;font-weight:700;letter-spacing:.03em;
+    border-radius:8px;padding:8px;transition:.2s}
+  .verdict.eq{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+  .verdict.neq{background:rgba(248,113,113,.10);color:var(--red);border:1px solid rgba(248,113,113,.28)}
+  .verdict.idle{background:rgba(138,155,180,.08);color:var(--muted);border:1px solid var(--line2)}
+
+  .doubt{margin-top:13px;background:linear-gradient(180deg,rgba(246,166,35,.10),transparent);
+    border:1px solid rgba(246,166,35,.32);border-radius:11px;padding:12px 14px}
+  .doubt .dl{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--amber);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .doubt p{font-size:12.8px;color:#d8cdb6;line-height:1.5}
+  .doubt .hl{color:var(--amber);font-weight:600}
+
+  .stepinfo{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+    padding:12px 13px;margin-top:13px}
+  .stepinfo .sn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--violet);
+    text-transform:uppercase;margin-bottom:6px}
+  .stepinfo p{font-size:12.8px;color:#c3cee0;line-height:1.5}
+  .stepinfo .hl{color:var(--amber);font-weight:600} .stepinfo .hlc{color:var(--cyan);font-weight:600}
+
+  /* term derivation (Akt 4) */
+  .term{font-family:var(--mono);font-size:13.5px;line-height:2;color:#cdd7e8;
+    background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-top:13px}
+  .term .step{opacity:.28;transition:.4s} .term .step.on{opacity:1}
+  .term .ca{color:var(--cyan)} .term .cb{color:var(--amber)} .term .cc{color:var(--violet)}
+  .term .res{color:var(--green);font-weight:700}
+
+  /* narrative + tasks */
+  .narr{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);
+    border-radius:12px;padding:18px 20px;margin-top:18px}
+  .narr h2{font-size:18px;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:10px}
+  .narr h2 .badge{font-family:var(--mono);font-size:11px;background:rgba(167,139,250,.16);
+    color:var(--violet);padding:3px 9px;border-radius:6px;letter-spacing:.12em}
+  .narr p{color:#c3cee0;font-size:14.5px;margin-bottom:9px}
+  .narr p:last-child{margin-bottom:0}
+  .narr .hl{color:var(--amber);font-weight:600} .narr .hlc{color:var(--cyan);font-weight:600}
+  .narr .hlv{color:var(--violet);font-weight:600}
+  .narr code{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;
+    font-size:13px;color:var(--violet);border:1px solid var(--line)}
+
+  .tasks{margin-top:16px}
+  .tasks h3{font-size:13px;font-family:var(--mono);letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:13px}
+  .task{display:flex;gap:13px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:14px 16px;margin-bottom:9px}
+  .task .num{font-family:var(--mono);font-size:13px;color:var(--violet);flex-shrink:0;
+    width:26px;height:26px;border-radius:7px;background:var(--panel2);border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center}
+  .task .body{font-size:14px;color:#cdd7e8}
+  .task .niv{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;margin-left:8px;
+    letter-spacing:.05em;vertical-align:middle}
+  .niv.g{background:rgba(52,211,153,.12);color:var(--green)}
+  .niv.e{background:rgba(167,139,250,.14);color:var(--violet)}
+
+  details.sol{margin-top:10px}
+  details.sol summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--green);list-style:none;display:inline-flex;align-items:center;gap:7px}
+  details.sol summary::-webkit-details-marker{display:none}
+  details.sol summary::before{content:"▸";transition:.2s}
+  details.sol[open] summary::before{transform:rotate(90deg)}
+  .sol-body{margin-top:9px;padding:11px 13px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;font-size:13px;color:#b9c4d6;line-height:1.55}
+  .sol-body .hl{color:var(--amber);font-weight:600} .sol-body .hlc{color:var(--cyan);font-weight:600}
+  .sol-body code{font-family:var(--mono);font-size:12px;color:var(--violet);
+    background:var(--panel);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+
+  details.begriffe{margin-top:16px;background:var(--panel);border:1px solid var(--line2);
+    border-left:3px solid var(--cyan);border-radius:12px}
+  details.begriffe summary{cursor:pointer;padding:14px 18px;font-size:14px;font-weight:700;
+    color:var(--text);list-style:none;display:flex;align-items:center;gap:10px}
+  details.begriffe summary::-webkit-details-marker{display:none}
+  details.begriffe summary::before{content:"▸";transition:.2s;color:var(--cyan);font-size:13px}
+  details.begriffe[open] summary::before{transform:rotate(90deg)}
+  .begriffe-body{padding:2px 18px 18px}
+  .begriffe-body dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}
+  .begriffe-body dt{font-weight:700;color:var(--amber);font-size:13.5px}
+  .begriffe-body dd{margin:0;font-size:13.5px;color:#c3cee0}
+  .begriffe-body dd code{font-family:var(--mono);font-size:12px;color:var(--violet);
+    background:var(--panel2);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  @media(max-width:560px){.begriffe-body dl{grid-template-columns:1fr;gap:3px 0}
+    .begriffe-body dt{margin-top:9px}}
+
+  /* teacher */
+  details.teacher{margin-top:24px;background:var(--panel2);border:1px solid var(--line2);border-radius:13px}
+  details.teacher summary{cursor:pointer;padding:16px 20px;font-family:var(--mono);font-size:12px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--amber);list-style:none;
+    display:flex;align-items:center;gap:10px}
+  details.teacher summary::-webkit-details-marker{display:none}
+  details.teacher summary::before{content:"▸";transition:.2s;color:var(--amber)}
+  details.teacher[open] summary::before{transform:rotate(90deg)}
+  .teacher-body{padding:4px 24px 24px;border-top:1px solid var(--line)}
+  .teacher-body h4{font-size:14px;color:var(--text);margin:18px 0 8px}
+  .teacher-body p,.teacher-body li{font-size:13.5px;color:#b9c4d6;margin-bottom:6px}
+  .teacher-body ul{padding-left:20px}
+  .teacher-body .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin:10px 0;font-size:13px;color:#cdd7e8;line-height:1.7}
+  .teacher-body .box .hl{color:var(--amber)} .teacher-body .box .hlc{color:var(--cyan)}
+  .teacher-body cite{color:var(--dim);font-style:italic;font-size:12.5px}
+
+  footer{margin-top:38px;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow"><span class="dot"></span>Mathematik · Jg. 9 (G/E) · Interaktives Beweis-Labor</div>
+    <h1>Das <span class="accent">Pythagoras</span>-Labor</h1>
+    <p class="sub">Dass <code>a² + b² = c²</code> stimmt, glaubst du gleich. Die spannendere Frage ist:
+      <b>Warum gilt das — und woher weißt du, dass es <i>immer</i> gilt?</b> In vier Akten gehst du vom
+      bloßen Hinschauen zum echten Beweis — und siehst, dass man denselben Satz auf ganz verschiedene
+      Arten begründen kann.</p>
+    <div class="formula-hero">
+      <span class="ca">a²</span><span class="op">+</span><span class="cb">b²</span>
+      <span class="op">=</span><span class="cc">c²</span>
+    </div>
+  </header>
+
+  <!-- ACT TABS -->
+  <div class="acts">
+    <div class="act-tab on" data-act="1">
+      <div class="n">AKT 01</div><div class="t">Überzeugen &amp; Zweifeln</div>
+      <div class="d">Zieh am Dreieck — wann gilt der Satz, wann nicht?</div>
+    </div>
+    <div class="act-tab" data-act="2">
+      <div class="n">AKT 02</div><div class="t">Das Umlege-Puzzle</div>
+      <div class="d">Gleiche Fläche, anders sortiert → erster Beweis</div>
+    </div>
+    <div class="act-tab" data-act="3">
+      <div class="n">AKT 03</div><div class="t">Quadrate umformen</div>
+      <div class="d">Die Quadrate verwandeln sich — Fläche bleibt gleich</div>
+    </div>
+    <div class="act-tab" data-act="4">
+      <div class="n">AKT 04</div><div class="t">Vom Bild zum Term</div>
+      <div class="d">Garfields Trapez — Geometrie wird Rechnung</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: stage -->
+    <div class="card">
+      <div class="card-head">
+        <span class="label">Instrument · <b id="instr">GeoGebra</b></span>
+        <span class="mode" id="modeReadout">rechtwinklig · γ = 90°</span>
+      </div>
+      <div class="stage" id="stage">
+        <!-- Akt 1: GeoGebra -->
+        <div class="stagePane on" id="pane1">
+          <div id="ggb"></div>
+          <div class="ggb-loading" id="ggbLoading"><div class="spin"></div>GeoGebra wird geladen …</div>
+          <div class="ggb-fallback" id="ggbFallback">
+            <div class="big">⚠</div>
+            <div><b>GeoGebra konnte nicht geladen werden.</b><br>
+            Akt 1 benötigt eine Internetverbindung (GeoGebra-Server).<br>
+            Die Akte 2–4 laufen <b>ohne Netz</b> — wechsle einfach oben den Akt.</div>
+          </div>
+        </div>
+        <!-- Akt 2-4: eigenes SVG -->
+        <div class="stagePane" id="pane2"><svg class="lab" id="svg2" viewBox="0 0 640 540"></svg></div>
+        <div class="stagePane" id="pane3"><svg class="lab" id="svg3" viewBox="0 0 640 540"></svg></div>
+        <div class="stagePane" id="pane4"><svg class="lab" id="svg4" viewBox="0 0 640 540"></svg></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <!-- RIGHT: controls -->
+    <div>
+      <!-- AKT 1 -->
+      <div class="ctrlPane on" id="ctrl1">
+        <div class="panel">
+          <h3>Dreieck einstellen</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">Kathete a (cyan)</span><span class="val" id="a1v" style="color:var(--cyan)">3</span></div>
+            <input type="range" class="cyan" id="a1" min="2" max="6" step="1" value="3">
+          </div>
+          <div class="ctrl">
+            <div class="row"><span class="name">Kathete b (amber)</span><span class="val" id="b1v" style="color:var(--amber)">4</span></div>
+            <input type="range" class="amber" id="b1" min="2" max="6" step="1" value="4">
+          </div>
+          <div class="ctrl">
+            <div class="row"><span class="name">Winkel γ bei C</span><span class="val" id="g1v">90°</span></div>
+            <input type="range" id="g1" min="40" max="140" step="1" value="90">
+            <div class="btn-row" style="margin-top:9px">
+              <button class="b" id="g90">↺ zurück auf 90°</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Flächenvergleich</h3>
+          <div class="term" id="calc1" style="margin-top:0;margin-bottom:13px">
+            <div><span class="ca">a²</span> = a·a = <span id="ca1">3·3 = 9</span> &nbsp;<span style="color:var(--dim)">(nicht a·2!)</span></div>
+            <div><span class="cb">b²</span> = b·b = <span id="cb1">4·4 = 16</span></div>
+            <div><span class="ca">a²</span>+<span class="cb">b²</span> = <span id="csum1">9 + 16 = 25</span></div>
+          </div>
+          <div class="reads">
+            <div class="read cyan"><div class="k">a² + b²</div><div class="v" id="sumv">–</div></div>
+            <div class="read violet"><div class="k">c² (über Hypotenuse)</div><div class="v" id="ccv">–</div></div>
+          </div>
+          <div class="cmp-box">
+            <div class="cmp-rows">
+              <div class="cmp-item f"><div class="clbl">a² + b²</div><div class="cval" id="cmpL">–</div></div>
+              <div class="cmp-eq" id="cmpEq">≟</div>
+              <div class="cmp-item a"><div class="clbl">c²</div><div class="cval" id="cmpR">–</div></div>
+            </div>
+            <div class="verdict idle" id="verdict1">Zieh an a, b und γ und beobachte</div>
+          </div>
+          <div class="doubt">
+            <div class="dl">◈ Stell die Beweis-Frage</div>
+            <p id="doubtTxt">Schieb jetzt den Winkel <span class="hl">γ</span> (sprich: <i>Gamma</i>) weg
+              von 90°. Schau auf die zwei Zahlen oben: Sie sind <span class="hl">nicht mehr gleich</span>.
+              Der Satz gilt also nur, wenn der Winkel <span class="hl">genau 90°</span> ist.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AKT 2 -->
+      <div class="ctrlPane" id="ctrl2">
+        <div class="panel">
+          <h3>Seitenlängen</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">a (cyan)</span><span class="val" id="a2v" style="color:var(--cyan)">3,0</span></div>
+            <input type="range" class="cyan" id="a2" min="2" max="5" step="0.5" value="3">
+          </div>
+          <div class="ctrl">
+            <div class="row"><span class="name">b (amber)</span><span class="val" id="b2v" style="color:var(--amber)">4,0</span></div>
+            <input type="range" class="amber" id="b2" min="2" max="5" step="0.5" value="4">
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Umlegen</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">Anordnung</span><span class="val" id="m2v">c² in der Mitte</span></div>
+            <input type="range" id="m2" min="0" max="1" step="0.01" value="0">
+          </div>
+          <div class="btn-row">
+            <button class="b primary" id="play2">▶ Dreiecke umlegen</button>
+            <button class="b" id="reset2">Zurück</button>
+          </div>
+          <div class="reads" style="margin-top:14px">
+            <div class="read violet"><div class="k">freie Fläche links</div><div class="v" id="r2c" style="font-size:16px">c²</div></div>
+            <div class="read cyan"><div class="k">freie Fläche rechts</div><div class="v" id="r2ab" style="font-size:16px">a²+b²</div></div>
+          </div>
+          <div class="stepinfo" id="step2">
+            <div class="sn">Beobachtung</div>
+            <p>Beide großen Quadrate haben die Seite <b>a+b</b> — also <span class="hlc">dieselbe
+              Gesamtfläche</span>. In beiden stecken <span class="hl">dieselben vier Dreiecke</span>.
+              Was übrig bleibt, muss darum gleich groß sein.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AKT 3 -->
+      <div class="ctrlPane" id="ctrl3">
+        <div class="panel">
+          <h3>Dreieck (rechtwinklig)</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">a (cyan)</span><span class="val" id="a3v" style="color:var(--cyan)">3,0</span></div>
+            <input type="range" class="cyan" id="a3" min="2" max="5" step="0.5" value="3">
+          </div>
+          <div class="ctrl">
+            <div class="row"><span class="name">b (amber)</span><span class="val" id="b3v" style="color:var(--amber)">4,0</span></div>
+            <input type="range" class="amber" id="b3" min="2" max="5" step="0.5" value="4">
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Schritt für Schritt</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">Schritt</span><span class="val" id="st3v">0 / 3</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="b" id="prev3">‹ zurück</button>
+            <button class="b primary" id="next3">weiter ›</button>
+          </div>
+          <div class="reads" style="margin-top:14px">
+            <div class="read cyan"><div class="k">blaue Fläche = a²</div><div class="v" id="r3a" style="font-size:18px">–</div></div>
+            <div class="read amber"><div class="k">gelbe Fläche = b²</div><div class="v" id="r3b" style="font-size:18px">–</div></div>
+          </div>
+          <div class="stepinfo" id="step3"><div class="sn">Phase</div><p id="step3txt"></p></div>
+          <div class="ctrl" style="margin-top:14px">
+            <div class="row"><span class="name">oder frei ziehen</span><span class="val" id="t3v">0 %</span></div>
+            <input type="range" class="green" id="t3" min="0" max="3" step="0.01" value="0">
+          </div>
+          <div class="btn-row" style="margin-top:8px">
+            <button class="b" id="play3">▶ alles abspielen</button>
+            <button class="b" id="reset3">↺ zum Start</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AKT 4 -->
+      <div class="ctrlPane" id="ctrl4">
+        <div class="panel">
+          <h3>Dreieck (rechtwinklig)</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">a (cyan)</span><span class="val" id="a4v" style="color:var(--cyan)">3,0</span></div>
+            <input type="range" class="cyan" id="a4" min="2" max="5" step="0.5" value="3">
+          </div>
+          <div class="ctrl">
+            <div class="row"><span class="name">b (amber)</span><span class="val" id="b4v" style="color:var(--amber)">4,0</span></div>
+            <input type="range" class="amber" id="b4" min="2" max="5" step="0.5" value="4">
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Beweis aufbauen</h3>
+          <div class="ctrl">
+            <div class="row"><span class="name">Schritt</span><span class="val" id="s4v">0 / 3</span></div>
+            <input type="range" id="s4" min="0" max="3" step="1" value="0">
+          </div>
+          <div class="btn-row">
+            <button class="b" id="prev4">‹ zurück</button>
+            <button class="b primary" id="next4">weiter ›</button>
+          </div>
+          <div class="term" id="term4">
+            <div class="step" data-s="1">A<sub>Trapez</sub> = ½·(<span class="ca">a</span>+<span class="cb">b</span>)·(<span class="ca">a</span>+<span class="cb">b</span>)</div>
+            <div class="step" data-s="2">A = ½<span class="ca">a</span><span class="cb">b</span> + ½<span class="ca">a</span><span class="cb">b</span> + ½<span class="cc">c</span>²</div>
+            <div class="step" data-s="3">½(<span class="ca">a</span>+<span class="cb">b</span>)² = <span class="ca">a</span><span class="cb">b</span> + ½<span class="cc">c</span>²</div>
+            <div class="step" data-s="3"><span class="res">⟹ a² + b² = c²</span></div>
+          </div>
+          <div class="stepinfo" id="step4"><div class="sn">Schritt</div><p id="step4txt"></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NARRATIVE + TASKS -->
+  <div id="actContent"></div>
+
+  <!-- TEACHER -->
+  <details class="teacher">
+    <summary>Lehrer-Ebene · Didaktik, Erwartungshorizont &amp; Hintergrund</summary>
+    <div class="teacher-body">
+      <h4>Die Leitidee des Labors</h4>
+      <div class="box">
+        Der gesamte Forschungsstand zum Beweisen konvergiert auf einen Befund (<span class="hl">de Villiers
+        1999</span>): <b>Überzeugung geht dem Beweis voraus, nicht umgekehrt.</b> Wer empirisch — durch
+        Ziehen/Messen — überzeugt ist, hat <i>weniger</i> Beweisbedürfnis. Die meisten Pythagoras-Applets
+        machen genau diesen Fehler: Sie <i>verifizieren</i> a²+b²=c² und löschen damit die Warum-Frage.<br><br>
+        Dieses Labor inszeniert stattdessen den <span class="hlc">Beweisbedürfnis-Gang</span>: erst
+        überzeugen, dann an einer prüfbaren Stelle <span class="hl">gezielt Zweifel säen</span>, dann den
+        Beweis als <i>Erklärung</i> auf <b>mehreren Wegen</b> anbieten. Mathematische Wahrheit erscheint so
+        nicht als Diktat, sondern als etwas, das man auf grundverschiedene Weisen <i>begründen</i> kann.
+      </div>
+
+      <h4>Didaktischer Ort</h4>
+      <ul>
+        <li>IGS Jg. 9 (G- und E-Kurs), KC Niedersachsen, Leitidee „Raum und Form" — Pythagoras ist hier
+          ausdrücklich der Ort, an dem „die Idee des Beweisens nahegebracht" wird; G-Kurs: Beweise
+          <i>nachvollziehen</i>, E-Kurs: den Satz <i>begründen</i>.</li>
+        <li>Prozessbezogene Kompetenz „Mathematisch argumentieren": Stufung von Plausibilität/Beispielen über
+          schlüssiges Begründen bis zum mehrschrittigen Beweisen — genau die Treppe der vier Akte.</li>
+        <li>Voraussetzung: Flächeninhalt von Quadrat/Dreieck/Trapez, Kongruenz, binomische Formel
+          (für Akt 4). Akt 3 braucht den Begriff <i>Scherung</i> („verschiebt flächentreu").</li>
+        <li>Einsatz am Beamer als Entdeckungs-Sequenz <i>oder</i> als Schüler-Selbstlerngang am Gerät.</li>
+      </ul>
+
+      <h4>Die vier Beweisideen — bewusst verschieden</h4>
+      <ul>
+        <li><b>Akt 1 (empirisch + Bedingung):</b> kein Beweis, sondern der <i>Anlass</i>. Der γ-Regler legt
+          den versteckten <span class="hl">warrant</span> frei: Pythagoras gilt nur bei γ=90° (für γ≠90°
+          liefert er den Kosinussatz c²=a²+b²−2ab·cos γ — bei γ&lt;90° ist c²&lt;a²+b², bei γ&gt;90°
+          umgekehrt). „Welche Regel sichert das für <i>alle</i> rechtwinkligen Dreiecke?" ist die Frage,
+          die in die Akte 2–4 trägt.</li>
+        <li><b>Akt 2 (Zerlegung/Ergänzung):</b> anschaulich, voraussetzungsarm. Zwei (a+b)²-Quadrate, dieselben
+          vier Dreiecke — der Rest ist einmal c², einmal a²+b². Identisch zum chinesischen
+          <i>Hsuan-thu</i>-Diagramm; kulturhistorischer Einstieg gratis.</li>
+        <li><b>Akt 3 (Scherung, Euklid I.47):</b> der dynamische Höhepunkt. Jede Scher- und Verschiebephase
+          ist <i>flächentreu</i> (die angezeigten Flächen bleiben konstant) — so wird Euklids
+          „Brautstuhl"-Argument körperlich erfahrbar, ohne seine formale Härte. Die Höhe teilt das
+          c-Quadrat in zwei Rechtecke (b² und a²).</li>
+        <li><b>Akt 4 (algebraisch, Garfield 1876):</b> Brücke Fläche → Term. Die Trapezfläche wird zweifach
+          berechnet; gleichgesetzt fällt 2·½ab heraus → a²+b²=c². Der Schritt „für beliebige a, b" macht den
+          Beweis <i>generisch</i> (Leuders: der allgemeine Rechenweg <i>ist</i> der Beweis).</li>
+      </ul>
+
+      <h4>Erwartungshorizont (Kurzform)</h4>
+      <ul>
+        <li><b>Akt 1:</b> Bei γ=90° immer a²+b²=c² (grün). Bei γ≠90° ungleich → die Rechtwinkligkeit ist die
+          notwendige Bedingung. Erkenntnis: Anschauung <i>zeigt</i>, dass etwas gilt, aber nicht <i>warum</i>
+          und nicht, <i>dass es für alle gilt</i>.</li>
+        <li><b>Akt 2:</b> Gleiche Gesamtfläche − gleiche vier Dreiecke ⟹ gleiche Restfläche, also c²=a²+b².
+          Der erste vollständige Beweis (präformal, aber lückenlos).</li>
+        <li><b>Akt 3:</b> Blaue Fläche bleibt a², gelbe bleibt b² über den ganzen Ablauf — beide füllen am
+          Ende lückenlos das c-Quadrat. Flächentreue der Scherung ist das tragende Argument.</li>
+        <li><b>Akt 4:</b> ½(a+b)² = ½ab+½ab+½c² ⟹ (a+b)²=2ab+c² ⟹ a²+b²=c². Die binomische Formel macht das
+          „Sehen" zur sicheren Rechnung.</li>
+      </ul>
+
+      <h4>Technik &amp; Hinweise</h4>
+      <ul>
+        <li><b>Akt 1</b> nutzt GeoGebra (CDN, Internet nötig). <b>Akte 2–4</b> sind reines SVG/JS und laufen
+          <span class="hlc">vollständig offline</span> — bei ausgefallener Leitung mit Akt 2 starten.</li>
+        <li>Keine Schülerdaten, datenschutzunkritisch.</li>
+        <li>Die Flächen-Anzeigen in Akt 3 sind <i>Mess-Anzeigen</i> der gezeichneten Polygone — sie belegen
+          die Flächentreue an jedem Zwischenschritt selbst (didaktisch ehrlich, nicht behauptet).</li>
+        <li>Differenzierung: <span style="color:var(--green);font-family:var(--mono)">[G]</span> Grund-,
+          <span style="color:var(--violet);font-family:var(--mono)">[E]</span> erweitertes Niveau.</li>
+      </ul>
+      <p style="margin-top:14px"><cite>Quellen: de Villiers (1999), The Role and Function of Proof · Leuders
+        (2018), Vom Rechnen zum Beweisen, mathematik lehren 210 · Harel &amp; Sowder (1998), Proof schemes ·
+        Baccaglini-Frank &amp; Mariotti (2010), Maintaining Dragging · Euklid, Elemente I.47 · KC Mathematik
+        IGS Niedersachsen (2020).</cite></p>
+    </div>
+  </details>
+
+  <footer>
+    <span>Pythagoras-Labor · Vom Sehen zum Beweisen · Mathematik Jg. 9</span>
+    <span style="font-family:var(--mono)">Hybrid · GeoGebra + eigene SVG-Engine</span>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   Pythagoras-Labor — Akt 1 (GeoGebra) + Akte 2-4 (SVG-Engine)
+   ============================================================ */
+var SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){var e=document.createElementNS(SVGNS,tag);
+  if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]); if(parent)parent.appendChild(e); return e;}
+function clear(node){while(node.firstChild)node.removeChild(node.firstChild);}
+function fmt(x,d){ if(x===undefined||x===null||isNaN(x))return '–';
+  return x.toFixed(d===undefined?2:d).replace('.',','); }
+function lerp(a,b,t){return a+(b-a)*t;}
+function lerpPt(p,q,t){return [lerp(p[0],q[0],t),lerp(p[1],q[1],t)];}
+function easeInOut(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+
+/* fit a set of math-points (y-up) into the svg viewBox with padding */
+function fitter(pts,vw,vh,pad){
+  var xs=pts.map(function(p){return p[0];}), ys=pts.map(function(p){return p[1];});
+  var minx=Math.min.apply(0,xs),maxx=Math.max.apply(0,xs);
+  var miny=Math.min.apply(0,ys),maxy=Math.max.apply(0,ys);
+  var w=maxx-minx||1,h=maxy-miny||1;
+  var u=Math.min((vw-2*pad)/w,(vh-2*pad)/h);
+  var ox=(vw-u*w)/2 - u*minx;
+  var oy=(vh-u*h)/2 + u*maxy;   // y flip
+  return {u:u, map:function(p){return [ox+u*p[0], oy-u*p[1]];}};
+}
+function polyStr(pts,f){return pts.map(function(p){var q=f.map(p);return q[0].toFixed(2)+','+q[1].toFixed(2);}).join(' ');}
+
+/* ---------- generic tween ---------- */
+var rafId=null;
+function animate(dur,onStep,onDone){
+  if(rafId)cancelAnimationFrame(rafId);
+  var t0=null;
+  function frame(ts){ if(t0===null)t0=ts; var t=Math.min(1,(ts-t0)/dur);
+    onStep(t); if(t<1){rafId=requestAnimationFrame(frame);} else {rafId=null; if(onDone)onDone();} }
+  rafId=requestAnimationFrame(frame);
+}
+function stopAnim(){ if(rafId){cancelAnimationFrame(rafId);rafId=null;} }
+
+/* ============================================================
+   AKT 1 — GeoGebra
+   ============================================================ */
+var api=null, ggbReady=false;
+var BUILD=[
+ 'a=Slider(2,6,1)','SetValue(a,3)','SetCaption(a,"a")',
+ 'b=Slider(2,6,1)','SetValue(b,4)','SetCaption(b,"b")',
+ 'gd=Slider(40,140,1)','SetValue(gd,90)','SetCaption(gd,"γ")',
+ 'C=(0,0)','A=(b,0)','B=(a;gd°)',
+ 'tri=Polygon(C,A,B)',
+ // squares (outward)
+ 'sqb=Polygon(C,A,Rotate(C,90°,A),Rotate(A,-90°,C))',                 // on CA (leg b), downward
+ 'sqa=Polygon(C,B,Rotate(C,-90°,B),Rotate(B,90°,C))',                // on CB (leg a), leftward
+ 'sqc=Polygon(A,B,Rotate(A,90°,B),Rotate(B,-90°,A))',               // on AB (hyp), outward
+ 'ang=Angle(A,C,B)',
+ 's_a=a^2','s_b=b^2','s_c=Distance(A,B)^2','summe=a^2+b^2'
+];
+function styleGGB(){
+  if(!api)return;
+  try{
+    api.setColor('tri',52,211,153); api.evalCommand('SetFilling(tri,0.10)');
+    api.setColor('sqa',34,211,238);  api.evalCommand('SetFilling(sqa,0.30)');   // a²
+    api.setColor('sqb',246,166,35);  api.evalCommand('SetFilling(sqb,0.30)');   // b²
+    api.setColor('sqc',167,139,250); api.evalCommand('SetFilling(sqc,0.30)');   // c²
+    api.setColor('ang',248,113,113); api.setLineThickness('ang',2);
+    ['tri','sqa','sqb','sqc'].forEach(function(o){try{api.setLineThickness(o,2);}catch(e){}});
+    // hide every helper point + all labels, then re-show only A,B,C
+    var keep={A:1,B:1,C:1};
+    var keepVis={A:1,B:1,C:1,tri:1,sqa:1,sqb:1,sqc:1,ang:1};
+    try{api.getAllObjectNames().forEach(function(o){
+      var ty=api.getObjectType(o);
+      if((ty==='point'||ty==='numeric')&&!keepVis[o]){try{api.setVisible(o,false);}catch(e){}}
+      if(!keep[o]){try{api.setLabelVisible(o,false);}catch(e){}}
+    });}catch(e){}
+    ['A','B','C'].forEach(function(o){try{api.setColor(o,230,236,244);api.setPointSize(o,4);
+      api.setLabelVisible(o,true);}catch(e){}});
+  }catch(e){}
+}
+function ggbView(){ try{api.setCoordSystem(-9,9,-7.5,8);}catch(e){} }
+function onGGB(g){
+  // deployggb.js übergibt je nach Version entweder das API-Objekt oder den Applet-Namen (String)
+  api=(typeof g==='object'&&g!==null)?g:(window[g]||window.ggbApplet);
+  if(!api||typeof api.evalCommand!=='function'){showFallback();return;}
+  BUILD.forEach(function(c){try{api.evalCommand(c);}catch(e){console.warn('GGB:',c,e);}});
+  try{api.setPerspective('G');}catch(e){}
+  styleGGB();
+  try{api.setGridVisible(true);}catch(e){}     // Einheitsgitter → Kästchen im Quadrat abzählbar
+  try{api.setAxesVisible(false,false);}catch(e){}
+  ggbView();
+  api.registerUpdateListener(refresh1);
+  ggbReady=true;
+  document.getElementById('ggbLoading').classList.add('hide');
+  refresh1();
+}
+function refresh1(){
+  if(!ggbReady)return;
+  var a=api.getValue('a'),b=api.getValue('b'),g=api.getValue('gd');
+  var sum=api.getValue('summe'),sc=api.getValue('s_c');
+  document.getElementById('a1').value=a; document.getElementById('a1v').textContent=fmt(a,0);
+  document.getElementById('b1').value=b; document.getElementById('b1v').textContent=fmt(b,0);
+  document.getElementById('g1').value=g; document.getElementById('g1v').textContent=fmt(g,0)+'°';
+  document.getElementById('sumv').textContent=fmt(sum,1);
+  document.getElementById('ccv').textContent=fmt(sc,1);
+  // Quadratzahlen ausgeschrieben (gegen den Fehler a² = a·2)
+  var ai=Math.round(a),bi=Math.round(b);
+  document.getElementById('ca1').textContent = ai+'·'+ai+' = '+(ai*ai);
+  document.getElementById('cb1').textContent = bi+'·'+bi+' = '+(bi*bi);
+  document.getElementById('csum1').textContent = (ai*ai)+' + '+(bi*bi)+' = '+(ai*ai+bi*bi);
+  document.getElementById('cmpL').textContent=fmt(sum,1);
+  document.getElementById('cmpR').textContent=fmt(sc,1);
+  document.getElementById('modeReadout').textContent =
+    (Math.abs(g-90)<0.5?'rechtwinklig · ':'NICHT rechtwinklig · ')+'γ = '+fmt(g,0)+'°';
+  var v=document.getElementById('verdict1'), eq=document.getElementById('cmpEq');
+  var d=sum-sc;
+  if(Math.abs(d)<0.06){ v.className='verdict eq'; v.innerHTML='✓ a² + b² = c² — der Satz gilt';
+    eq.textContent='='; eq.style.color='var(--green)'; }
+  else if(d>0){ v.className='verdict neq'; v.innerHTML='✗ a² + b² &gt; c² &nbsp;(γ &lt; 90°: Kosinussatz)';
+    eq.textContent='>'; eq.style.color='var(--red)'; }
+  else { v.className='verdict neq'; v.innerHTML='✗ a² + b² &lt; c² &nbsp;(γ &gt; 90°: Kosinussatz)';
+    eq.textContent='<'; eq.style.color='var(--red)'; }
+}
+function setGGB(name,val){ if(ggbReady){try{api.setValue(name,val);}catch(e){}} }
+document.getElementById('a1').addEventListener('input',function(){setGGB('a',parseFloat(this.value));});
+document.getElementById('b1').addEventListener('input',function(){setGGB('b',parseFloat(this.value));});
+document.getElementById('g1').addEventListener('input',function(){setGGB('gd',parseFloat(this.value));});
+document.getElementById('g90').addEventListener('click',function(){setGGB('gd',90);});
+
+/* ============================================================
+   AKT 2 — Umlege-Puzzle (SVG)
+   ============================================================ */
+function trianglesA(a,b){ var s=a+b; return [
+  [[0,0],[a,0],[0,b]],         // T1 bottom-left  (RA, a-end, b-end)
+  [[s,0],[s,a],[a,0]],         // T2 bottom-right
+  [[s,s],[b,s],[s,a]],         // T3 top-right
+  [[0,s],[0,b],[b,s]]          // T4 top-left
+];}
+function trianglesB(a,b){ var s=a+b; return [
+  [[s,0],[s,a],[a,0]],         // -> lower-right rect, lower
+  [[a,a],[a,0],[s,a]],         // -> lower-right rect, upper
+  [[a,a],[0,a],[a,s]],         // -> top-left rect, lower
+  [[0,s],[a,s],[0,a]]          // -> top-left rect, upper
+];}
+var act2={a:3,b:4,m:0};
+function render2(){
+  var svg=document.getElementById('svg2'); clear(svg);
+  var a=act2.a,b=act2.b,s=a+b,m=act2.m;
+  var f=fitter([[0,0],[s,s]],640,540,46);
+  // big square frame
+  el('polygon',{points:polyStr([[0,0],[s,0],[s,s],[0,s]],f),fill:'none',
+    stroke:'#27384f','stroke-width':2},svg);
+  // rest regions: c² (m=0) and a²,b² (m=1)
+  var cSq=[[a,0],[s,a],[b,s],[0,b]];
+  var aSq=[[0,0],[a,0],[a,a],[0,a]];     // a² bottom-left (B)
+  var bSq=[[a,a],[s,a],[s,s],[a,s]];     // b² top-right (B)
+  el('polygon',{points:polyStr(cSq,f),fill:'rgba(167,139,250,'+(0.30*(1-m))+')',
+    stroke:'rgba(167,139,250,'+(0.9*(1-m))+')','stroke-width':2},svg);
+  el('polygon',{points:polyStr(aSq,f),fill:'rgba(34,211,238,'+(0.30*m)+')',
+    stroke:'rgba(34,211,238,'+(0.9*m)+')','stroke-width':2},svg);
+  el('polygon',{points:polyStr(bSq,f),fill:'rgba(246,166,35,'+(0.30*m)+')',
+    stroke:'rgba(246,166,35,'+(0.9*m)+')','stroke-width':2},svg);
+  // labels for rest regions
+  function centroid(p){var x=0,y=0;p.forEach(function(q){x+=q[0];y+=q[1];});return [x/p.length,y/p.length];}
+  if(m<0.5){ var cc=f.map(centroid(cSq));
+    el('text',{x:cc[0],y:cc[1]+5,fill:'#a78bfa','text-anchor':'middle','font-family':'monospace',
+      'font-size':18,'font-weight':700,opacity:(1-2*m).toFixed(2)},svg).textContent='c²'; }
+  else { var ca=f.map(centroid(aSq)),cb=f.map(centroid(bSq)),o=(2*m-1).toFixed(2);
+    el('text',{x:ca[0],y:ca[1]+5,fill:'#22d3ee','text-anchor':'middle','font-family':'monospace',
+      'font-size':16,'font-weight':700,opacity:o},svg).textContent='a²';
+    el('text',{x:cb[0],y:cb[1]+5,fill:'#f6a623','text-anchor':'middle','font-family':'monospace',
+      'font-size':16,'font-weight':700,opacity:o},svg).textContent='b²'; }
+  // 4 triangles (per-vertex interpolation, role order)
+  var TA=trianglesA(a,b),TB=trianglesB(a,b),e=easeInOut(m);
+  for(var i=0;i<4;i++){
+    var tri=[lerpPt(TA[i][0],TB[i][0],e),lerpPt(TA[i][1],TB[i][1],e),lerpPt(TA[i][2],TB[i][2],e)];
+    el('polygon',{points:polyStr(tri,f),fill:'rgba(52,211,153,0.22)',
+      stroke:'#34d399','stroke-width':2,'stroke-linejoin':'round'},svg);
+  }
+  document.getElementById('m2v').textContent = m<0.5?'c² in der Mitte':'a² + b² getrennt';
+}
+function set2(a,b){act2.a=a;act2.b=b;
+  document.getElementById('a2v').textContent=fmt(a,1);
+  document.getElementById('b2v').textContent=fmt(b,1);
+  document.getElementById('r2c').innerHTML='c² = '+fmt(a*a+b*b,1);
+  document.getElementById('r2ab').innerHTML='a²+b² = '+fmt(a*a+b*b,1);
+  render2();}
+document.getElementById('a2').addEventListener('input',function(){set2(parseFloat(this.value),act2.b);});
+document.getElementById('b2').addEventListener('input',function(){set2(act2.a,parseFloat(this.value));});
+document.getElementById('m2').addEventListener('input',function(){act2.m=parseFloat(this.value);render2();});
+document.getElementById('play2').addEventListener('click',function(){
+  stopAnim(); var from=act2.m<0.5?0:1, to=from?0:1;
+  animate(1400,function(t){act2.m=lerp(from,to,t);document.getElementById('m2').value=act2.m;render2();});
+});
+document.getElementById('reset2').addEventListener('click',function(){
+  stopAnim();act2.m=0;document.getElementById('m2').value=0;render2();});
+
+/* ============================================================
+   AKT 3 — Scherungs-Fluss (SVG)
+   computeLegFlow: square on a leg -> rectangle, area-preserving
+   ============================================================ */
+function computeLegFlow(ell,other,c){
+  var d=ell*ell/c, h=ell*other/c;
+  // states share vertex order [P0,P1,P2,P3]
+  var s0=[[0,0],[d,h],[d-h,h+d],[-h,d]];     // square on the leg
+  var s1=[[0,0],[d,h],[d,h+c],[0,c]];        // shear 1: parallelogram (vertical sides)
+  var s2=[[0,-c],[d,h-c],[d,h],[0,0]];       // shift down by c
+  var s3=[[0,-c],[d,-c],[d,0],[0,0]];        // shear 2: rectangle (area b² or a²)
+  return [s0,s1,s2,s3];
+}
+function mirrorX(states,c){return states.map(function(st){return st.map(function(p){return [c-p[0],p[1]];});});}
+function interpStates(states,tau){
+  var i=Math.min(2,Math.floor(tau)), local=easeInOut(Math.min(1,tau-i));
+  return states[i].map(function(p,k){return lerpPt(p,states[i+1][k],local);});
+}
+function polyArea(p){var s=0;for(var i=0;i<p.length;i++){var j=(i+1)%p.length;s+=p[i][0]*p[j][1]-p[j][0]*p[i][1];}return Math.abs(s)/2;}
+var act3={a:3,b:4,tau:0};
+var STEP3=[
+ '<b>Schritt 0 — Start:</b> Das <span class="hlc">blaue a²-Quadrat</span> und das <span class="hl">gelbe b²-Quadrat</span> sitzen auf den beiden Katheten.',
+ '<b>Schritt 1 — Scheren:</b> Die obere Kante rutscht zur Seite. Aus jedem Quadrat wird ein schräges Parallelogramm. <span class="hlc">Die Fläche bleibt gleich.</span>',
+ '<b>Schritt 2 — Verschieben:</b> Die Parallelogramme rutschen nach unten ins große c-Quadrat hinein.',
+ '<b>Schritt 3 — Geradeziehen:</b> Sie werden zu zwei Rechtecken und füllen das c-Quadrat ohne Lücke. Zusammen: a² + b² = c².'
+];
+function render3(){
+  var svg=document.getElementById('svg3'); clear(svg);
+  svg.parentElement.parentElement.classList.add('dark');
+  var a=act3.a,b=act3.b,c=Math.sqrt(a*a+b*b),tau=act3.tau;
+  var P=[0,0],Q=[c,0],R=[b*b/c,a*b/c],F=[b*b/c,0];
+  var bFlow=computeLegFlow(b,a,c);                 // left leg (b) -> left rectangle
+  var aFlowRaw=computeLegFlow(a,b,c);              // build then mirror -> right leg (a)
+  var aFlow=mirrorX(aFlowRaw,c);
+  // bounding pts to fit
+  var allPts=[P,Q,R,[0,-c],[c,-c]];
+  bFlow.concat(aFlow).forEach(function(st){st.forEach(function(p){allPts.push(p);});});
+  var f=fitter(allPts,640,540,40);
+  // hypotenuse square (target) + altitude split
+  el('polygon',{points:polyStr([[0,0],[c,0],[c,-c],[0,-c]],f),fill:'none',
+    stroke:'#3a4a63','stroke-width':2},svg);
+  el('line',{x1:f.map(F)[0],y1:f.map(F)[1],x2:f.map([b*b/c,-c])[0],y2:f.map([b*b/c,-c])[1],
+    stroke:'#2a3850','stroke-width':1.5,'stroke-dasharray':'4 4'},svg);
+  el('text',{x:f.map([c/2,-c])[0],y:f.map([c/2,-c])[1]+20,fill:'#5d6f8a','text-anchor':'middle',
+    'font-family':'monospace','font-size':13},svg).textContent='c-Quadrat';
+  // triangle (faded)
+  el('polygon',{points:polyStr([P,Q,R],f),fill:'rgba(52,211,153,0.08)',
+    stroke:'rgba(52,211,153,0.5)','stroke-width':2},svg);
+  // flowing squares
+  var bp=interpStates(bFlow,tau), ap=interpStates(aFlow,tau);
+  el('polygon',{points:polyStr(bp,f),fill:'rgba(246,166,35,0.34)',stroke:'#f6a623',
+    'stroke-width':2,'stroke-linejoin':'round'},svg);
+  el('polygon',{points:polyStr(ap,f),fill:'rgba(34,211,238,0.34)',stroke:'#22d3ee',
+    'stroke-width':2,'stroke-linejoin':'round'},svg);
+  // live areas (measured from drawn polygons)
+  document.getElementById('r3a').textContent=fmt(polyArea(ap),2);
+  document.getElementById('r3b').textContent=fmt(polyArea(bp),2);
+  var si=Math.max(0,Math.min(3,Math.round(tau)));
+  document.getElementById('step3txt').innerHTML=STEP3[si];
+  document.getElementById('st3v').textContent=si+' / 3';
+  document.getElementById('t3v').textContent=Math.round(tau/3*100)+' %';
+}
+function set3(a,b){act3.a=a;act3.b=b;
+  document.getElementById('a3v').textContent=fmt(a,1);
+  document.getElementById('b3v').textContent=fmt(b,1);render3();}
+document.getElementById('a3').addEventListener('input',function(){set3(parseFloat(this.value),act3.b);});
+document.getElementById('b3').addEventListener('input',function(){set3(act3.a,parseFloat(this.value));});
+document.getElementById('t3').addEventListener('input',function(){stopAnim();act3.tau=parseFloat(this.value);render3();});
+function step3to(n){
+  n=Math.max(0,Math.min(3,n)); stopAnim();
+  var from=act3.tau;
+  animate(900,function(t){act3.tau=lerp(from,n,easeInOut(t));document.getElementById('t3').value=act3.tau;render3();},
+    function(){act3.tau=n;document.getElementById('t3').value=n;render3();});
+}
+document.getElementById('next3').addEventListener('click',function(){step3to(Math.round(act3.tau)+1);});
+document.getElementById('prev3').addEventListener('click',function(){step3to(Math.round(act3.tau)-1);});
+document.getElementById('play3').addEventListener('click',function(){
+  stopAnim(); var from=act3.tau>=2.99?0:act3.tau;
+  animate(3200,function(t){act3.tau=lerp(from,3,t);document.getElementById('t3').value=act3.tau;render3();});
+});
+document.getElementById('reset3').addEventListener('click',function(){
+  stopAnim();act3.tau=0;document.getElementById('t3').value=0;render3();});
+
+/* ============================================================
+   AKT 4 — Garfield-Trapez (SVG)
+   ============================================================ */
+var act4={a:3,b:4,step:0};
+var STEP4=[
+ '<b>Schritt 0:</b> Zwei <span class="hlc">gleiche rechtwinklige Dreiecke</span> (Katheten a und b).',
+ '<b>Schritt 1:</b> Schieb sie zusammen — es entsteht ein <span class="hl">Trapez</span> (parallele Seiten a und b, Höhe a+b).',
+ '<b>Schritt 2:</b> In der Lücke sitzt ein <span class="hlv">drittes Dreieck</span>. Es ist rechtwinklig (die zwei spitzen Winkel unten ergänzen sich zu 90°), seine zwei kurzen Seiten sind beide c → Fläche ½·c·c = ½c².',
+ '<b>Schritt 3:</b> Jetzt die Trapezfläche <b>auf zwei Arten</b> berechnen und gleichsetzen → rechts läuft der Term mit.'
+];
+function render4(){
+  var svg=document.getElementById('svg4'); clear(svg);
+  var a=act4.a,b=act4.b,c=Math.sqrt(a*a+b*b),st=act4.step;
+  // assembled coordinates
+  var P0=[0,0],M=[a,0],P2=[a+b,0],T=[0,b],U=[a+b,a]; // trapezoid P0,P2,U,T ; M on base
+  var f=fitter([[0,0],[a+b,0],[a+b,Math.max(a,b)],[0,Math.max(a,b)]],640,540,60);
+  // split offset for step 0 (triangles apart)
+  var apart = st===0?1:0;
+  // Triangle 1 (left): P0,M,T  -> shift left when apart
+  var sh1=apart*(-a*0.5);
+  var tri1=[[P0[0]+sh1,P0[1]+apart*0.6],[M[0]+sh1,M[1]+apart*0.6],[T[0]+sh1,T[1]+apart*0.6]];
+  // Triangle 2 (right): P2,U,M -> shift right when apart
+  var sh2=apart*(a*0.5);
+  var tri2=[[P2[0]+sh2,P2[1]+apart*0.6],[U[0]+sh2,U[1]+apart*0.6],[M[0]+sh2,M[1]+apart*0.6]];
+  // trapezoid outline (from step1)
+  if(st>=1){
+    el('polygon',{points:polyStr([P0,P2,U,T],f),fill:'none',stroke:'#3a4a63','stroke-width':2},svg);
+  }
+  // middle triangle (step2)
+  if(st>=2){
+    el('polygon',{points:polyStr([M,U,T],f),fill:'rgba(167,139,250,0.26)',stroke:'#a78bfa',
+      'stroke-width':2,'stroke-linejoin':'round'},svg);
+    var mc=f.map([(M[0]+U[0]+T[0])/3,(M[1]+U[1]+T[1])/3]);
+    el('text',{x:mc[0],y:mc[1]+5,fill:'#a78bfa','text-anchor':'middle','font-family':'monospace',
+      'font-size':14,'font-weight':700},svg).textContent='½c²';
+  }
+  // the two triangles
+  el('polygon',{points:polyStr(tri1,f),fill:'rgba(34,211,238,0.26)',stroke:'#22d3ee',
+    'stroke-width':2,'stroke-linejoin':'round'},svg);
+  el('polygon',{points:polyStr(tri2,f),fill:'rgba(246,166,35,0.26)',stroke:'#f6a623',
+    'stroke-width':2,'stroke-linejoin':'round'},svg);
+  // edge labels on assembled figure
+  if(st>=1){
+    function lab(p,q,txt,col,dx,dy){var m=f.map([(p[0]+q[0])/2,(p[1]+q[1])/2]);
+      el('text',{x:m[0]+(dx||0),y:m[1]+(dy||0),fill:col,'text-anchor':'middle','font-family':'monospace',
+        'font-size':13,'font-weight':700},svg).textContent=txt;}
+    lab(P0,T,'b','#f6a623',-12,0);          // left vertical side length b
+    lab(P2,U,'a','#22d3ee',14,0);           // right vertical side length a
+    lab(P0,M,'a','#22d3ee',0,18);           // base left part
+    lab(M,P2,'b','#f6a623',0,18);           // base right part
+  }
+  // term highlighting
+  document.querySelectorAll('#term4 .step').forEach(function(d){
+    d.classList.toggle('on', parseInt(d.getAttribute('data-s'))<=st);});
+  document.getElementById('s4v').textContent=st+' / 3';
+  document.getElementById('s4').value=st;
+  document.getElementById('step4txt').innerHTML=STEP4[st];
+}
+function set4(a,b){act4.a=a;act4.b=b;
+  document.getElementById('a4v').textContent=fmt(a,1);
+  document.getElementById('b4v').textContent=fmt(b,1);render4();}
+document.getElementById('a4').addEventListener('input',function(){set4(parseFloat(this.value),act4.b);});
+document.getElementById('b4').addEventListener('input',function(){set4(act4.a,parseFloat(this.value));});
+document.getElementById('s4').addEventListener('input',function(){act4.step=parseInt(this.value);render4();});
+document.getElementById('next4').addEventListener('click',function(){act4.step=Math.min(3,act4.step+1);render4();});
+document.getElementById('prev4').addEventListener('click',function(){act4.step=Math.max(0,act4.step-1);render4();});
+
+/* ============================================================
+   Legends + narrative/tasks + act switching
+   ============================================================ */
+var LEGENDS={
+ 1:'<span><span class="swatch" style="background:#22d3ee"></span>a² (Kathete a)</span>'+
+   '<span><span class="swatch" style="background:#f6a623"></span>b² (Kathete b)</span>'+
+   '<span><span class="swatch" style="background:#a78bfa"></span>c² (Hypotenuse)</span>'+
+   '<span><span class="swatch" style="background:#f87171"></span>Winkel γ bei C</span>',
+ 2:'<span><span class="swatch" style="background:#34d399"></span>vier gleiche Dreiecke</span>'+
+   '<span><span class="swatch" style="background:#a78bfa"></span>c²-Fläche</span>'+
+   '<span><span class="swatch" style="background:#22d3ee"></span>a²-Fläche</span>'+
+   '<span><span class="swatch" style="background:#f6a623"></span>b²-Fläche</span>',
+ 3:'<span><span class="swatch" style="background:#22d3ee"></span>a²-Quadrat (wird umgeformt)</span>'+
+   '<span><span class="swatch" style="background:#f6a623"></span>b²-Quadrat (wird umgeformt)</span>'+
+   '<span><span class="swatch" style="background:#3a4a63"></span>c-Quadrat (Ziel)</span>',
+ 4:'<span><span class="swatch" style="background:#22d3ee"></span>Dreieck 1 (½ab)</span>'+
+   '<span><span class="swatch" style="background:#f6a623"></span>Dreieck 2 (½ab)</span>'+
+   '<span><span class="swatch" style="background:#a78bfa"></span>mittleres Dreieck (½c²)</span>'
+};
+var ACTS={
+1:{badge:'AKT 01',title:'Überzeugen — und dann zweifeln',
+  html:'<p>Links siehst du ein rechtwinkliges Dreieck. Über jeder Kathete liegt ein Quadrat '+
+       '(<span class="hlc">a²</span>, <span class="hl">b²</span>), über der längsten Seite das '+
+       '<span class="hlv">c²</span>-Quadrat. Zieh an <code>a</code> und <code>b</code>. Rechts '+
+       'vergleichst du <span class="hlc">a²+b²</span> mit <span class="hlv">c²</span>.</p>'+
+       '<p>Du wirst sehen: <b>es passt immer.</b> Aber Achtung: Du bist jetzt <i>überzeugt</i> — du '+
+       'weißt aber noch nicht <span class="hl">warum</span>. Und du hast nur ein paar Beispiele gesehen, '+
+       'nicht alle Dreiecke der Welt.</p>'+
+       '<p>Jetzt der wichtige Schritt: Schieb den Winkel <span class="hl">γ (Gamma)</span> weg von 90°. '+
+       'Die zwei Zahlen sind <span class="hl">nicht mehr gleich</span>. Der Satz gilt also nur, wenn der '+
+       'Winkel <span class="hl">genau 90°</span> ist. Die große Frage für die nächsten Akte: '+
+       '<b>Warum sorgt der rechte Winkel dafür, dass a²+b² immer genau c² ergibt?</b></p>',
+  tasks:[
+   {n:1,g:1,t:'<b>Zähl nach:</b> Stell a=3, b=4 ein. Zähl im Bild die kleinen Gitter-Kästchen im blauen Quadrat (a²) und im gelben (b²). Rechne dann a·a und b·b aus. Passt die Kästchen-Zahl zur Rechnung?',
+    sol:'Blau: 3·3 = <span class="hl">9</span> Kästchen. Gelb: 4·4 = <span class="hl">16</span> Kästchen. '+
+        'Das gemalte Quadrat <b>ist</b> die Zahl a² — nämlich sein Flächeninhalt. Merke: a² heißt a·a, '+
+        '<b>nicht</b> a·2 (3·3 = 9, nicht 3·2 = 6).'},
+   {n:2,g:1,t:'<b>Stell ein &amp; schreib auf:</b> Probier zwei verschiedene rechtwinklige Dreiecke (γ = 90°). Schreib je a²+b² und c² auf. Was fällt dir auf?',
+    sol:'In <span class="hl">jedem</span> Fall ist a²+b² = c² (Vergleichsfeld grün). Das überzeugt — '+
+        'beweist aber noch nichts: Du hast nur ein paar Beispiele gesehen, nicht alle Dreiecke.'},
+   {n:3,g:1,t:'<b>Schieb &amp; beobachte:</b> Stell γ auf 70° und dann auf 110°. Wann ist c² kleiner als a²+b², wann größer?',
+    sol:'Bei <span class="hl">γ &lt; 90°</span> (spitzer Winkel) ist c² &lt; a²+b². Bei <span class="hl">γ &gt; 90°</span> '+
+        '(stumpfer Winkel) ist c² &gt; a²+b². Nur bei genau 90° sind beide gleich.'},
+   {n:4,e:1,t:'<b>Schreib auf:</b> Welche Bedingung muss erfüllt sein, damit a²+b²=c² gilt? Und warum reicht „ich habe es ausprobiert" nicht als Beweis?',
+    sol:'Bedingung: das Dreieck muss <span class="hl">rechtwinklig</span> sein (γ=90°). Ausprobieren liefert '+
+        'nur <i>Beispiele</i>. Eine Aussage über <b>alle</b> rechtwinkligen Dreiecke braucht eine '+
+        'allgemeine Begründung — einen Beweis. Den suchen wir ab Akt 2.'},
+   {n:5,e:1,t:'<b>Knobelaufgabe:</b> Bei γ≠90° stimmt a²+b²=c² nicht mehr. Finde am Regler heraus, wie c² dann — außer von a und b — auch vom Winkel γ abhängt. Prüf deine Idee an mehreren Winkeln.',
+    sol:'Es gilt der <span class="hl">Kosinussatz</span>: c² = a² + b² − 2ab·cos γ. Bei γ=90° ist cos 90°=0, '+
+        'der letzte Teil fällt weg → c²=a²+b². <b>Pythagoras ist also der Sonderfall γ=90° eines größeren '+
+        'Satzes.</b> (Test: a=3, b=4, γ=70° → c² = 25 − 24·cos 70° ≈ 16,8 — genau die Anzeige.)'}
+  ]},
+2:{badge:'AKT 02',title:'Das Umlege-Puzzle — dein erster Beweis',
+  html:'<p>Zwei große Quadrate, beide mit der Seitenlänge <code>a+b</code> — also <span class="hlc">genau '+
+       'gleich groß</span>. In beiden liegen <span class="hl">dieselben vier rechtwinkligen Dreiecke</span> '+
+       '(mit den Katheten a und b).</p>'+
+       '<p>Klick <b>„Dreiecke umlegen"</b>. Vorher bleibt in der Mitte ein schräges '+
+       '<span class="hlv">c²-Quadrat</span> frei. Nachher rücken die vier Dreiecke in zwei Ecken zusammen, '+
+       'und es bleiben <span class="hlc">a²</span> und <span class="hl">b²</span> frei.</p>'+
+       '<p>Das ist schon der ganze Beweis: <b>Gleich große Quadrate, davon die gleichen vier Dreiecke '+
+       'weggenommen — dann ist auch der Rest gleich groß.</b> Also muss <span class="hlv">c²</span> = '+
+       '<span class="hlc">a²</span> + <span class="hl">b²</span> sein, und das für <i>jedes</i> a und b, '+
+       'nicht nur für dein Beispiel.</p>'+
+       '<p style="font-size:12.5px;color:var(--dim)">Übrigens: Genau dieses Bild steht im alten chinesischen '+
+       '„Hsuan-thu"-Diagramm — über 2000 Jahre alt, ganz ohne Pythagoras entdeckt.</p>',
+  tasks:[
+   {n:1,g:1,t:'<b>Klick &amp; vergleiche:</b> Leg die Dreiecke um und wieder zurück. Bleibt das große Quadrat gleich groß? Bleibt die Anzahl der Dreiecke gleich?',
+    sol:'Ja, beides bleibt gleich: Das große Quadrat hat immer die Fläche (a+b)², und es sind immer genau '+
+        'vier gleiche Dreiecke. Nur die <i>freie Restfläche</i> wird anders angeordnet.'},
+   {n:2,g:1,t:'<b>Schreib auf (ein Satz):</b> Warum folgt daraus a²+b²=c²?',
+    sol:'Weil man von <span class="hl">gleich großen</span> Quadraten <span class="hl">gleich viel</span> '+
+        '(vier gleiche Dreiecke) wegnimmt, muss der Rest gleich groß sein: c² = a²+b².'},
+   {n:3,e:1,t:'<b>Begründe:</b> Woran erkennst du, dass die schräge Figur in der Mitte wirklich ein Quadrat ist — und nicht nur fast? (Genau diese Lücke muss ein echter Beweis schließen.)',
+    sol:'Alle vier Seiten sind Hypotenusen kongruenter Dreiecke → gleich lang (= c). An jeder Ecke treffen '+
+        'die beiden spitzen Winkel des Dreiecks zusammen; sie ergänzen sich zu 90° (denn im rechtwinkligen '+
+        'Dreieck sind die beiden spitzen Winkel zusammen 90°). Vier gleiche Seiten + vier rechte Winkel '+
+        '= Quadrat. <span class="hl">Hier steckt der rechte Winkel aus Akt 1 wieder drin!</span>'}
+  ]},
+3:{badge:'AKT 03',title:'Der Scherungs-Fluss — Euklids Idee in Bewegung',
+  html:'<p>Zuerst ein Werkzeug: die <span class="hl">Scherung</span>. Man schiebt die obere Kante einer '+
+       'Figur zur Seite, die Grundseite bleibt liegen. Aus einem Quadrat wird so ein schräges '+
+       '<span class="hl">Parallelogramm</span> — aber die <b>Fläche bleibt genau gleich groß</b> (gleiche '+
+       'Grundseite, gleiche Höhe).</p>'+
+       '<p>Damit beweisen wir den Satz (die Idee stammt von <span class="hlv">Euklid</span>). Eine '+
+       'Höhenlinie teilt das große <span class="hlv">c-Quadrat</span> in zwei Rechtecke. Klick dich mit '+
+       '<b>„weiter ›"</b> Schritt für Schritt durch: Das <span class="hl">b²-Quadrat</span> und das '+
+       '<span class="hlc">a²-Quadrat</span> werden geschert, verschoben und nochmal geschert — und füllen '+
+       'am Ende genau diese beiden Rechtecke.</p>'+
+       '<p>Behalte die beiden Flächen-Anzeigen rechts im Auge: Sie bleiben die ganze Zeit '+
+       '<span class="hlc">9 (= a²)</span> und <span class="hl">16 (= b²)</span>. <b>Achtung:</b> Die '+
+       'Anzeige <i>zeigt</i> nur, dass die Fläche gleich bleibt. <i>Warum</i> sie gleich bleiben muss, '+
+       'sagt dir die Scherung — und genau das ist hier der Beweis, nicht das Messen.</p>',
+  tasks:[
+   {n:1,g:1,t:'<b>Klick &amp; beobachte:</b> Geh mit „weiter ›" Schritt für Schritt durch. Schau auf die zwei Flächen-Anzeigen (blau, gelb). Verändern sich die Zahlen?',
+    sol:'Nein — sie bleiben <span class="hl">9 und 16</span> (blau = a², gelb = b²), obwohl sich die Formen '+
+        'stark verbiegen. Scheren und Verschieben ändern die Fläche nicht.'},
+   {n:2,g:1,t:'<b>Schreib auf:</b> Wohin genau wandern die beiden Quadrate am Ende?',
+    sol:'In die <span class="hl">zwei Rechtecke</span>, in die die Höhenlinie das c-Quadrat teilt. Zusammen '+
+        'füllen sie es ohne Lücke: a² + b² = c².'},
+   {n:3,e:1,t:'<b>Begründe:</b> Warum ändert eine Scherung die Fläche nicht? Nutze die Wörter „Grundseite" und „Höhe".',
+    sol:'Die Fläche ist <span class="hl">Grundseite · Höhe</span>. Beim Scheren rutscht die obere Seite nur '+
+        'zur Seite — Grundseite und Höhe (der senkrechte Abstand der beiden Seiten) bleiben gleich, also '+
+        'auch die Fläche. (Dieses Prinzip heißt Cavalieri-Prinzip.)'}
+  ]},
+4:{badge:'AKT 04',title:'Vom Bild zum Term — Garfields Trapez',
+  html:'<p>Jetzt machen wir aus dem Sehen eine <span class="hl">Rechnung</span> — sicher und für alle '+
+       'Dreiecke. Diesen Beweis fand 1876 <span class="hlv">James A. Garfield</span> (später US-Präsident).</p>'+
+       '<p>Bau ihn mit „weiter ›" Schritt für Schritt auf: zwei gleiche Dreiecke → ein '+
+       '<span class="hl">Trapez</span> → das mittlere Dreieck. Dieses mittlere Dreieck ist '+
+       '<span class="hlv">rechtwinklig</span> (die zwei spitzen Winkel unten ergänzen sich zu 90° — '+
+       'genau wie in Akt 2), seine zwei kurzen Seiten sind beide c, seine Fläche also ½·c·c = ½c².</p>'+
+       '<p>Jetzt die Trapezfläche <b>auf zwei Arten</b> berechnen (rechts läuft der Term mit). Als Trapez: '+
+       '<code>½·(a+b)·(a+b)</code>. Als Summe der drei Dreiecke: <code>½ab + ½ab + ½c²</code>. Beides ist '+
+       'dieselbe Fläche — gleichsetzen, dann steht <span class="hl">2ab auf beiden Seiten und wird '+
+       'gestrichen</span>, übrig bleibt <span class="res">a²+b²=c²</span>.</p>'+
+       '<p>Weil wir mit den <i>Buchstaben</i> a und b gerechnet haben, gilt das Ergebnis für <b>alle</b> '+
+       'rechtwinkligen Dreiecke auf einmal. <span class="hl">Das ist die Stärke des Rechen-Beweises.</span></p>',
+  tasks:[
+   {n:1,g:1,t:'<b>Bau auf &amp; schreib ab:</b> Geh mit „weiter ›" bis Schritt 3. Schreib die beiden Berechnungen der Trapezfläche untereinander.',
+    sol:'Trapez: <code>½(a+b)(a+b)</code>. Drei Dreiecke: <code>½ab+½ab+½c²</code>. Beide beschreiben '+
+        'dieselbe Fläche.'},
+   {n:2,e:1,t:'<b>Forme um:</b> Setze beide Ausdrücke gleich und rechne, bis a²+b²=c² dasteht. An welcher Stelle fällt 2ab weg?',
+    sol:'½(a+b)² = ab + ½c² &nbsp;| ·2 → (a+b)² = 2ab + c² → a²+2ab+b² = 2ab+c². '+
+        'Auf beiden Seiten steht <span class="hl">2ab</span> → streichen → a²+b² = c².'},
+   {n:3,e:1,t:'<b>Denk nach (kein richtig oder falsch):</b> Vier Beweise, dasselbe Ergebnis. Welcher hat dich am meisten überzeugt — und was heißt es überhaupt, dass ein Satz mehrere Beweise hat?',
+    sol:'Persönliche Antwort. Mathematisch: Ein Satz hängt nicht an <i>einem</i> Beweis. Verschiedene '+
+        'Beweise zeigen verschiedene <span class="hl">Gründe</span>, warum er gilt (Umlegen, Flächentreue, '+
+        'Rechnung). Mehr Beweiswege = tieferes Verständnis, nicht „mehr Sicherheit".'}
+  ]}
+};
+var BEGRIFFE=
+ '<details class="begriffe" open><summary>Wörter-Hilfe — hier nachschlagen</summary><div class="begriffe-body"><dl>'+
+ '<dt>Kathete</dt><dd>Eine der beiden Seiten <b>am</b> rechten Winkel (<code>a</code>, <code>b</code>).</dd>'+
+ '<dt>Hypotenuse</dt><dd>Die längste Seite, immer <b>gegenüber dem rechten Winkel</b> (<code>c</code>).</dd>'+
+ '<dt>γ (Gamma)</dt><dd>Griechischer Buchstabe. Hier: der Winkel an der Ecke <code>C</code>.</dd>'+
+ '<dt>a² (a Quadrat)</dt><dd>Heißt <b>a·a</b> (nicht a·2!). Es ist <b>genau der Flächeninhalt</b> des '+
+   'Quadrats über der Seite a. Bei a=3: a² = 3·3 = 9.</dd>'+
+ '<dt>Beweis</dt><dd>Eine lückenlose Begründung, dass etwas für <b>alle</b> Fälle gilt — nicht nur für '+
+   'ein paar ausprobierte Beispiele.</dd>'+
+ '<dt>Scherung</dt><dd>Eine Figur „schräg ziehen": Die obere Kante rutscht zur Seite, die Grundseite '+
+   'bleibt liegen. <b>Die Fläche bleibt dabei gleich groß.</b></dd>'+
+ '<dt>Parallelogramm</dt><dd>Ein „schiefes Rechteck" — gegenüberliegende Seiten sind parallel und gleich lang.</dd>'+
+ '<dt>Trapez</dt><dd>Ein Viereck, bei dem zwei Seiten parallel sind.</dd>'+
+ '<dt>kongruent</dt><dd>Deckungsgleich — gleiche Form und Größe.</dd>'+
+ '</dl></div></details>';
+function renderContent(n){
+  var A=ACTS[n];
+  var tasks=A.tasks.map(function(t){
+    var niv=t.e?'<span class="niv e">E</span>':'<span class="niv g">G</span>';
+    var sol=t.sol?'<details class="sol"><summary>Lösung / Erwartung</summary><div class="sol-body">'+t.sol+'</div></details>':'';
+    return '<div class="task"><div class="num">'+t.n+'</div><div class="body">'+t.t+niv+sol+'</div></div>';
+  }).join('');
+  document.getElementById('actContent').innerHTML=
+    BEGRIFFE+
+    '<div class="narr"><h2><span class="badge">'+A.badge+'</span>'+A.title+'</h2>'+A.html+'</div>'+
+    '<div class="tasks"><h3>Aufgaben</h3>'+tasks+'</div>';
+}
+var instrName={1:'GeoGebra',2:'SVG-Engine · offline',3:'SVG-Engine · offline',4:'SVG-Engine · offline'};
+function showAct(n){
+  for(var i=1;i<=4;i++){
+    document.getElementById('pane'+i).classList.toggle('on',i===n);
+    document.getElementById('ctrl'+i).classList.toggle('on',i===n);
+  }
+  document.querySelectorAll('.act-tab').forEach(function(el){
+    el.classList.toggle('on',el.getAttribute('data-act')==String(n));});
+  document.getElementById('legend').innerHTML=LEGENDS[n];
+  document.getElementById('instr').textContent=instrName[n];
+  document.getElementById('stage').classList.toggle('dark',n===3);
+  if(n===1){document.getElementById('modeReadout').style.display='';refresh1&&ggbReady&&refresh1();}
+  else{document.getElementById('modeReadout').style.display='none';}
+  stopAnim();
+  if(n===2)render2(); if(n===3)render3(); if(n===4)render4();
+  renderContent(n);
+}
+document.querySelectorAll('.act-tab').forEach(function(el){
+  el.addEventListener('click',function(){showAct(parseInt(this.getAttribute('data-act')));});
+});
+
+/* ---------- init ---------- */
+set2(3,4); set3(3,4); set4(3,4);
+showAct(1);
+var ggbApp=new GGBApplet({appName:'classic',width:760,height:540,showToolBar:false,
+  showAlgebraInput:false,showMenuBar:false,showResetIcon:false,enableLabelDrags:false,
+  enableRightClick:false,enableShiftDragZoom:true,showZoomButtons:true,
+  errorDialogsActive:false,language:'de',appletOnLoad:onGGB},true);
+window.addEventListener('load',function(){
+  if(typeof GGBApplet==='undefined'){showFallback();return;}
+  try{ggbApp.inject('ggb');}catch(e){showFallback();}
+  setTimeout(function(){if(!ggbReady)showFallback();},12000);
+});
+function showFallback(){
+  document.getElementById('ggbLoading').classList.add('hide');
+  document.getElementById('ggbFallback').classList.add('show');
+}
+</script>
+</body>
+</html>

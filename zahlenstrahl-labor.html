@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zahlenstrahl-Labor · Rationale Zahlen entdecken</title>
+<style>
+:root{
+  --bg:#0a0e16; --bg2:#0d1320; --panel:#121b2a; --panel2:#0f1825;
+  --line:#1e2c40; --line2:#27384f;
+  --text:#e7ecf4; --muted:#8a9bb4; --dim:#5d6f8a;
+  --cyan:#22d3ee; --amber:#f6a623; --violet:#a78bfa;
+  --green:#34d399; --red:#f87171; --orange:#fb923c;
+  --mono:'JetBrains Mono','SF Mono',ui-monospace,Menlo,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;line-height:1.55}
+body{
+  background:
+    radial-gradient(900px 600px at 75% -5%,rgba(34,211,238,.09),transparent 60%),
+    radial-gradient(700px 500px at 5% 110%,rgba(167,139,250,.07),transparent 55%),
+    var(--bg);
+  min-height:100vh;padding:0 0 80px;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ---- Header ---- */
+header{padding:32px 0 18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--cyan);display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 0 4px rgba(34,211,238,.14);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+h1 .acc{color:var(--amber)}
+.sub{color:var(--muted);font-size:14.5px;margin-top:8px;max-width:720px}
+
+/* ---- Niveau-Schalter ---- */
+.niveau-bar{display:flex;align-items:center;gap:8px;margin:16px 0 0;flex-wrap:wrap}
+.niveau-bar span{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.15em}
+.niv-btn{font:inherit;font-size:12px;color:var(--muted);background:var(--panel2);
+  border:1px solid var(--line);border-radius:7px;padding:5px 12px;cursor:pointer;transition:.14s}
+.niv-btn:hover{border-color:var(--line2);color:var(--text)}
+.niv-btn.on{background:#1a2540;border-color:var(--amber);color:var(--amber)}
+.niveau-hint{font-size:11.5px;color:var(--dim);margin-top:6px;font-family:var(--mono)}
+
+/* ---- Akt-Tabs ---- */
+.acts{display:flex;gap:10px;margin:24px 0 20px;flex-wrap:wrap}
+.act-tab{flex:1;min-width:160px;text-align:left;cursor:pointer;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:13px 16px;transition:.16s;position:relative}
+.act-tab:hover{border-color:var(--line2);transform:translateY(-1px)}
+.act-tab.on{border-color:var(--cyan);background:linear-gradient(160deg,rgba(34,211,238,.09),rgba(34,211,238,.02))}
+.act-tab .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--dim)}
+.act-tab.on .n{color:var(--cyan)}
+.act-tab .t{font-size:14px;font-weight:700;margin-top:4px}
+.act-tab .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ---- Akt-Panels ---- */
+.akt{display:none}
+.akt.on{display:block}
+
+/* ---- Karten ---- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.card-head .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.card-head .lbl b{color:var(--text)}
+.card-body{padding:16px}
+
+/* ---- SVG Zahlenstrahl ---- */
+.nl-wrap{padding:8px 0 4px}
+svg.nl{width:100%;overflow:visible;display:block}
+
+/* ---- Eingabe ---- */
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.row label{font-size:12.5px;color:var(--muted)}
+input[type=number],input[type=text]{
+  font:inherit;font-family:var(--mono);font-size:15px;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:8px;
+  color:var(--text);padding:7px 11px;width:90px;outline:none;
+  transition:.14s;-moz-appearance:textfield
+}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+input.error{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(248,113,113,.18)!important}
+
+/* ---- Bruch-Eingabe visuell ---- */
+.frac-widget{display:inline-flex;flex-direction:column;align-items:center;gap:2px;vertical-align:middle}
+.frac-label{font-size:10.5px;color:var(--dim);font-family:var(--mono);letter-spacing:.08em}
+.frac-line{width:100%;height:2px;background:var(--muted);border-radius:1px;margin:1px 0}
+.frac-eq{font-size:14px;color:var(--dim);padding:0 6px}
+
+.btn{font:inherit;font-size:13px;font-weight:600;color:#0a0e16;background:var(--cyan);
+  border:none;border-radius:8px;padding:8px 18px;cursor:pointer;transition:.14s}
+.btn:hover{opacity:.88}
+.btn.sec{background:var(--panel2);border:1px solid var(--line2);color:var(--text)}
+.btn.sec:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn.amber{background:var(--amber)}
+.btn.sm{font-size:12px;padding:5px 12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---- Info-Box ---- */
+.info{background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:11px 14px;font-size:13px;color:var(--muted);margin:10px 0}
+.info b{color:var(--text)}
+.info.green{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.06);color:var(--green)}
+.info.red{border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.06);color:var(--red)}
+.info.amber{border-color:rgba(246,166,35,.35);background:rgba(246,166,35,.06);color:var(--amber)}
+
+/* ---- Grid ---- */
+.two{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+
+/* ---- Niveau-Hinweis ---- */
+.niv-hint{font-size:11.5px;color:var(--dim);font-family:var(--mono);
+  border-left:2px solid var(--amber);padding-left:8px;margin:8px 0;min-height:0}
+.niv-e{color:var(--violet)} .niv-e-border{border-left-color:var(--violet)}
+.niv-l{color:var(--green)} .niv-l-border{border-left-color:var(--green)}
+
+/* ---- Chips ---- */
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;min-height:36px;align-items:center;padding:8px 0}
+.chip{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:14px;font-weight:700;border:2px solid;transition:.2s}
+.chip.g{background:rgba(52,211,153,.15);border-color:var(--green);color:var(--green)}
+.chip.s{background:rgba(248,113,113,.15);border-color:var(--red);color:var(--red)}
+.chip.fade-in{animation:chipIn .25s ease both}
+@keyframes chipIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+
+/* ---- Quiz ---- */
+.quiz-opt{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.q-btn{font:inherit;font-size:13px;background:var(--panel2);border:1px solid var(--line2);
+  border-radius:8px;color:var(--text);padding:8px 16px;cursor:pointer;transition:.14s;font-family:var(--mono)}
+.q-btn:hover:not(:disabled){border-color:var(--cyan)}
+.q-btn:disabled{pointer-events:none}
+.q-btn.correct{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green)}
+.q-btn.wrong{border-color:var(--red);background:rgba(248,113,113,.08);color:var(--red)}
+
+/* ---- Score-Counter ---- */
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.score-badge{font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:6px;
+  background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);color:var(--cyan)}
+
+/* ---- Permanenzprinzip ---- */
+.perm-table{width:100%;border-collapse:collapse}
+.perm-table td{padding:6px 14px;font-family:var(--mono);font-size:14px;border-bottom:1px solid var(--line)}
+.perm-table td:first-child{color:var(--muted)}
+.perm-row.active td{background:rgba(34,211,238,.08);color:var(--cyan)}
+.perm-row.result td{color:var(--amber)}
+
+/* ---- Tags ---- */
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);
+  padding:3px 8px;border-radius:5px;border:1px solid}
+.tag.cyan{color:var(--cyan);border-color:rgba(34,211,238,.3);background:rgba(34,211,238,.06)}
+.tag.amber{color:var(--amber);border-color:rgba(246,166,35,.3);background:rgba(246,166,35,.06)}
+.tag.green{color:var(--green);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)}
+.tag.violet{color:var(--violet);border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.06)}
+.tag.red{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06)}
+
+/* ---- Tooltip ---- */
+.tooltip-wrap{position:relative;display:inline-block}
+.tooltip-wrap .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1e2c40;border:1px solid var(--line2);color:var(--text);font-size:12px;
+  padding:6px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;
+  opacity:0;transition:.15s;z-index:100;font-family:var(--sans);font-weight:400}
+.tooltip-wrap:hover .tip{opacity:1}
+.help-icon{font-size:11px;color:var(--dim);cursor:help;border-bottom:1px dotted var(--dim);margin-left:2px}
+
+/* ---- Geführter Einstieg Akt3 ---- */
+.intro-overlay{background:rgba(10,14,22,.88);border:1px solid var(--line2);border-radius:14px;
+  padding:28px 24px;text-align:center;margin-bottom:16px}
+.intro-overlay h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.intro-overlay p{color:var(--muted);font-size:14px;margin-bottom:16px}
+
+/* ---- Strahl-Legende ---- */
+.nl-legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 2px;font-size:12px;font-family:var(--mono)}
+.nl-legend-item{display:flex;align-items:center;gap:5px}
+.nl-legend-dot{width:10px;height:10px;border-radius:50%;border:2px solid}
+
+/* ---- Tipp-Button (versteckt) ---- */
+.tip-reveal{font:inherit;font-size:11.5px;color:var(--dim);background:none;border:1px dashed var(--line2);
+  border-radius:6px;padding:4px 10px;cursor:pointer;transition:.14s;margin-top:6px}
+.tip-reveal:hover{border-color:var(--amber);color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="eyebrow"><span class="dot"></span>Mathematik · Jahrgang 7 · Q1</div>
+  <h1>Zahlenstrahl-<span class="acc">Labor</span></h1>
+  <p class="sub">Brüche, Dezimalzahlen und negative Zahlen — alle auf einem gemeinsamen Strahl.</p>
+  <div class="niveau-bar">
+    <span>NIVEAU</span>
+    <button class="niv-btn on" onclick="setNiv('L')" id="niv-L">⭐ Lerner</button>
+    <button class="niv-btn" onclick="setNiv('GE')" id="niv-GE">⭐⭐ G · E</button>
+    <button class="niv-btn" onclick="setNiv('E')" id="niv-E">⭐⭐⭐ nur E</button>
+  </div>
+  <div class="niveau-hint">Neu hier? → Lerner wählen</div>
+</header>
+
+<!-- AKT-TABS -->
+<div class="acts">
+  <button class="act-tab on" onclick="setAkt(1,this)">
+    <div class="n">AKT 01</div>
+    <div class="t">Brüche ↔ Dezimalzahlen</div>
+    <div class="d">Gleicher Punkt, zwei Schreibweisen</div>
+  </button>
+  <button class="act-tab" onclick="setAkt(2,this)">
+    <div class="n">AKT 02</div>
+    <div class="t">Ordnen &amp; Vergleichen</div>
+    <div class="d">Der Strahl nach links</div>
+  </button>
+  <button class="act-tab" onclick="setAkt(3,this)">
+    <div class="n">AKT 03</div>
+    <div class="t">Addition &amp; Subtraktion</div>
+    <div class="d">Sprünge und Vorzeichen</div>
+  </button>
+  <button class="act-tab" onclick="setAkt(4,this)">
+    <div class="n">AKT 04</div>
+    <div class="t">Multiplikation &amp; Division</div>
+    <div class="d">Warum Minus · Minus = Plus?</div>
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     AKT 1 — Brüche ↔ Dezimalzahlen
+══════════════════════════════════════════════ -->
+<div class="akt on" id="akt1">
+<div class="two">
+<div>
+  <div class="card">
+    <div class="card-head">
+      <span class="lbl"><b>Zahlenstrahl</b> — Brüche &amp; Dezimalzahlen</span>
+      <span class="tag cyan">0 bis 1</span>
+    </div>
+    <div class="card-body">
+      <div class="nl-wrap">
+        <svg class="nl" id="nl1" viewBox="0 0 700 100" height="100"></svg>
+      </div>
+      <div id="a1-info" class="info" style="min-height:44px"></div>
+    </div>
+  </div>
+
+  <!-- Merksatz direkt unter Strahl -->
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Merksatz</b></span></div>
+    <div class="card-body">
+      <div class="info">
+        <b>Bruch und Dezimalzahl bezeichnen denselben Punkt auf dem Strahl.</b><br>
+        Der Bruch ¾ und die Dezimalzahl 0,75 sind nur verschiedene Schreibweisen für dasselbe.
+      </div>
+      <div class="info amber" style="margin-top:8px;font-size:12.5px">
+        <b>Umrechnen:</b> Bruch → Dezimal = Zähler ÷ Nenner<br>
+        ¾ = 3 ÷ 4 = 0,75 &nbsp;|&nbsp; ⅓ = 1 ÷ 3 = 0,333…
+      </div>
+      <div id="a1-e-card" style="display:none;margin-top:8px">
+        <div class="info" style="border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:var(--violet);font-size:12.5px">
+          <b>Wann ist ein Dezimalbruch endlich?</b><br>
+          Kürze den Bruch zuerst. Dann: Der Nenner darf nur die Primfaktoren <b>2</b> und <b>5</b> haben.<br>
+          Beispiel: ¾ → Nenner 4 = 2² → endlich. &nbsp; 1/6 → Nenner 6 = 2·3 → periodisch!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Eingabe</b></span></div>
+    <div class="card-body">
+      <div class="row" style="align-items:flex-end;gap:14px">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)">Bruch eingeben:</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="frac-widget">
+              <span class="frac-label">Zähler</span>
+              <input type="number" id="a1z" value="1" min="-20" max="20" style="width:72px" oninput="a1update()">
+              <div class="frac-line" style="width:72px"></div>
+              <input type="number" id="a1n" value="4" min="-20" max="20" style="width:72px" oninput="a1update()">
+              <span class="frac-label">Nenner</span>
+            </div>
+            <span class="frac-eq">=</span>
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-family:var(--mono)">Dezimalzahl:</div>
+              <input type="number" id="a1d" step="0.001" value="0.25" style="width:110px" oninput="a1fromDez()">
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--dim);margin-top:8px;font-family:var(--mono)">
+            Beispiel: 1 geteilt durch 4 = ein Viertel = 0,25
+          </div>
+        </div>
+      </div>
+      <div class="row" style="gap:6px;margin-top:10px" id="a1-quick-l">
+        <span style="font-size:11.5px;color:var(--dim);font-family:var(--mono)">Schnellwahl:</span>
+        <button class="btn sm sec" onclick="a1quick('1/2')">½</button>
+        <button class="btn sm sec" onclick="a1quick('1/4')">¼</button>
+        <button class="btn sm sec" onclick="a1quick('3/4')">¾</button>
+        <button class="btn sm sec" onclick="a1quick('1/3')">⅓</button>
+        <button class="btn sm sec" onclick="a1quick('1/5')">⅕</button>
+      </div>
+      <div class="row" style="gap:6px;margin-top:4px;display:none" id="a1-quick-e">
+        <span style="font-size:11.5px;color:var(--violet);font-family:var(--mono)">E-Niveau:</span>
+        <button class="btn sm sec" onclick="a1quick('7/12')">7/12</button>
+        <button class="btn sm sec" onclick="a1quick('5/6')">5/6</button>
+        <button class="btn sm sec" onclick="a1quick('11/9')">11/9</button>
+        <button class="btn sm sec" onclick="a1quick('7/10')">7/10</button>
+        <button class="btn sm sec" onclick="a1quick('1/8')">⅛</button>
+      </div>
+      <div id="a1-niv" class="niv-hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz -->
+<div>
+  <div class="card">
+    <div class="card-head">
+      <span class="lbl"><b>Quiz</b> — Ordne auf dem Strahl</span>
+      <button class="btn sm sec" onclick="a1quiz()">Neue Aufgabe</button>
+    </div>
+    <div class="card-body">
+      <div class="score-row">
+        <span style="font-size:12px;color:var(--muted)">Session:</span>
+        <span class="score-badge" id="a1-score">0 / 0</span>
+      </div>
+      <div id="a1-qtext" class="info amber" style="margin-bottom:10px;font-size:14px"></div>
+      <!-- Quiz-Strahl -->
+      <div id="a1-quiz-nl-wrap" style="display:none">
+        <div class="nl-wrap"><svg class="nl" id="nl1q" viewBox="0 0 340 80" height="80"></svg></div>
+      </div>
+      <div id="a1-qopts" class="quiz-opt"></div>
+      <div id="a1-qfb" class="info" style="display:none;margin-top:8px"></div>
+      <div id="a1-qniv-wrap" style="margin-top:8px;display:none">
+        <button class="tip-reveal" onclick="document.getElementById('a1-qniv').style.display='';this.style.display='none'">Tipp anzeigen</button>
+        <div id="a1-qniv" class="niv-hint" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     AKT 2 — Ordnen & Vergleichen
+══════════════════════════════════════════════ -->
+<div class="akt" id="akt2">
+<div class="two">
+<div>
+  <div class="card">
+    <div class="card-head">
+      <span class="lbl"><b>Zahlenstrahl</b> — mit negativen Zahlen</span>
+      <span class="tag amber">−10 bis +10</span>
+    </div>
+    <div class="card-body">
+      <div class="nl-wrap">
+        <svg class="nl" id="nl2" viewBox="0 0 700 110" height="110"></svg>
+      </div>
+      <div class="nl-legend">
+        <div class="nl-legend-item">
+          <div class="nl-legend-dot" style="background:rgba(246,166,35,.2);border-color:#f6a623"></div>
+          <span style="color:var(--amber)">Punkt A (gelb)</span>
+        </div>
+        <div class="nl-legend-item">
+          <div class="nl-legend-dot" style="background:rgba(34,211,238,.2);border-color:#22d3ee"></div>
+          <span style="color:var(--cyan)">Punkt B (blau)</span>
+        </div>
+      </div>
+      <div id="a2-cmp" class="info" style="font-family:var(--mono);font-size:16px;margin-top:8px"></div>
+      <div id="a2-dist" class="info" style="font-size:12.5px;margin-top:4px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Eingabe</b> — zwei Zahlen vergleichen</span></div>
+    <div class="card-body">
+      <div class="row">
+        <label style="color:var(--amber)">Zahl A:</label>
+        <input type="number" id="a2a" value="-3" min="-10" max="10" oninput="a2update()">
+        <label style="color:var(--cyan)">Zahl B:</label>
+        <input type="number" id="a2b" value="2" min="-10" max="10" oninput="a2update()">
+        <button class="btn sec sm" onclick="a2random()">Zufällig</button>
+      </div>
+      <div id="a2-niv" class="niv-hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <div class="card-head">
+      <span class="lbl"><b>Quiz</b> — Größer oder kleiner?</span>
+      <button class="btn sm sec" onclick="a2quiz()">Neue Aufgabe</button>
+    </div>
+    <div class="card-body">
+      <div class="score-row">
+        <span style="font-size:12px;color:var(--muted)">Session:</span>
+        <span class="score-badge" id="a2-score">0 / 0</span>
+      </div>
+      <div id="a2-qtext" class="info amber" style="margin-bottom:10px;font-size:15px;text-align:center"></div>
+      <div class="quiz-opt" id="a2-qopts"></div>
+      <div id="a2-qfb" class="info" style="display:none;margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Merksatz</b></span></div>
+    <div class="card-body">
+      <div class="info"><b>Weiter links auf dem Strahl = kleiner.</b><br>
+        Deshalb gilt: −7 &lt; −2, obwohl 7 &gt; 2.<br>
+        Den <span class="tooltip-wrap"><span class="help-icon">Betrag ?</span><span class="tip">Der Betrag ist der Abstand einer Zahl von der 0. Betrag von −7 = 7, Betrag von +7 = 7.</span></span> einer Zahl nennen wir ihren <b>Abstand von der Null</b>.
+      </div>
+      <div class="info amber" style="margin-top:8px;font-size:12.5px">
+        <b>Gegenzahl:</b> Das Spiegelbild der Zahl an der 0.<br>
+        Gegenzahl von −3 ist +3 &nbsp;|&nbsp; Gegenzahl von +5 ist −5.
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     AKT 3 — Addition & Subtraktion
+══════════════════════════════════════════════ -->
+<div class="akt" id="akt3">
+
+<!-- Geführter Einstieg -->
+<div id="a3-intro" class="intro-overlay">
+  <h3>Akt 3 — Addition &amp; Subtraktion</h3>
+  <p>Wir starten mit einem Beispiel: <b>−3 + 5 = ?</b><br>
+     Schau, was auf dem Zahlenstrahl passiert — dann kannst du selbst rechnen.</p>
+  <button class="btn" onclick="a3startIntro()">Beispiel ansehen ▶</button>
+</div>
+
+<div id="a3-main" style="display:none">
+<div class="two">
+<div>
+  <div class="card">
+    <div class="card-head">
+      <span class="lbl"><b>Zahlenstrahl</b> — Sprünge</span>
+      <div style="display:flex;gap:6px">
+        <span class="tag amber">Vorzeichen (gelb)</span>
+        <span class="tag cyan">Rechenzeichen (blau)</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="nl-wrap">
+        <svg class="nl" id="nl3" viewBox="0 0 700 140" height="140"></svg>
+      </div>
+      <div id="a3-ovrange" class="info red" style="display:none;font-size:12.5px;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- Chips animiert -->
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Guthaben &amp; Schulden</b> — Chips</span>
+      <div style="display:flex;gap:6px">
+        <span class="tag green">+ Guthaben</span>
+        <span class="tag red">− Schulden</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Schritt 1 — Start:</div>
+      <div id="a3-chips-start" class="chips-row"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;margin-bottom:4px" id="a3-chips-op-label">Schritt 2 — Operation:</div>
+      <div id="a3-chips-op" class="chips-row"></div>
+      <div id="a3-chipinfo" class="info" style="font-family:var(--mono);margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Rechnung eingeben</b></span>
+      <button class="btn sm sec" onclick="a3random()">Zufällig</button></div>
+    <div class="card-body">
+      <div class="row">
+        <input type="number" id="a3a" value="-3" min="-10" max="10" oninput="a3update()" style="width:80px">
+        <select id="a3op" style="font:inherit;font-size:15px;background:var(--panel2);border:1px solid var(--line2);
+          color:var(--text);border-radius:8px;padding:7px 10px;outline:none" onchange="a3update()">
+          <option value="+">+</option>
+          <option value="-">−</option>
+        </select>
+        <input type="number" id="a3b" value="5" min="-10" max="10" oninput="a3update()" style="width:80px">
+        <span style="color:var(--dim);font-size:18px">=</span>
+        <span id="a3res" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--cyan)"></span>
+      </div>
+      <div id="a3-expl" class="info" style="font-size:13px"></div>
+      <div id="a3-niv" class="niv-hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Quiz</b></span>
+      <button class="btn sm sec" onclick="a3quiz()">Neue Aufgabe</button></div>
+    <div class="card-body">
+      <div class="score-row">
+        <span style="font-size:12px;color:var(--muted)">Session:</span>
+        <span class="score-badge" id="a3-score">0 / 0</span>
+      </div>
+      <div id="a3-qtext" class="info amber" style="font-family:var(--mono);font-size:16px;text-align:center;margin-bottom:10px"></div>
+      <div class="row">
+        <input type="number" id="a3-qans" placeholder="?" style="width:100px;font-size:18px">
+        <button class="btn" onclick="a3check()">Prüfen</button>
+      </div>
+      <div id="a3-qfb" class="info" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Merksätze</b></span></div>
+    <div class="card-body">
+      <div class="info">
+        <b>Vorzeichen</b> <span class="tag amber">gelb</span> gehört zur Zahl selbst.<br>
+        <b>Rechenzeichen</b> <span class="tag cyan">blau</span> verbindet zwei Zahlen.
+      </div>
+      <div class="info" style="margin-top:8px">
+        Subtraktion einer negativen Zahl:<br>
+        <span style="font-family:var(--mono)">a − (−b) = a + b</span><br>
+        <span style="font-size:12px;color:var(--muted)">„Schulden wegnehmen = Guthaben geben"</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div><!-- #a3-main -->
+</div><!-- akt3 -->
+
+
+<!-- ══════════════════════════════════════════════
+     AKT 4 — Multiplikation & Division
+══════════════════════════════════════════════ -->
+<div class="akt" id="akt4">
+<div class="two">
+<div>
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Permanenzprinzip</b> — Muster entdecken</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm amber" onclick="permPlay()" id="perm-play-btn">▶ Abspielen</button>
+        <button class="btn sm sec" onclick="permStep_manual()" id="perm-step-btn">Schritt</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row" style="margin-bottom:12px">
+        <label>
+          <span class="tooltip-wrap">Faktor 2<span class="help-icon"> ?</span><span class="tip">Nur Zahlen von −9 bis −1 oder 1 bis 9. 0 hat kein Vorzeichen.</span></span>:
+        </label>
+        <input type="number" id="p2" value="-2" min="-9" max="9" oninput="permBuild()" style="width:80px">
+        <button class="btn sm sec" onclick="permBuild()">Tabelle neu</button>
+      </div>
+      <div id="perm-zero-warn" class="info red" style="display:none;font-size:12.5px;margin-bottom:8px">
+        Mit Faktor 0 lässt sich kein Vorzeichenmuster erkennen — 0 hat kein Vorzeichen. Bitte eine Zahl ≠ 0 wählen.
+      </div>
+      <table class="perm-table" id="perm-tbl"></table>
+      <div id="perm-rule" class="info amber" style="display:none;margin-top:12px;font-size:14px"></div>
+    </div>
+  </div>
+
+  <!-- Strahl Akt4: Multiplikation als wiederholte Addition -->
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Strahl</b> — Multiplikation als Sprünge</span></div>
+    <div class="card-body">
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">
+        z.B. 3 · (−2) = drei Sprünge je 2 nach links
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label>a =</label>
+        <input type="number" id="m4a" value="3" min="-6" max="6" style="width:70px" oninput="m4update()">
+        <span style="color:var(--dim)">·</span>
+        <label>b =</label>
+        <input type="number" id="m4b" value="-2" min="-6" max="6" style="width:70px" oninput="m4update()">
+        <span style="color:var(--dim);font-size:18px">=</span>
+        <span id="m4res" style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--cyan)"></span>
+      </div>
+      <div class="nl-wrap">
+        <svg class="nl" id="nl4m" viewBox="0 0 700 130" height="130"></svg>
+      </div>
+      <div id="m4-info" class="info" style="font-size:12.5px;margin-top:6px"></div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Vorzeichen-Regeln</b></span></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="info green" style="text-align:center">
+          <div style="font-size:22px;font-family:var(--mono)">+ · + = <b>+</b></div>
+          <div style="font-size:11px;margin-top:4px">pos. · pos.</div>
+        </div>
+        <div class="info red" style="text-align:center">
+          <div style="font-size:22px;font-family:var(--mono)">+ · − = <b>−</b></div>
+          <div style="font-size:11px;margin-top:4px">pos. · neg.</div>
+        </div>
+        <div class="info red" style="text-align:center">
+          <div style="font-size:22px;font-family:var(--mono)">− · + = <b>−</b></div>
+          <div style="font-size:11px;margin-top:4px">neg. · pos.</div>
+        </div>
+        <div class="info green" style="text-align:center">
+          <div style="font-size:22px;font-family:var(--mono)">− · − = <b>+</b></div>
+          <div style="font-size:11px;margin-top:4px">neg. · neg.</div>
+        </div>
+      </div>
+      <div class="info" style="margin-top:10px;font-size:12.5px">
+        <b>Division:</b> Gleiche Vorzeichen → positives Ergebnis.<br>
+        Verschiedene Vorzeichen → negatives Ergebnis.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="lbl"><b>Quiz</b></span>
+      <button class="btn sm sec" onclick="a4quiz()">Neue Aufgabe</button></div>
+    <div class="card-body">
+      <div class="score-row">
+        <span style="font-size:12px;color:var(--muted)">Session:</span>
+        <span class="score-badge" id="a4-score">0 / 0</span>
+      </div>
+      <div id="a4-qtext" class="info amber" style="font-family:var(--mono);font-size:16px;text-align:center;margin-bottom:10px"></div>
+      <div class="row">
+        <input type="number" id="a4-qans" placeholder="?" style="width:100px;font-size:18px">
+        <button class="btn" onclick="a4check()">Prüfen</button>
+      </div>
+      <div id="a4-qfb" class="info" style="display:none"></div>
+      <div id="a4-niv-wrap" style="margin-top:8px;display:none">
+        <button class="tip-reveal" onclick="document.getElementById('a4-niv').style.display='';this.style.display='none'">Tipp anzeigen</button>
+        <div id="a4-niv" class="niv-hint" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+</div><!-- .wrap -->
+
+<script>
+// ════════════════════════════════════════════════════════
+// Globaler State
+// ════════════════════════════════════════════════════════
+let NIV = 'L';
+let a1qData=null, a2qData=null, a3qData=null, a4qData=null;
+let a1sc=[0,0], a2sc=[0,0], a3sc=[0,0], a4sc=[0,0];
+let permTimer=null, permStepIdx=0, permPlaying=false;
+let permManualStep=0;
+let a3introPlayed=false;
+
+// ── Hilfsfunktionen ──────────────────────────────────
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){let t=b;b=a%b;a=t;}return a||1;}
+
+function updateScore(id,sc){
+  document.getElementById(id).textContent=`${sc[0]} / ${sc[1]}`;
+}
+
+function setNiv(n){
+  NIV=n;
+  document.querySelectorAll('.niv-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('niv-'+n).classList.add('on');
+  a1applyNiv(); a2update(); a3update(); permBuild(); a1quiz(); a2quiz(); a3quiz(); a4quiz();
+}
+
+function setAkt(n,el){
+  document.querySelectorAll('.act-tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.akt').forEach(a=>a.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('akt'+n).classList.add('on');
+}
+
+// ════════════════════════════════════════════════════════
+// SVG-Hilfsfunktionen
+// ════════════════════════════════════════════════════════
+function drawNL(id, min, max, pts, arrows, opts={}){
+  const svg=document.getElementById(id);
+  if(!svg) return;
+  const W=700, H=parseInt(svg.getAttribute('height')||90);
+  const pad=44, tw=W-2*pad;
+  const cx=x=>pad+(x-min)/(max-min)*tw;
+  const cy=H/2;
+
+  let html='';
+  // Achse
+  html+=`<line x1="${pad}" y1="${cy}" x2="${W-pad+4}" y2="${cy}" stroke="#1e2c40" stroke-width="2"/>`;
+  // Pfeilspitze
+  html+=`<polygon points="${W-pad+10},${cy} ${W-pad},${cy-5} ${W-pad},${cy+5}" fill="#1e2c40"/>`;
+
+  // Null-Linie
+  if(min<0 && max>0){
+    const x0=cx(0);
+    html+=`<line x1="${x0}" y1="${cy-16}" x2="${x0}" y2="${cy+16}" stroke="#283248" stroke-width="1.5"/>`;
+    html+=`<text x="${x0}" y="${cy+30}" text-anchor="middle" fill="#5d6f8a" font-size="12" font-family="JetBrains Mono,monospace">0</text>`;
+  }
+
+  // Teilstriche + Beschriftung
+  const step = (max-min)>20 ? 2 : 1;
+  for(let v=Math.ceil(min/step)*step; v<=Math.floor(max); v+=step){
+    if(min<0&&max>0&&v===0) continue;
+    const x=cx(v);
+    html+=`<line x1="${x}" y1="${cy-6}" x2="${x}" y2="${cy+6}" stroke="#283248" stroke-width="1.5"/>`;
+    html+=`<text x="${x}" y="${cy+28}" text-anchor="middle" fill="#5d6f8a" font-size="11" font-family="JetBrains Mono,monospace">${v}</text>`;
+  }
+
+  // Akt1: Teilstriche ohne Beschriftung für ¼,½,¾ etc.
+  if(opts.fineMarks){
+    opts.fineMarks.forEach(v=>{
+      const x=cx(v);
+      html+=`<line x1="${x}" y1="${cy-4}" x2="${x}" y2="${cy+4}" stroke="#1e2c40" stroke-width="1"/>`;
+    });
+  }
+
+  // Beschriftungen Akt1 (0, ¼, ½, ¾, 1)
+  if(opts.labelPairs){
+    opts.labelPairs.forEach(([v,lbl,lbl2])=>{
+      const x=cx(v);
+      html+=`<text x="${x}" y="${cy+28}" text-anchor="middle" fill="#3a4d66" font-size="10.5" font-family="JetBrains Mono,monospace">${lbl}</text>`;
+      if(lbl2) html+=`<text x="${x}" y="${cy+40}" text-anchor="middle" fill="#2e3e54" font-size="9.5" font-family="JetBrains Mono,monospace">${lbl2}</text>`;
+    });
+  }
+
+  // Pfeile (Sprünge)
+  if(arrows) arrows.forEach((a,i)=>{
+    const x1=cx(a.from), x2=cx(a.to);
+    const col=a.col||'#22d3ee';
+    const yoff=cy-26-(a.level||0)*26;
+    const mx=(x1+x2)/2, mdir=a.to>a.from?1:-1;
+    html+=`<path d="M${x1},${cy} Q${mx},${yoff} ${x2},${cy}" fill="none" stroke="${col}" stroke-width="2.5" stroke-dasharray="${a.dash||''}" opacity="${a.op||1}"/>`;
+    const dxA=mdir*5;
+    html+=`<polygon points="${x2},${cy} ${x2-dxA*1.4},${cy-4} ${x2-dxA*1.4},${cy+4}" fill="${col}" opacity="${a.op||1}"/>`;
+    if(a.label) html+=`<text x="${mx}" y="${yoff-7}" text-anchor="middle" fill="${col}" font-size="12" font-family="JetBrains Mono,monospace">${a.label}</text>`;
+  });
+
+  // Punkte
+  if(pts) pts.forEach(p=>{
+    const x=cx(p.v);
+    const col=p.col||'#22d3ee';
+    html+=`<circle cx="${x}" cy="${cy}" r="${p.r||8}" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-width="2.2"/>`;
+    if(p.label){
+      html+=`<text x="${x}" y="${cy-16}" text-anchor="middle" fill="${col}" font-size="12.5" font-family="JetBrains Mono,monospace" font-weight="600">${p.label}</text>`;
+    }
+  });
+
+  svg.innerHTML=html;
+}
+
+// ════════════════════════════════════════════════════════
+// AKT 1 — Brüche ↔ Dezimalzahlen
+// ════════════════════════════════════════════════════════
+function terminiert(z,n){
+  const g=gcd(Math.abs(z),Math.abs(n)||1);
+  let d=Math.abs(n/g);
+  while(d%2===0) d/=2;
+  while(d%5===0) d/=5;
+  return d===1;
+}
+
+function a1applyNiv(){
+  document.getElementById('a1-quick-e').style.display = NIV==='E'?'flex':'none';
+  document.getElementById('a1-e-card').style.display = NIV==='E'?'block':'none';
+}
+
+function a1update(){
+  const zEl=document.getElementById('a1z');
+  const nEl=document.getElementById('a1n');
+  const z=parseInt(zEl.value)||0;
+  const n=parseInt(nEl.value)||0;
+
+  // K1 — Nenner 0 abfangen
+  if(n===0){
+    nEl.classList.add('error');
+    document.getElementById('a1-info').innerHTML=`<span style="color:var(--red)"><b>Fehler:</b> Nenner 0 ist nicht erlaubt — Division durch null ist undefiniert.</span>`;
+    document.getElementById('a1d').value='';
+    // Löschen SVG
+    const svg=document.getElementById('nl1');
+    if(svg) svg.innerHTML='';
+    return;
+  }
+  nEl.classList.remove('error');
+
+  const val=z/n;
+  document.getElementById('a1d').value=Math.round(val*10000)/10000;
+  a1draw(z,n,val);
+}
+
+function a1fromDez(){
+  const d=parseFloat(document.getElementById('a1d').value);
+  if(isNaN(d)) return;
+  const tol=0.001;
+  let best=[1,1]; let bestErr=1e9;
+  for(let den=1;den<=1000;den++){
+    const num=Math.round(d*den);
+    if(Math.abs(num/den-d)<bestErr){bestErr=Math.abs(num/den-d);best=[num,den];}
+    if(bestErr<tol) break;
+  }
+  document.getElementById('a1z').value=best[0];
+  document.getElementById('a1n').value=best[1];
+  document.getElementById('a1n').classList.remove('error');
+  a1draw(best[0],best[1],d);
+}
+
+function a1draw(z,n,val){
+  const g=gcd(Math.abs(z),Math.abs(n)||1);
+  const zk=z/g, nk=(n/g);
+  const gekuerzt=(g>1);
+  const immer=!terminiert(z,n);
+
+  // M6 — außerhalb [0,1] warnen
+  if(val<-0.05 || val>1.05){
+    document.getElementById('a1-info').innerHTML=
+      `<span style="color:var(--amber)">Dieser Bruch (${Math.round(val*1000)/1000}) liegt außerhalb des Strahls (0 bis 1). Probiere Werte zwischen 0 und 1.</span>`;
+    const svg=document.getElementById('nl1');
+    if(svg){
+      drawNL('nl1',0,1,[],[],{
+        labelPairs:[[0,'0',''],[ 0.25,'¼','0,25'],[0.5,'½','0,5'],[0.75,'¾','0,75'],[1,'1','']]
+      });
+    }
+    return;
+  }
+
+  // M10 — Beschriftung mit Bruch und Dezimalzahl
+  drawNL('nl1',0,1,[],[],{
+    fineMarks:[0.1,0.2,0.3,0.4,0.6,0.7,0.8,0.9],
+    labelPairs:[[0,'0',''],[0.25,'¼','0,25'],[0.5,'½','0,5'],[0.75,'¾','0,75'],[1,'1','']]
+  });
+
+  const svg=document.getElementById('nl1');
+  if(!svg) return;
+  const W=700, H=100, pad=44, tw=W-2*pad;
+  const cx=x=>pad+x*tw;
+  const cy=H/2;
+  const xv=cx(val);
+
+  let extra='';
+  extra+=`<circle cx="${xv}" cy="${cy}" r="9" fill="#f6a623" fill-opacity=".22" stroke="#f6a623" stroke-width="2.5"/>`;
+  extra+=`<text x="${xv}" y="${cy-18}" text-anchor="middle" fill="#f6a623" font-size="13" font-family="JetBrains Mono,monospace" font-weight="700">${zk}/${nk}</text>`;
+  extra+=`<text x="${xv}" y="${cy+45}" text-anchor="middle" fill="#f6a623" font-size="12" font-family="JetBrains Mono,monospace">${Math.round(val*10000)/10000}</text>`;
+  svg.innerHTML+=extra;
+
+  let info=`<b>${zk}/${nk}</b> = <b>${Math.round(val*10000)/10000}</b>`;
+  if(gekuerzt) info+=`  <span style="color:var(--muted);font-size:12px">(gekürzt aus ${z}/${n})</span>`;
+  if(immer) info+=`  <span style="color:var(--dim);font-size:12px">→ unendlicher (periodischer) Dezimalbruch</span>`;
+  document.getElementById('a1-info').innerHTML=info;
+
+  let niv='';
+  const nivEl=document.getElementById('a1-niv');
+  if(NIV==='L'){
+    niv='Tipp: Teile den Zähler durch den Nenner (mit dem Taschenrechner).';
+    nivEl.className='niv-hint niv-l niv-l-border';
+  } else if(NIV==='E'){
+    niv=immer?`${zk}/${nk} ist ein periodischer Dezimalbruch — die Ziffernfolge wiederholt sich unendlich.`
+      :'Warum ist dieser Bruch ein endlicher Dezimalbruch? Prüfe die Primfaktoren des Nenners (nur 2 und 5 erlaubt).';
+    nivEl.className='niv-hint niv-e niv-e-border';
+  } else {
+    niv=''; nivEl.className='niv-hint';
+  }
+  nivEl.textContent=niv;
+}
+
+function a1quick(s){
+  const [z,n]=s.split('/').map(Number);
+  document.getElementById('a1z').value=z;
+  document.getElementById('a1n').value=n;
+  document.getElementById('a1n').classList.remove('error');
+  a1update();
+}
+
+// Quiz
+const a1quizPool=[
+  {q:'Welche Zahl liegt weiter rechts auf dem Strahl?', opts:['½','¼','¾','⅛'], ans:'¾', vals:[1/2,1/4,3/4,1/8], niv:['L','GE','E']},
+  {q:'Welcher Bruch entspricht 0,5?', opts:['½','¼','⅓','⅕'], ans:'½', vals:[1/2,1/4,1/3,1/5], niv:['L','GE','E']},
+  {q:'Welcher Bruch entspricht 0,25?', opts:['½','¼','¾','⅕'], ans:'¼', vals:[1/2,1/4,3/4,1/5], niv:['L','GE','E']},
+  {q:'Welcher Bruch ist am größten?', opts:['⅓','⅔','¼','⅙'], ans:'⅔', vals:[1/3,2/3,1/4,1/6], niv:['L','GE','E']},
+  {q:'Welcher Dezimalwert hat 3/10?', opts:['0,03','3','0,3','0,003'], ans:'0,3', vals:[0.03,3,0.3,0.003], niv:['L','GE','E']},
+  {q:'Welche Zahl ist kleiner als 0,5?', opts:['3/4','2/3','7/10','3/8'], ans:'3/8', vals:[3/4,2/3,7/10,3/8], niv:['GE','E']},
+  {q:'Welcher Bruch entspricht 0,75?', opts:['3/4','2/3','7/8','4/5'], ans:'3/4', vals:[3/4,2/3,7/8,4/5], niv:['GE','E']},
+  {q:'Welcher Bruch ist ein periodischer Dezimalbruch?', opts:['¼','⅕','⅓','¾'], ans:'⅓', vals:[1/4,1/5,1/3,3/4], niv:['E']},
+  {q:'Welcher Bruch hat den kleinsten Wert?', opts:['7/10','5/6','7/12','11/9'], ans:'7/12', vals:[7/10,5/6,7/12,11/9], niv:['E']},
+];
+
+function a1quiz(){
+  const pool=a1quizPool.filter(q=>q.niv.includes(NIV));
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  a1qData=q;
+  document.getElementById('a1-qtext').textContent=q.q;
+  const opts=document.getElementById('a1-qopts');
+  opts.innerHTML='';
+  document.getElementById('a1-qfb').style.display='none';
+  document.getElementById('a1-quiz-nl-wrap').style.display='';
+
+  // K2 — Quiz-Strahl mit allen Optionen
+  if(q.vals){
+    const pts=q.vals.map((v,i)=>({v, col:['#f6a623','#22d3ee','#a78bfa','#34d399'][i], label:q.opts[i], r:7}));
+    drawNL('nl1q',0,1,pts,[],{});
+  }
+
+  const shuffle=[...q.opts.map((o,i)=>({o,v:q.vals?q.vals[i]:null}))].sort(()=>Math.random()-.5);
+  shuffle.forEach(({o})=>{
+    const b=document.createElement('button');
+    b.className='q-btn'; b.textContent=o;
+    b.onclick=()=>a1quizAnswer(o,q,opts);
+    opts.appendChild(b);
+  });
+
+  // Tipp
+  const nw=document.getElementById('a1-qniv-wrap');
+  const ni=document.getElementById('a1-qniv');
+  let tipText='';
+  if(NIV==='L') tipText='Tipp: Schau dir den Strahl an — wo liegen die Zahlen genau?';
+  else if(NIV==='E') tipText='Kannst du alle Optionen der Größe nach ordnen?';
+  if(tipText){nw.style.display='';ni.style.display='none';ni.textContent=tipText;nw.querySelector('.tip-reveal').style.display='';}
+  else{nw.style.display='none';}
+}
+
+function a1quizAnswer(o,q,opts){
+  // K8 — alle Buttons deaktivieren sofort
+  opts.querySelectorAll('.q-btn').forEach(x=>{x.disabled=true;});
+  const ok=o===q.ans;
+  a1sc[1]++;
+  if(ok) a1sc[0]++;
+  updateScore('a1-score',a1sc);
+  const clickedBtn=[...opts.querySelectorAll('.q-btn')].find(b=>b.textContent===o);
+  if(clickedBtn) clickedBtn.classList.add(ok?'correct':'wrong');
+  // richtige Antwort nach 500ms markieren
+  setTimeout(()=>{
+    opts.querySelectorAll('.q-btn').forEach(x=>{if(x.textContent===q.ans) x.classList.add('correct');});
+  },500);
+  const fb=document.getElementById('a1-qfb');
+  fb.style.display=''; fb.className='info '+(ok?'green':'red');
+  fb.textContent=ok?'Richtig! ✓':'Falsch. Die richtige Antwort ist '+q.ans+'.';
+}
+
+// ════════════════════════════════════════════════════════
+// AKT 2 — Ordnen & Vergleichen
+// ════════════════════════════════════════════════════════
+function a2update(){
+  const a=parseFloat(document.getElementById('a2a').value)||0;
+  const b=parseFloat(document.getElementById('a2b').value)||0;
+
+  // M4 — Labels mit Wert
+  drawNL('nl2',-10,10,[
+    {v:a, col:'#f6a623', label:`A (${a})`, r:9},
+    {v:b, col:'#22d3ee', label:`B (${b})`, r:9},
+  ]);
+
+  const op=a<b?'<':a>b?'>':'=';
+  const cmp=document.getElementById('a2-cmp');
+  cmp.innerHTML=`<span style="color:var(--amber);font-size:20px;font-family:var(--mono)">${a}</span> &nbsp;<span style="font-size:22px;font-weight:800;color:${a<b?'var(--green)':a>b?'var(--red)':'var(--muted)'}">${op}</span>&nbsp; <span style="color:var(--cyan);font-size:20px;font-family:var(--mono)">${b}</span>`;
+  cmp.className='info '+(a<b?'green':a>b?'red':'');
+
+  // M5 — Abstand einblenden
+  const dist=Math.abs(b-a);
+  document.getElementById('a2-dist').innerHTML=`Abstand von A zu B: <b style="font-family:var(--mono)">${dist}</b> Einheit${dist===1?'':'en'} &nbsp;|&nbsp; |${a}| = <b>${Math.abs(a)}</b> &nbsp; |${b}| = <b>${Math.abs(b)}</b>`;
+
+  const nivEl=document.getElementById('a2-niv');
+  let niv='';
+  if(NIV==='L'){
+    niv='Tipp: Schau wo A und B auf dem Strahl liegen. Weiter links = kleiner.';
+    nivEl.className='niv-hint niv-l niv-l-border';
+  } else if(NIV==='E'){
+    niv=`Betrag (Abstand von 0): |${a}| = ${Math.abs(a)} — |${b}| = ${Math.abs(b)}`;
+    nivEl.className='niv-hint niv-e niv-e-border';
+  } else {
+    niv=''; nivEl.className='niv-hint';
+  }
+  nivEl.textContent=niv;
+}
+
+function a2random(){
+  const r=()=>Math.round((Math.random()*18-9)*2)/2;
+  document.getElementById('a2a').value=r();
+  document.getElementById('a2b').value=r();
+  a2update();
+}
+
+// K7 — Betragsdenken-Fallen sicherstellen
+const a2betragsFallen=[
+  {a:-9,b:-1},{a:-8,b:-2},{a:-7,b:-3},{a:-6,b:-1},{a:-5,b:-1},
+];
+let a2betragsFalleIdx=0;
+
+function a2quiz(){
+  let a,b;
+  // K7: jedes zweite Item ist eine Betragsdenken-Falle
+  if(a2sc[1]%2===1 && a2betragsFallen.length){
+    const falle=a2betragsFallen[a2betragsFalleIdx%a2betragsFallen.length];
+    a=falle.a; b=falle.b; a2betragsFalleIdx++;
+  } else {
+    const vals=[-8,-5,-3,-2,-1,0,1,2,4,6,8];
+    a=vals[Math.floor(Math.random()*vals.length)];
+    do{b=vals[Math.floor(Math.random()*vals.length)];}while(b===a);
+  }
+  a2qData={a,b};
+  const txt=document.getElementById('a2-qtext');
+  txt.innerHTML=`<span style="font-family:var(--mono);font-size:22px">${a} ☐ ${b}</span><br><span style="font-size:12px">Was kommt in das Kästchen?</span>`;
+  const opts=document.getElementById('a2-qopts');
+  opts.innerHTML='';
+  document.getElementById('a2-qfb').style.display='none';
+  ['<','>','='].forEach(op=>{
+    const btn=document.createElement('button');
+    btn.className='q-btn'; btn.textContent=op; btn.style.fontSize='22px'; btn.style.padding='10px 22px';
+    const correct=(a<b&&op==='<')||(a>b&&op==='>')||(a===b&&op==='=');
+    btn.onclick=()=>a2quizAnswer(op,correct,a,b,opts);
+    opts.appendChild(btn);
+  });
+}
+
+function a2quizAnswer(op,correct,a,b,opts){
+  opts.querySelectorAll('.q-btn').forEach(x=>x.disabled=true);
+  const clickedBtn=[...opts.querySelectorAll('.q-btn')].find(btn=>btn.textContent===op);
+  if(clickedBtn) clickedBtn.classList.add(correct?'correct':'wrong');
+  setTimeout(()=>{
+    const ans=a<b?'<':a>b?'>':'=';
+    opts.querySelectorAll('.q-btn').forEach(x=>{if(x.textContent===ans) x.classList.add('correct');});
+  },500);
+  a2sc[1]++; if(correct) a2sc[0]++; updateScore('a2-score',a2sc);
+  const fb=document.getElementById('a2-qfb');
+  fb.style.display=''; fb.className='info '+(correct?'green':'red');
+  const ans=a<b?'<':a>b?'>':'=';
+  if(correct){
+    fb.textContent=`Richtig! ${a} ${ans} ${b} ✓`;
+  } else {
+    // K7 — diagnostisches Feedback bei Betragsdenken-Fehlern
+    const istBetragsdenken=(a<0&&b<0&&Math.abs(a)>Math.abs(b)&&op==='>');
+    if(istBetragsdenken){
+      fb.innerHTML=`Falsch. Es gilt: ${a} ${ans} ${b}.<br><b>Betragsdenken-Falle:</b> Der Betrag von ${a} ist größer (${Math.abs(a)} &gt; ${Math.abs(b)}), aber auf dem Strahl liegt ${a} weiter <b>links</b> — also kleiner!`;
+    } else {
+      fb.textContent=`Falsch. Es gilt: ${a} ${ans} ${b}. Weiter links auf dem Strahl = kleiner.`;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// AKT 3 — Addition & Subtraktion (geführter Einstieg)
+// ════════════════════════════════════════════════════════
+function a3startIntro(){
+  document.getElementById('a3-intro').style.display='none';
+  document.getElementById('a3-main').style.display='block';
+  // Einstiegsbeispiel −3 + 5 animiert
+  document.getElementById('a3a').value='-3';
+  document.getElementById('a3b').value='5';
+  document.getElementById('a3op').value='+';
+  a3update();
+  a3quiz();
+}
+
+function a3update(){
+  const a=parseFloat(document.getElementById('a3a').value)||0;
+  const op=document.getElementById('a3op').value;
+  const b=parseFloat(document.getElementById('a3b').value)||0;
+  const res=op==='+'?a+b:a-b;
+  document.getElementById('a3res').textContent=res;
+
+  const effectiveB=op==='-'?-b:b;
+
+  // K3 — dynamische Strahlgrenzen
+  const rawMin=Math.min(-10,a,res)-1;
+  const rawMax=Math.max(10,a,res)+1;
+  const visMin=Math.max(-20,rawMin);
+  const visMax=Math.min(20,rawMax);
+
+  const ovEl=document.getElementById('a3-ovrange');
+  if(Math.abs(res)>10 || Math.abs(a)>10){
+    ovEl.style.display='';
+    ovEl.textContent=`Hinweis: Werte außerhalb −10/+10 — Strahl automatisch erweitert (zeigt bis ${visMin} / ${visMax}).`;
+  } else {
+    ovEl.style.display='none';
+  }
+
+  drawNL('nl3',visMin,visMax,[
+    {v:a, col:'#f6a623', label:'Start', r:7},
+    {v:res, col:'#22d3ee', label:'Ende', r:9},
+  ],[
+    {from:a, to:res, col:effectiveB>=0?'#22d3ee':'#f87171', label:(effectiveB>=0?'+':'')+effectiveB, level:0}
+  ]);
+
+  // M11 — Chip-Animation: Start → Operation → Ergebnis
+  a3animateChips(a, op, b, res);
+
+  // M7 — korrekte Klammerdarstellung
+  const expl=document.getElementById('a3-expl');
+  let e='';
+  if(op==='-' && b<0){
+    e=`<span style="color:var(--amber)">Rechenzeichen −</span> · <span style="color:var(--amber)">Vorzeichen −</span> = <span style="color:var(--cyan)">Vorzeichen +</span><br><b>${a} − (${b}) = ${a} + ${-b} = ${res}</b>`;
+  } else if(op==='+' && b<0){
+    e=`Addition einer negativen Zahl: Schritt nach links.<br><b>${a} + (${b}) = ${res}</b>`;
+  } else if(op==='-' && b>0){
+    e=`<b>${a} − ${b} = ${res}</b>`;
+  } else {
+    e=`<b>${a} + ${b} = ${res}</b>`;
+  }
+  expl.innerHTML=e;
+
+  const nivEl=document.getElementById('a3-niv');
+  let niv='';
+  if(NIV==='L'){niv='Tipp: Starte bei der ersten Zahl und hüpfe auf dem Strahl.';nivEl.className='niv-hint niv-l niv-l-border';}
+  else if(NIV==='E'&&op==='-'&&b<0){niv=`Allgemein: a − (−b) = a + b. Hier: ${a} − (−${Math.abs(b)}) = ${a} + ${Math.abs(b)} = ${res}`;nivEl.className='niv-hint niv-e niv-e-border';}
+  else{niv='';nivEl.className='niv-hint';}
+  nivEl.innerHTML=niv;
+}
+
+function a3animateChips(a, op, b, res){
+  const startEl=document.getElementById('a3-chips-start');
+  const opEl=document.getElementById('a3-chips-op');
+  const opLbl=document.getElementById('a3-chips-op-label');
+  const ci=document.getElementById('a3-chipinfo');
+  startEl.innerHTML=''; opEl.innerHTML='';
+
+  const MAX_CHIPS=20;
+
+  // Start-Chips
+  const startAbs=Math.min(Math.abs(a),MAX_CHIPS);
+  for(let i=0;i<startAbs;i++){
+    const c=document.createElement('span');
+    c.className='chip '+(a>=0?'g':'s');
+    c.textContent=a>=0?'+':'-';
+    c.style.animationDelay=(i*0.04)+'s';
+    c.classList.add('fade-in');
+    startEl.appendChild(c);
+  }
+  if(Math.abs(a)>MAX_CHIPS) startEl.innerHTML+=`<span style="color:var(--muted);font-size:12px;margin-left:4px">… (${Math.abs(a)} Chips)</span>`;
+
+  // Operations-Chips
+  const effectiveB=op==='-'?-b:b;
+  const opAbs=Math.min(Math.abs(effectiveB),MAX_CHIPS);
+  if(op==='+' && b<0){
+    opLbl.textContent='Schritt 2 — Addition (negativer Wert → nach links):';
+  } else if(op==='-' && b<0){
+    opLbl.textContent=`Schritt 2 — Subtraktion von (${b}) = Addition von ${-b}:`;
+  } else if(op==='-'){
+    opLbl.textContent='Schritt 2 — Subtraktion (Chips wegnehmen):';
+  } else {
+    opLbl.textContent='Schritt 2 — Addition:';
+  }
+  for(let i=0;i<opAbs;i++){
+    const c=document.createElement('span');
+    c.className='chip '+(effectiveB>=0?'g':'s');
+    c.textContent=effectiveB>=0?'+':'-';
+    c.style.animationDelay=(0.3+i*0.05)+'s';
+    c.classList.add('fade-in');
+    opEl.appendChild(c);
+  }
+  if(Math.abs(effectiveB)>MAX_CHIPS) opEl.innerHTML+=`<span style="color:var(--muted);font-size:12px;margin-left:4px">… (${Math.abs(effectiveB)} Chips)</span>`;
+
+  ci.textContent=`Ergebnis: ${Math.abs(res)} ${res>=0?'Guthaben-':'Schulden-'}Chips → Kontostand: ${res}`;
+}
+
+function a3random(){
+  const r=()=>Math.round((Math.random()*14-7));
+  document.getElementById('a3a').value=r();
+  document.getElementById('a3b').value=r();
+  document.getElementById('a3op').value=Math.random()<0.5?'+':'-';
+  a3update();
+}
+
+function a3quiz(){
+  const pool=[];
+  for(let i=-8;i<=8;i++) for(let j=-8;j<=8;j++) if(Math.abs(i)>1||Math.abs(j)>1) pool.push([i,j]);
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const op=Math.random()<0.5?'+':'-';
+  const ans=op==='+'?pick[0]+pick[1]:pick[0]-pick[1];
+  a3qData={a:pick[0],b:pick[1],op,ans};
+  // M7 — korrekte Klammerdarstellung im Quiz
+  let qtext='';
+  if(op==='-'&&pick[1]<0) qtext=`${pick[0]} − (${pick[1]}) = ?`;
+  else if(op==='+'&&pick[1]<0) qtext=`${pick[0]} + (${pick[1]}) = ?`;
+  else qtext=`${pick[0]} ${op==='+'?'+':'−'} ${pick[1]} = ?`;
+  document.getElementById('a3-qtext').textContent=qtext;
+  document.getElementById('a3-qans').value='';
+  document.getElementById('a3-qfb').style.display='none';
+}
+
+function a3check(){
+  if(!a3qData) return;
+  const inp=parseFloat(document.getElementById('a3-qans').value);
+  const ok=inp===a3qData.ans;
+  a3sc[1]++; if(ok) a3sc[0]++; updateScore('a3-score',a3sc);
+  const fb=document.getElementById('a3-qfb');
+  fb.style.display=''; fb.className='info '+(ok?'green':'red');
+  if(ok) fb.textContent=`Richtig! = ${a3qData.ans} ✓`;
+  else fb.innerHTML=`Nicht ganz. Ergebnis ist <b>${a3qData.ans}</b>. (Deine Antwort: ${inp}, Abstand: ${Math.abs(inp-a3qData.ans)})`;
+}
+
+// ════════════════════════════════════════════════════════
+// AKT 4 — Permanenzprinzip
+// ════════════════════════════════════════════════════════
+const permFactors=[4,3,2,1,0,-1,-2,-3,-4];
+let permRows=[];
+
+function permBuild(){
+  const f2v=parseInt(document.getElementById('p2').value)||0;
+  const warnEl=document.getElementById('perm-zero-warn');
+  const tbl=document.getElementById('perm-tbl');
+  if(permTimer){clearInterval(permTimer);permTimer=null;permPlaying=false;}
+  permStepIdx=0; permManualStep=0;
+
+  // K6 — Faktor 0 abfangen
+  if(f2v===0){
+    warnEl.style.display='';
+    tbl.innerHTML='';
+    document.getElementById('perm-rule').style.display='none';
+    document.getElementById('perm-play-btn').textContent='▶ Abspielen';
+    return;
+  }
+  warnEl.style.display='none';
+
+  let rows='<tr style="border-bottom:2px solid #1e2c40"><td style="color:var(--dim)">Rechnung</td><td style="color:var(--dim)">Ergebnis</td><td style="color:var(--dim)">Muster</td></tr>';
+  permFactors.forEach(f1=>{
+    const res=f1*f2v;
+    rows+=`<tr class="perm-row ${f1<0?'result':''}" data-f1="${f1}">
+      <td>${f1} · (${f2v})</td>
+      <td style="color:${res>0?'var(--green)':res<0?'var(--red)':'var(--muted)'}">${res}</td>
+      <td style="font-size:11px;color:var(--dim)">${f1>0?'pos.':f1<0?'neg.':'0'} · ${f2v>0?'pos.':'neg.'} = ${res>0?'pos.':res<0?'neg.':'0'}</td>
+    </tr>`;
+  });
+  tbl.innerHTML=rows;
+  permRows=document.querySelectorAll('.perm-row');
+  document.getElementById('perm-rule').style.display='none';
+  document.getElementById('perm-play-btn').textContent='▶ Abspielen';
+
+  // Strahl aktualisieren
+  m4update();
+}
+
+function permPlay(){
+  if(permPlaying){
+    clearInterval(permTimer); permTimer=null; permPlaying=false;
+    document.getElementById('perm-play-btn').textContent='▶ Abspielen';
+    return;
+  }
+  permRows=document.querySelectorAll('.perm-row');
+  if(!permRows.length) return;
+  permRows.forEach(r=>r.classList.remove('active'));
+  permStepIdx=0; permPlaying=true;
+  document.getElementById('perm-play-btn').textContent='⏸ Pause';
+  document.getElementById('perm-rule').style.display='none';
+  // M8 — 400ms statt 600ms
+  permTimer=setInterval(()=>{
+    permRows.forEach(r=>r.classList.remove('active'));
+    if(permStepIdx>=permRows.length){
+      clearInterval(permTimer); permTimer=null; permPlaying=false;
+      document.getElementById('perm-play-btn').textContent='▶ Abspielen';
+      permShowRule();
+      return;
+    }
+    permRows[permStepIdx].classList.add('active');
+    permStepIdx++;
+  },400);
+}
+
+function permStep_manual(){
+  if(permPlaying){clearInterval(permTimer);permTimer=null;permPlaying=false;document.getElementById('perm-play-btn').textContent='▶ Abspielen';}
+  permRows=document.querySelectorAll('.perm-row');
+  if(!permRows.length) return;
+  permRows.forEach(r=>r.classList.remove('active'));
+  if(permManualStep>=permRows.length){permManualStep=0;permShowRule();return;}
+  permRows[permManualStep].classList.add('active');
+  permManualStep++;
+}
+
+function permShowRule(){
+  const f2v=parseInt(document.getElementById('p2').value)||0;
+  if(f2v===0) return;
+  const rule=document.getElementById('perm-rule');
+  rule.style.display='';
+  const allNeg=f2v<0;
+  rule.innerHTML=`<b>Muster erkannt:</b> Wenn Faktor 1 von positiv nach negativ wechselt, dreht das Vorzeichen des Ergebnisses um — das Muster „verlangt" es. So sehen wir: <b>negativ · ${allNeg?'negativ':'positiv'} = ${allNeg?'positiv':'negativ'}</b>. Das nennen wir das <b>Permanenzprinzip</b>.`;
+}
+
+// N6 — Multiplikation als wiederholte Sprünge
+function m4update(){
+  const a=parseInt(document.getElementById('m4a').value)||0;
+  const b=parseInt(document.getElementById('m4b').value)||0;
+  const res=a*b;
+  document.getElementById('m4res').textContent=res;
+
+  const visMin=Math.min(-12,res-1,0)-1;
+  const visMax=Math.max(12,res+1,0)+1;
+
+  const arrows=[];
+  let cur=0;
+  if(a>0 && Math.abs(a)<=8){
+    for(let i=0;i<a;i++){
+      arrows.push({from:cur,to:cur+b,col:b>=0?'#22d3ee':'#f87171',label:i===0?(b>=0?`+${b}`:String(b)):'',level:0,op:.8});
+      cur+=b;
+    }
+  } else if(a<0 && Math.abs(a)<=8){
+    for(let i=0;i<Math.abs(a);i++){
+      arrows.push({from:cur,to:cur+(-b),col:-b>=0?'#22d3ee':'#f87171',label:i===0?String(-b):'',level:0,op:.8});
+      cur+=(-b);
+    }
+  }
+
+  drawNL('nl4m',visMin,visMax,
+    [{v:0,col:'#5d6f8a',label:'0',r:5},{v:res,col:res>=0?'#34d399':'#f87171',label:'= '+res,r:9}],
+    arrows
+  );
+
+  const infoEl=document.getElementById('m4-info');
+  if(a===0||b===0){infoEl.textContent='Mit Faktor 0 ist das Ergebnis immer 0.';return;}
+  if(Math.abs(a)>8){infoEl.textContent=`${a} · ${b} = ${res} (zu viele Sprünge für die Darstellung)`;return;}
+  infoEl.innerHTML=`${Math.abs(a)} Sprung${Math.abs(a)===1?'':'e'} je <b>${b}</b> ${b>=0?'nach rechts':'nach links'} = <b>${res}</b>`;
+}
+
+// Quiz Akt 4 — K5: sauber getrennte Pools
+const a4poolL=[
+  {q:'(−3) · (−4) = ?', ans:12},
+  {q:'(−2) · 5 = ?', ans:-10},
+  {q:'3 · (−6) = ?', ans:-18},
+  {q:'(−7) · (−1) = ?', ans:7},
+  {q:'(−4) · 4 = ?', ans:-16},
+  {q:'(−5) · (−5) = ?', ans:25},
+];
+const a4poolG=[
+  ...a4poolL,
+  {q:'(−12) ÷ (−3) = ?', ans:4},
+  {q:'15 ÷ (−5) = ?', ans:-3},
+  {q:'(−20) ÷ 4 = ?', ans:-5},
+];
+const a4poolE=[
+  ...a4poolG,
+  {q:'(−2) · (−3) · (−1) = ?', ans:-6},
+  {q:'(−2)² = ?', ans:4},
+  {q:'(−1)³ = ?', ans:-1},
+  {q:'(−3)³ = ?', ans:-27},
+  {q:'(−2)⁴ = ?', ans:16},
+];
+
+function a4quiz(){
+  const pool=NIV==='L'?a4poolL:NIV==='E'?a4poolE:a4poolG;
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  a4qData=q;
+  document.getElementById('a4-qtext').textContent=q.q;
+  document.getElementById('a4-qans').value='';
+  document.getElementById('a4-qfb').style.display='none';
+  // M9 — Tipp erst auf Knopfdruck
+  const nw=document.getElementById('a4-niv-wrap');
+  const ni=document.getElementById('a4-niv');
+  let tipText='';
+  if(NIV==='L') tipText='Tipp: Gleiche Vorzeichen → positives Ergebnis. Verschiedene → negatives.';
+  else if(NIV==='E') tipText='Merke: (−2)² = (−2)·(−2) = +4, aber (−2)³ = (−2)·(−2)·(−2) = −8.';
+  if(tipText){
+    nw.style.display=''; ni.style.display='none'; ni.textContent=tipText;
+    const tr=nw.querySelector('.tip-reveal');
+    if(tr) tr.style.display='';
+  } else {
+    nw.style.display='none';
+  }
+}
+
+function a4check(){
+  if(!a4qData) return;
+  const inp=parseFloat(document.getElementById('a4-qans').value);
+  const ok=inp===a4qData.ans;
+  a4sc[1]++; if(ok) a4sc[0]++; updateScore('a4-score',a4sc);
+  const fb=document.getElementById('a4-qfb');
+  fb.style.display=''; fb.className='info '+(ok?'green':'red');
+  if(ok) fb.textContent=`Richtig! ✓`;
+  else{
+    fb.textContent=`Nicht ganz. Ergebnis ist ${a4qData.ans}.`;
+    // M9 — Tipp nach Fehler einblenden
+    const ni=document.getElementById('a4-niv');
+    ni.style.display='';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// Init
+// ════════════════════════════════════════════════════════
+a1applyNiv();
+a1update();
+a2update();
+// Akt3: Strahl beim ersten Öffnen noch nicht zeichnen (Intro kommt zuerst)
+permBuild();
+m4update();
+a1quiz();
+a2quiz();
+a3quiz();
+a4quiz();
+</script>
+</body>
+</html>

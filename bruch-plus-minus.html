@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bruch-Plus-Minus — Brüche addieren und subtrahieren</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  h1 .hl2{color:var(--bad)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .tools{display:flex;gap:8px;align-items:center}
+
+  .ctl{display:none}
+  .ctl.on{display:block}
+
+  /* Aufgaben-Zeile */
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:14px}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px;white-space:nowrap}
+  .tlab.ok{color:var(--good);border-color:#3f6f5c}
+
+  /* Frage gross — Bruch-Aufgabe */
+  .qbig{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:30px;font-weight:600;margin:8px 0 4px;color:#eaf1ff}
+  .qbig .op{color:var(--muted)}
+  .qbig .blank{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:48px;border-radius:10px;
+    border:1.5px dashed #46506b;color:#8ea2c4;font-size:24px}
+
+  /* Bruch als Stapel (Zähler über Nenner) */
+  .frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;vertical-align:middle;font-family:var(--mono)}
+  .frac .num{display:block;padding:0 6px}
+  .frac .den{display:block;padding:0 6px;border-top:2px solid currentColor}
+
+  /* Antwort-Buttons (Wahl) */
+  .choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0 4px}
+  .choices button{font:inherit;font-family:var(--mono);font-size:18px;font-weight:680;color:#e8edf6;background:var(--panel2);
+    border:1.5px solid var(--line);border-radius:13px;padding:12px 16px;cursor:pointer;transition:.14s;min-width:88px;min-height:54px;
+    display:flex;align-items:center;justify-content:center}
+  .choices button:hover{border-color:#3d4d70;color:#fff}
+  .choices button.pick{background:#21345c;border-color:var(--accent);color:#fff}
+  .choices button.right{background:var(--goodDim);border-color:var(--good);color:#bff0d8}
+  .choices button.wrong{background:var(--badDim);border-color:var(--bad);color:#ffb4b4}
+  .choices button:disabled{cursor:default}
+  .choices button .frac .den{border-top-color:currentColor}
+
+  /* Buttons */
+  .btn{font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 17px;cursor:pointer;transition:.14s}
+  .btn:hover{background:#284273}
+  .btn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .btn.ghost:hover{border-color:#3d4d70;color:#fff}
+  .btn.think{background:#2e2a17;border-color:var(--think);color:#f6dc97}
+  .btn.think:hover{background:#3a3420}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+  /* Bruchstreifen + Zahlenstrahl SVG */
+  .vizwrap{margin:10px 0 4px}
+  .vizlab{font-family:var(--mono);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:8px 0 3px}
+  svg.viz{width:100%;height:auto;display:block;background:#121a2c;border:1px solid var(--line);border-radius:11px}
+  svg.nl{width:100%;height:auto;display:block}
+
+  .feedback{min-height:22px;text-align:center;font-size:14px;margin-top:14px;color:var(--muted);transition:.2s;line-height:1.45}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+  .feedback b{color:#fff}
+  .feedback .frac{font-size:13px}
+
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+  .pulse{animation:pulse .5s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 6 · Brüche</div>
+    <h1>Bruch-Plus-Minus <span class="hl">+</span><span class="hl2">−</span></h1>
+    <div class="sub">Zusammenzählen geht nur mit gleich großen Stücken.</div>
+  </header>
+
+  <div class="thesis">
+    Brüche addiert man nicht, indem man Zähler und Nenner getrennt zusammenzählt. Man kann nur
+    <b>gleich große Stücke</b> zusammenlegen. Der Nenner sagt, <b>wie groß</b> ein Stück ist — er ändert
+    sich beim Zählen nicht. Die Streifen und der Zahlenstrahl sind hier der <b>Schiedsrichter</b>:
+    Sie zeigen, ob deine Antwort an der richtigen Stelle landet.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="gleich">Stücke zählen <span class="st"></span></button>
+    <button class="tab" data-mode="ungleich">Gleiche Stücke <span class="st"></span></button>
+    <button class="tab" data-mode="schaetzen">Erst schätzen <span class="st"></span></button>
+    <button class="tab" data-mode="minus">Subtrahieren <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <!-- ===================== MODUS 1 — GLEICHNAMIG ===================== -->
+    <div class="ctl on" id="ctl-gleich">
+      <div class="task" id="glTask"></div>
+      <div class="qbig" id="glQ"></div>
+      <div class="choices" id="glChoices"></div>
+      <div class="vizwrap">
+        <div class="vizlab">Bruchstreifen — aneinandergelegt</div>
+        <svg class="viz" id="glStrip" viewBox="0 0 700 120" role="img" aria-label="Bruchstreifen"></svg>
+        <div class="vizlab">Zahlenstrahl</div>
+        <svg class="nl" id="glNL" viewBox="0 0 700 96" role="img" aria-label="Zahlenstrahl"></svg>
+      </div>
+      <div class="feedback" id="glFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="glNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- ===================== MODUS 2 — UNGLEICHNAMIG ===================== -->
+    <div class="ctl" id="ctl-ungleich">
+      <div class="task" id="unTask"></div>
+      <div class="qbig" id="unQ"></div>
+
+      <!-- Schritt A: Stückgröße vorhersagen -->
+      <div id="unStepA">
+        <div class="vizlab" style="text-align:center">Diese Stücke passen nicht direkt zusammen — sie sind verschieden groß.</div>
+        <div class="vizwrap">
+          <svg class="viz" id="unStrip" viewBox="0 0 700 120" role="img" aria-label="Bruchstreifen ungleich"></svg>
+        </div>
+        <div class="task" style="margin-top:6px"><span class="tlab">Vorhersage</span> <span id="unAsk"></span></div>
+        <div class="choices" id="unChoices"></div>
+      </div>
+
+      <!-- Schritt B: gemeinsame Stückgröße / abrechnen -->
+      <div id="unStepB" style="display:none">
+        <div class="vizwrap">
+          <div class="vizlab">Beide neu geteilt — jetzt gleich große Stücke</div>
+          <svg class="viz" id="unStrip2" viewBox="0 0 700 120" role="img" aria-label="Bruchstreifen gleich geteilt"></svg>
+          <div class="vizlab">Zahlenstrahl</div>
+          <svg class="nl" id="unNL" viewBox="0 0 700 96" role="img" aria-label="Zahlenstrahl"></svg>
+        </div>
+      </div>
+
+      <div class="feedback" id="unFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:8px">
+        <button class="btn think" id="unCut" style="display:none">Gemeinsame Stückgröße herstellen ▷</button>
+        <button class="btn ghost" id="unNext" style="display:none">Nächste →</button>
+      </div>
+    </div>
+
+    <!-- ===================== MODUS 3 — SCHÄTZEN ===================== -->
+    <div class="ctl" id="ctl-schaetzen">
+      <div class="task" id="scTask"></div>
+      <div class="qbig" id="scQ"></div>
+
+      <div id="scStepA">
+        <div class="task" style="margin-top:2px"><span class="tlab">Erst schätzen</span> <span id="scAsk"></span></div>
+        <div class="vizwrap">
+          <div class="vizlab">Wo liegt das Ergebnis? Tippe auf einen Punkt am Strahl.</div>
+          <svg class="nl" id="scGuessNL" viewBox="0 0 700 110" role="img" aria-label="Zahlenstrahl zum Schätzen"></svg>
+        </div>
+      </div>
+
+      <div id="scStepB" style="display:none">
+        <div class="vizwrap">
+          <div class="vizlab">Aufgedeckt — das genaue Ergebnis</div>
+          <svg class="viz" id="scStrip" viewBox="0 0 700 120" role="img" aria-label="Bruchstreifen Ergebnis"></svg>
+          <svg class="nl" id="scNL" viewBox="0 0 700 110" role="img" aria-label="Zahlenstrahl mit Ergebnis"></svg>
+        </div>
+      </div>
+
+      <div class="feedback" id="scFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:8px">
+        <button class="btn ghost" id="scNext" style="display:none">Nächste →</button>
+      </div>
+    </div>
+
+    <!-- ===================== MODUS 4 — SUBTRAHIEREN ===================== -->
+    <div class="ctl" id="ctl-minus">
+      <div class="task" id="miTask"></div>
+      <div class="qbig" id="miQ"></div>
+      <div class="choices" id="miChoices"></div>
+      <div class="vizwrap">
+        <div class="vizlab">Bruchstreifen — vom ersten wird weggenommen</div>
+        <svg class="viz" id="miStrip" viewBox="0 0 700 120" role="img" aria-label="Bruchstreifen Subtraktion"></svg>
+        <div class="vizlab">Zahlenstrahl</div>
+        <svg class="nl" id="miNL" viewBox="0 0 700 96" role="img" aria-label="Zahlenstrahl"></svg>
+      </div>
+      <div class="feedback" id="miFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="miNext" style="display:none">Nächste →</button></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   BRUCH-PLUS-MINUS — Addieren & Subtrahieren von Brüchen (Jg. 6)
+   Kern: ehrliche Bruchstreifen + Zahlenstrahl.
+   Man kann nur GLEICH GROSSE Stuecke zusammenzaehlen. Der Nenner-Fehler
+   (1/2 + 1/3 = 2/5) scheitert sichtbar: 2/5 liegt LINKS der 1/2-Marke.
+   Komplett offline, KEIN eval, keine Daten.
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+/* ---------- Ton (offline) ---------- */
+let actx=null, soundOn=false;
+function ding(ok){ if(!soundOn)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type='sine'; o.connect(g); g.connect(actx.destination);
+  const n=actx.currentTime; g.gain.value=0.0001; g.gain.exponentialRampToValueAtTime(0.12,n+0.02); g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+  o.frequency.setValueAtTime(ok?660:300,n); if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13); o.start(n); o.stop(n+0.32);
+}catch(e){} }
+
+/* ---------- Bruch-Werkzeuge (ganzzahlig, kein eval) ---------- */
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
+function lcm(a,b){ return Math.abs(a*b)/gcd(a,b); }
+/* Bruch als HTML-Stapel (Zaehler ueber Nenner) */
+function fracHTML(n,d){ return "<span class='frac'><span class='num'>"+n+"</span><span class='den'>"+d+"</span></span>"; }
+/* Nenner als deutsches Wort (fuer den Sprachtrick) */
+const NENNERWORT={2:"Halbe",3:"Drittel",4:"Viertel",5:"Fünftel",6:"Sechstel",8:"Achtel",10:"Zehntel",12:"Zwölftel"};
+function nennerWort(d){ return NENNERWORT[d]||("Stücke (1/"+d+")"); }
+/* gekuerzte Form als Text */
+function kuerzText(n,d){ const g=gcd(n,d); if(g>1 && (n/g)!==n){ return fracHTML(n/g,d/g); } return fracHTML(n,d); }
+
+/* ---------- Farben ---------- */
+const C={a:"#5aa0ff", b:"#f4b740", good:"#4fd6a0", bad:"#ff6f6f", res:"#4fd6a0", grid:"#3a455f", axis:"#46506b", line:"#283248", inkdim:"#8ea2c4"};
+
+/* ==========================================================================
+   ZEICHNER — Bruchstreifen
+   Ein Streifen: Rechteck von x0..x0+w, in 'den' gleiche Faecher geteilt,
+   die ersten 'num' eingefaerbt (col). Optional Beschriftung.
+   ========================================================================== */
+function stripSVG(x0,y,w,h,num,den,col,opts){
+  opts=opts||{};
+  let s="";
+  const cw=w/den;
+  // Rahmen
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="#0e1320" stroke="${C.line}" stroke-width="1.5"/>`;
+  for(let i=0;i<den;i++){
+    const fx=x0+i*cw;
+    const filled=i<num;
+    if(filled){
+      s+=`<rect x="${fx+1}" y="${y+1}" width="${cw-2}" height="${h-2}" fill="${col}" fill-opacity="0.42"/>`;
+    }
+    if(i>0){ s+=`<line x1="${fx}" y1="${y}" x2="${fx}" y2="${y+h}" stroke="${C.grid}" stroke-width="1"/>`; }
+  }
+  // Aussenrahmen erneut drueber
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+  if(opts.label){
+    s+=`<text x="${x0+w/2}" y="${y-7}" fill="${col}" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${opts.label}</text>`;
+  }
+  return s;
+}
+
+/* ==========================================================================
+   ZEICHNER — Zahlenstrahl 0..max (max=1 oder 2), Marken & Punkte
+   marks=[{v,lbl,col,below}]  ; ticksDen = Feinraster (optional)
+   ========================================================================== */
+function drawNL(svgId, vbW, vbH, maxVal, marks, opts){
+  opts=opts||{};
+  const W=vbW, padL=34, padR=30, y=opts.y||46;
+  const x=v=>padL+(v/maxVal)*(W-padL-padR);
+  let s="";
+  // Achse
+  s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${C.axis}" stroke-width="2"/>`;
+  s+=`<path d="M${W-padR},${y} l-9,-5 l0,10 z" fill="${C.axis}"/>`;
+  // Ganzzahl-Marken 0,1,(2)
+  for(let v=0; v<=maxVal; v++){
+    const px=x(v);
+    s+=`<line x1="${px}" y1="${y-11}" x2="${px}" y2="${y+11}" stroke="#e8edf6" stroke-width="2.2"/>`;
+    s+=`<text x="${px}" y="${y+28}" fill="#e8edf6" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${v}</text>`;
+  }
+  // Feinraster (z.B. Zwoelftel) als duenne Striche
+  if(opts.ticksDen){
+    const d=opts.ticksDen;
+    for(let i=1;i<d*maxVal;i++){ if(i%d===0) continue; const px=x(i/d);
+      s+=`<line x1="${px}" y1="${y-5}" x2="${px}" y2="${y+5}" stroke="${C.grid}" stroke-width="1"/>`;
+    }
+  }
+  // 1/2-Hilfsmarke (immer dezent, als Orientierung gegen den 2/5-Fehler)
+  if(opts.halfMark){
+    const px=x(0.5);
+    s+=`<line x1="${px}" y1="${y-9}" x2="${px}" y2="${y+9}" stroke="${C.inkdim}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+    s+=`<text x="${px}" y="${y-15}" fill="${C.inkdim}" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1/2</text>`;
+  }
+  // Punkte
+  (marks||[]).forEach(m=>{
+    const px=x(m.v); const col=m.col||C.a; const r=m.big?9:7;
+    s+=`<circle cx="${px}" cy="${y}" r="${r}" fill="${col}" stroke="#0e1320" stroke-width="2"/>`;
+    if(m.lbl!=null){
+      const ly = m.below? y+28 : y-16;
+      s+=`<text x="${px}" y="${ly}" fill="${col}" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${m.lbl}</text>`;
+    }
+  });
+  $(svgId).innerHTML=s;
+}
+
+const HINTS={
+  gleich:"<b>Stücke zählen:</b> Gleicher Nenner = gleich große Stücke. Du zählst nur, <i>wie viele</i> — der Nenner bleibt. Wähle das Ergebnis, die Streifen rechnen ab.",
+  ungleich:"<b>Gleiche Stücke:</b> Verschiedene Nenner = verschieden große Stücke. Erst die <i>kleinste gemeinsame Stückgröße</i> finden, dann zählen.",
+  schaetzen:"<b>Erst schätzen:</b> Zeig am Strahl, <i>wo</i> das Ergebnis ungefähr liegt. Danach decken wir es genau auf. Schätzen schützt vor dem Nenner-Fehler.",
+  minus:"<b>Subtrahieren:</b> Auch beim Minus brauchst du gleich große Stücke. Nenner werden nie subtrahiert — du nimmst Stücke weg."
+};
+
+/* ==========================================================================
+   MODUS 1 — GLEICHNAMIG: STUECKE ZAEHLEN
+   Fehlvorstellung: Nenner mitaddieren (2/5+1/5 = 3/10).
+   Mechanik: zwei gleich geteilte Streifen aneinandergelegt -> abzaehlen.
+   ========================================================================== */
+/* op:"+" oder "-" ; a=(n1,d) b=(n2,d) gleicher Nenner d */
+const GL=[
+  {n1:2,n2:1,d:5,op:"+", ans:[3,5], wrongs:[[3,10],[2,10],[2,5]],
+   fb:"2 Fünftel + 1 Fünftel = <b>3 Fünftel</b>. Die Stückgröße (Fünftel) ändert sich nicht — du zählst nur, wie viele."},
+  {n1:3,n2:2,d:8,op:"+", ans:[5,8], wrongs:[[5,16],[6,16],[1,8]],
+   fb:"3 Achtel + 2 Achtel = <b>5 Achtel</b>. Nenner bleibt 8: gleich große Stücke werden gezählt, nicht zusammengezählt."},
+  {n1:1,n2:1,d:4,op:"+", ans:[2,4], kuerz:[1,2], wrongs:[[2,8],[1,4],[4,4]],
+   fb:"1 Viertel + 1 Viertel = <b>2 Viertel</b>. Das sind genau zwei von vier — also die Hälfte: 2/4 = 1/2."},
+  {n1:5,n2:2,d:6,op:"-", ans:[3,6], kuerz:[1,2], wrongs:[[3,0],[7,6],[3,12]],
+   fb:"5 Sechstel − 2 Sechstel = <b>3 Sechstel</b>. Nimm 2 Stücke weg, 3 bleiben. 3/6 ist die Hälfte."}
+];
+let glPos=0, glItem=null, glDone=false, progGL=0;
+
+function glLoad(){
+  if(glPos>=GL.length) glPos=0;
+  glItem=GL[glPos]; glDone=false;
+  $("glFeedback").textContent=""; $("glFeedback").className="feedback"; $("glNext").style.display="none";
+  const opSym = glItem.op==="+"?"+":"−";
+  $("glTask").innerHTML="<span class='tlab'>"+(glItem.op==="+"?"Addieren":"Subtrahieren")+"</span> Gleicher Nenner — gleich große Stücke. Wie viele Stücke sind es?";
+  $("glQ").innerHTML = fracHTML(glItem.n1,glItem.d)+"<span class='op'>"+opSym+"</span>"+fracHTML(glItem.n2,glItem.d)+"<span class='op'>=</span><span class='blank'>?</span>";
+  // Antworten
+  const opts=[glItem.ans,...glItem.wrongs];
+  const arranged=deterShuffle(opts, glPos);
+  const box=$("glChoices"); box.innerHTML="";
+  arranged.forEach(p=>{
+    const b=document.createElement("button"); b.dataset.n=p[0]; b.dataset.d=p[1];
+    b.innerHTML=fracHTML(p[0],p[1]);
+    b.onclick=()=>glAnswer(p,b); box.appendChild(b);
+  });
+  glDrawStart();
+}
+function glDrawStart(){
+  // zwei Streifen mit gleicher Einteilung, Faecher gefaerbt
+  const d=glItem.d;
+  // Layout: Streifen A oben, Streifen B darunter (gleiche Breite, gleiche Einteilung)
+  const W=700, x0=40, w=W-80, h=30;
+  let s="";
+  s+=stripSVG(x0,18,w,h,glItem.n1,d,C.a,{});
+  // labels separat (text)
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${glItem.n1}/${d}</text>`;
+  s+=stripSVG(x0,66,w,h,glItem.n2,d,glItem.op==="+"?C.b:C.bad,{});
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${glItem.op==="+"?C.b:C.bad}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${glItem.op==="+"?"+":"−"}${glItem.n2}/${d}</text>`;
+  $("glStrip").innerHTML=s;
+  // Zahlenstrahl: nur Startwert a
+  drawNL("glNL",700,96,1,[{v:glItem.n1/d,lbl:null,col:C.a,below:false}],{ticksDen:d, y:40});
+  // Beschrifte den Startpunkt mit Text-Bruch
+  glNLstart();
+}
+function glNLstart(){
+  // Startwert a auf dem Strahl markieren (Label als a/d)
+  drawNLfrac("glNL",700,96,1,[{v:glItem.n1/glItem.d,lbl:glItem.n1+"/"+glItem.d,col:C.a}],{ticksDen:glItem.d,y:40});
+}
+/* drawNL-Variante, die textbasierte Bruch-Labels nutzt */
+function drawNLfrac(svgId,vbW,vbH,maxVal,marks,opts){
+  opts=opts||{}; const W=vbW,padL=34,padR=30,y=opts.y||46;
+  const x=v=>padL+(v/maxVal)*(W-padL-padR);
+  let s="";
+  s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${C.axis}" stroke-width="2"/>`;
+  s+=`<path d="M${W-padR},${y} l-9,-5 l0,10 z" fill="${C.axis}"/>`;
+  for(let v=0;v<=maxVal;v++){ const px=x(v);
+    s+=`<line x1="${px}" y1="${y-11}" x2="${px}" y2="${y+11}" stroke="#e8edf6" stroke-width="2.2"/>`;
+    s+=`<text x="${px}" y="${y+28}" fill="#e8edf6" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${v}</text>`;
+  }
+  if(opts.ticksDen){ const d=opts.ticksDen;
+    for(let i=1;i<d*maxVal;i++){ if(i%d===0) continue; const px=x(i/d);
+      s+=`<line x1="${px}" y1="${y-5}" x2="${px}" y2="${y+5}" stroke="${C.grid}" stroke-width="1"/>`; }
+  }
+  if(opts.halfMark){ const px=x(0.5);
+    s+=`<line x1="${px}" y1="${y-9}" x2="${px}" y2="${y+9}" stroke="${C.inkdim}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+    s+=`<text x="${px}" y="${y-15}" fill="${C.inkdim}" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1/2</text>`;
+  }
+  (marks||[]).forEach(m=>{ const px=x(m.v); const col=m.col||C.a; const r=m.big?9:7;
+    s+=`<circle cx="${px}" cy="${y}" r="${r}" fill="${col}" stroke="#0e1320" stroke-width="2"/>`;
+    if(m.lbl!=null){ const ly=m.below?y+28:y-16;
+      s+=`<text x="${px}" y="${ly}" fill="${col}" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${m.lbl}</text>`; }
+  });
+  $(svgId).innerHTML=s;
+}
+function glAnswer(p,btn){
+  if(glDone) return; glDone=true;
+  const right = (p[0]===glItem.ans[0] && p[1]===glItem.ans[1]);
+  const btns=$("glChoices").querySelectorAll("button");
+  btns.forEach(x=>{ x.disabled=true;
+    const n=Number(x.dataset.n), d=Number(x.dataset.d);
+    if(n===glItem.ans[0] && d===glItem.ans[1]) x.classList.add("right");
+    else if(n===p[0] && d===p[1]) x.classList.add("wrong");
+  });
+  // Ergebnis-Streifen zeigen + Strahl mit allen Punkten
+  glDrawResult(p);
+  const ansN=glItem.ans[0], ansD=glItem.ans[1];
+  const kuerz = glItem.kuerz ? " = "+fracHTML(glItem.kuerz[0],glItem.kuerz[1]) : "";
+  if(right){
+    progGL++; document.querySelector('[data-mode="gleich"] .st').textContent="✓"+progGL;
+    $("glFeedback").innerHTML="Richtig! "+glItem.fb+" Ergebnis: <b>"+fracHTML(ansN,ansD)+kuerz+"</b>.";
+    $("glFeedback").className="feedback good"; ding(true);
+  } else {
+    // gezielte Diagnose
+    let diag="";
+    if(p[1]>ansD){
+      diag="Du hast den <b>Nenner mitgezählt</b> — das ist der häufigste Fehler. Aber die Stückgröße bleibt: ";
+    } else if(p[1]===0){
+      diag="Der Nenner wird beim Minus <b>nicht</b> abgezogen — die Stückgröße bleibt. ";
+    }
+    $("glFeedback").innerHTML=diag+glItem.fb+" Richtig ist <b>"+fracHTML(ansN,ansD)+kuerz+"</b>.";
+    $("glFeedback").className="feedback bad"; ding(false);
+  }
+  $("glNext").style.display="";
+}
+function glDrawResult(picked){
+  const d=glItem.d, W=700, x0=40, w=W-80, h=30;
+  let s="";
+  // Ergebnis-Streifen: ein langer Streifen mit ans/d gefaerbt
+  const ansN=glItem.ans[0];
+  s+=stripSVG(x0,18,w,h,glItem.n1,d,C.a,{});
+  // zweiter Streifen visuell ANGEFUEGT: zeige beide gefaerbten Teile in einem kombinierten Streifen darunter
+  // kombinierter Streifen: ans/d Faecher gefaerbt (gruen)
+  s+=stripSVG(x0,66,w,h,ansN,d,C.res,{});
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">start</text>`;
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${C.res}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${ansN}/${d}</text>`;
+  $("glStrip").innerHTML=s;
+  // Strahl: Start a, Ergebnis ans, ggf. falsche Wahl
+  const ansV=ansN/d;
+  const marks=[
+    {v:glItem.n1/d, lbl:glItem.n1+"/"+d, col:C.a, below:true},
+    {v:ansV, lbl:ansN+"/"+d, col:C.res, big:true}
+  ];
+  if(!(picked[0]===ansN && picked[1]===d)){
+    const pv=picked[0]/picked[1];
+    if(pv>=0 && pv<=1 && isFinite(pv)) marks.push({v:pv, lbl:"deine "+picked[0]+"/"+picked[1], col:C.bad, below:true});
+  }
+  drawNLfrac("glNL",700,96,1,marks,{ticksDen:d,y:40});
+}
+
+/* ==========================================================================
+   MODUS 2 — UNGLEICHNAMIG: GLEICHE STUECKE
+   Fehlvorstellung: gemeinsamen Nenner als SUMME; ungleichnamig nicht erkannt.
+   Schritt A: Stueckgroesse vorhersagen (Summe=falsch, kgV=richtig).
+   Schritt B: beide neu teilen -> abrechnen, Strahl.
+   ========================================================================== */
+const UN=[
+  {n1:1,d1:2, n2:1,d2:3, op:"+",
+   ld:6, ln1:3, ln2:2, ans:[5,6],
+   fb:"6 ist die kleinste Zahl, in die 2 UND 3 passen. 1/2 = 3/6, 1/3 = 2/6, zusammen 3/6 + 2/6 = <b>5/6</b>."},
+  {n1:1,d1:4, n2:1,d2:2, op:"+",
+   ld:4, ln1:1, ln2:2, ans:[3,4], note4:true,
+   fb:"Hier reicht <b>4</b>! In 4 passt auch die 2 (4 ist durch 2 teilbar). 1/2 = 2/4, also 1/4 + 2/4 = <b>3/4</b>. Du musst nicht stur die Nenner malnehmen."},
+  {n1:2,d1:3, n2:1,d2:4, op:"+",
+   ld:12, ln1:8, ln2:3, ans:[11,12],
+   fb:"Kleinste gemeinsame Stückgröße von 3 und 4 ist 12. 2/3 = 8/12, 1/4 = 3/12, zusammen <b>11/12</b>."},
+  {n1:1,d1:6, n2:1,d2:4, op:"+",
+   ld:12, ln1:2, ln2:3, ans:[5,12],
+   fb:"In 12 passen 6 und 4. 1/6 = 2/12, 1/4 = 3/12, zusammen <b>5/12</b>. (24 ginge auch — aber 12 ist die kleinste.)"}
+];
+let unPos=0, unItem=null, unStep="A", unPicked=null, unDone=false, progUN=0;
+
+function unLoad(){
+  if(unPos>=UN.length) unPos=0;
+  unItem=UN[unPos]; unStep="A"; unPicked=null; unDone=false;
+  $("unStepA").style.display="";
+  $("unStepB").style.display="none";
+  $("unFeedback").textContent=""; $("unFeedback").className="feedback";
+  $("unCut").style.display="none"; $("unNext").style.display="none";
+  $("unTask").innerHTML="<span class='tlab'>Ungleiche Nenner</span> Diese Brüche haben verschieden große Stücke. So passen sie nicht zusammen.";
+  $("unQ").innerHTML = fracHTML(unItem.n1,unItem.d1)+"<span class='op'>+</span>"+fracHTML(unItem.n2,unItem.d2)+"<span class='op'>=</span><span class='blank'>?</span>";
+  $("unAsk").innerHTML="In wie viele gleich große Stücke musst du <b>beide</b> teilen, damit es passt?";
+  // Vorhersage-Optionen: Summe (falsch), kgV (richtig), d1, d2
+  const sumD=unItem.d1+unItem.d2;
+  let opts=[unItem.ld, sumD, unItem.d1, unItem.d2];
+  // doppelte entfernen, Reihenfolge deterministisch
+  opts=[...new Set(opts)];
+  const arranged=deterShuffle(opts, unPos+3);
+  const box=$("unChoices"); box.innerHTML="";
+  arranged.forEach(v=>{
+    const b=document.createElement("button"); b.textContent=v; b.dataset.val=v;
+    b.style.minWidth="70px";
+    b.onclick=()=>unPredict(v,b); box.appendChild(b);
+  });
+  unDrawUnequal();
+}
+function unDrawUnequal(){
+  // zwei Streifen, ungleich geteilt, gleiche Breite -> Faecher verschieden gross
+  const W=700, x0=40, w=W-80, h=30;
+  let s="";
+  s+=stripSVG(x0,18,w,h,unItem.n1,unItem.d1,C.a,{});
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${unItem.n1}/${unItem.d1}</text>`;
+  s+=stripSVG(x0,66,w,h,unItem.n2,unItem.d2,C.b,{});
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${C.b}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${unItem.n2}/${unItem.d2}</text>`;
+  $("unStrip").innerHTML=s;
+}
+function unPredict(v,btn){
+  if(unDone) return;
+  const sumD=unItem.d1+unItem.d2;
+  const right=(v===unItem.ld);
+  const btns=$("unChoices").querySelectorAll("button");
+  btns.forEach(x=>{ x.disabled=true;
+    if(Number(x.dataset.val)===unItem.ld) x.classList.add("right");
+    else if(Number(x.dataset.val)===v) x.classList.add("wrong");
+  });
+  unPicked=v;
+  if(right){
+    $("unFeedback").innerHTML="Genau — <b>"+unItem.ld+"</b> ist die kleinste gemeinsame Stückgröße. Jetzt beide neu teilen.";
+    $("unFeedback").className="feedback good"; ding(true);
+  } else if(v===sumD){
+    $("unFeedback").innerHTML=unItem.ld+" wäre richtig — <b>"+v+" ist die SUMME der Nenner</b>, keine gemeinsame Stückgröße. Such die kleinste Zahl, in die "+unItem.d1+" UND "+unItem.d2+" passen: <b>"+unItem.ld+"</b>.";
+    $("unFeedback").className="feedback bad"; ding(false);
+  } else {
+    $("unFeedback").innerHTML="<b>"+v+"</b> passt nur für einen der beiden Brüche. Du brauchst eine Stückgröße, in die <b>"+unItem.d1+" UND "+unItem.d2+"</b> passen: <b>"+unItem.ld+"</b>.";
+    $("unFeedback").className="feedback bad"; ding(false);
+  }
+  $("unCut").style.display="";
+}
+function unCutNow(){
+  unDone=true;
+  $("unStepA").style.display="none";
+  $("unStepB").style.display="";
+  $("unCut").style.display="none";
+  // beide Streifen neu geteilt in ld Faecher; gefaerbt ln1 bzw ln2
+  const W=700, x0=40, w=W-80, h=30, d=unItem.ld;
+  let s="";
+  s+=stripSVG(x0,18,w,h,unItem.ln1,d,C.a,{});
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${unItem.ln1}/${d}</text>`;
+  // zweiter Streifen: gefaerbt ab Position ln1 (angesetzt) bis ln1+ln2 -> zeigt Aneinanderlegen
+  s+=stripSVGoffset(x0,66,w,h,unItem.ln1,unItem.ln2,d,C.b,C.a);
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${C.res}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">= ${unItem.ans[0]}/${d}</text>`;
+  $("unStrip2").innerHTML=s;
+  // Strahl: 1/2-Marke als Orientierung, Summe als Ergebnis, Start a
+  const ansV=unItem.ans[0]/unItem.ans[1];
+  const marks=[
+    {v:unItem.n1/unItem.d1, lbl:unItem.n1+"/"+unItem.d1, col:C.a, below:true},
+    {v:ansV, lbl:unItem.ans[0]+"/"+unItem.ans[1], col:C.res, big:true}
+  ];
+  drawNLfrac("unNL",700,96,1,marks,{ticksDen:d,y:40,halfMark:true});
+  // Feedback final
+  const sumD=unItem.d1+unItem.d2;
+  let head = (unPicked===unItem.ld) ? "Beide in "+d+" gleich große Stücke geteilt. " :
+    "Jetzt sieht man es: in <b>"+d+"</b> passen beide. ";
+  $("unFeedback").innerHTML=head+unItem.fb;
+  $("unFeedback").className="feedback good";
+  progUN++; document.querySelector('[data-mode="ungleich"] .st').textContent="✓"+progUN;
+  $("unNext").style.display="";
+}
+/* zweiter Streifen: erste 'startCol'-Faecher in startC (Platzhalter), dann 'add' Faecher in col -> Aneinanderlegen sichtbar */
+function stripSVGoffset(x0,y,w,h,start,add,den,col,startC){
+  // start = Fächer von Bruch A, add = Fächer von Bruch B (in den-teln).
+  // Bei Summe > 1 wird über mehrere Ganze gezeichnet, mit Markierung bei jeder 1.
+  let s=""; const total=start+add;
+  const wholes=Math.max(1, Math.ceil(total/den));
+  const cells=wholes*den; const cw=w/cells;
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="#0e1320" stroke="${C.line}" stroke-width="1.5"/>`;
+  for(let i=0;i<cells;i++){
+    const fx=x0+i*cw;
+    if(i<start){ s+=`<rect x="${fx+1}" y="${y+1}" width="${cw-2}" height="${h-2}" fill="${startC}" fill-opacity="0.42"/>`; }
+    else if(i<total){ s+=`<rect x="${fx+1}" y="${y+1}" width="${cw-2}" height="${h-2}" fill="${col}" fill-opacity="0.42"/>`; }
+    if(i>0 && i%den!==0){ s+=`<line x1="${fx}" y1="${y}" x2="${fx}" y2="${y+h}" stroke="${C.grid}" stroke-width="1"/>`; }
+  }
+  // Grenze bei jedem Ganzen (nur wenn Summe über 1 hinausgeht) deutlich markieren
+  for(let u=1;u<wholes;u++){
+    const ux=x0+u*den*cw;
+    s+=`<line x1="${ux}" y1="${y-4}" x2="${ux}" y2="${y+h+4}" stroke="#e8edf6" stroke-width="2"/>`;
+    s+=`<text x="${ux}" y="${y-7}" fill="#e8edf6" font-size="10" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1</text>`;
+  }
+  // Trennlinie zwischen start (Bruch A) und add (Bruch B)
+  const sx=x0+start*cw;
+  s+=`<line x1="${sx}" y1="${y-3}" x2="${sx}" y2="${y+h+3}" stroke="${C.res}" stroke-width="2"/>`;
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="none" stroke="${C.res}" stroke-width="1.6"/>`;
+  return s;
+}
+
+/* ==========================================================================
+   MODUS 3 — ERST SCHAETZEN
+   Fehlvorstellung: Nenner addieren -> 2/5, unplausibel.
+   Schritt A: am Strahl 0..2 schaetzen (Punkte tippbar; 2/5 als Falle).
+   Schritt B: genau aufdecken, 2/5 gegen 1/2-Marke halten.
+   ========================================================================== */
+const SC=[
+  {n1:1,d1:2, n2:1,d2:3, ld:6, ans:[5,6],
+   guesses:[ [2,5], [5,6], [2,6] ],   // tippbare Schaetzpunkte: 2/5 (Falle), 5/6 (richtig), 2/6
+   fb:"1/2 + 1/3 ist <b>mehr</b> als ein Halbes — es muss <b>rechts</b> der 1/2-Marke liegen. 5/6 liegt dort. 2/5 liegt <b>links</b> davon, kann also nicht stimmen. Schätzen schützt vor dem Nenner-Fehler."},
+  {n1:3,d1:4, n2:1,d2:2, ld:4, ans:[5,4],
+   guesses:[ [4,6], [5,4], [3,4] ],
+   fb:"3/4 + 1/2 ist <b>mehr als ein Ganzes</b> (3/4 ist schon fast 1, plus ein Halbes). Ergebnis 5/4 liegt <b>rechts der 1</b>. 4/6 (Nenner addiert) wäre kleiner als 1 — unmöglich."},
+  {n1:1,d1:2, n2:1,d2:4, ld:4, ans:[3,4],
+   guesses:[ [2,6], [3,4], [1,2] ],
+   fb:"1/2 + 1/4: ein Halbes plus ein Viertel ist <b>3/4</b> — knapp unter 1. 2/6 (Nenner addiert) liegt links der 1/2-Marke, wäre also sogar kleiner als 1/2 — das kann nicht sein."},
+  {n1:2,d1:3, n2:2,d2:3, ld:3, ans:[4,3],
+   guesses:[ [4,6], [4,3], [1,1] ],
+   fb:"2/3 + 2/3 = <b>4/3</b>, das ist <b>mehr als 1</b> (zwei mal fast ein Ganzes). 4/6 (Nenner verdoppelt) wäre nur 2/3 — viel zu klein."}
+];
+let scPos=0, scItem=null, scStep="A", scDone=false, progSC=0;
+
+function scLoad(){
+  if(scPos>=SC.length) scPos=0;
+  scItem=SC[scPos]; scStep="A"; scDone=false;
+  $("scStepA").style.display="";
+  $("scStepB").style.display="none";
+  $("scFeedback").textContent=""; $("scFeedback").className="feedback"; $("scNext").style.display="none";
+  $("scTask").innerHTML="<span class='tlab'>Schätzen</span> Erst urteilen, dann nachrechnen.";
+  $("scQ").innerHTML = fracHTML(scItem.n1,scItem.d1)+"<span class='op'>+</span>"+fracHTML(scItem.n2,scItem.d2)+"<span class='op'>=</span><span class='blank'>?</span>";
+  $("scAsk").innerHTML="Wo landet das Ergebnis ungefähr? Tippe den Punkt am Strahl an.";
+  scDrawGuess();
+}
+function scDrawGuess(){
+  // Strahl 0..2 mit den tippbaren Schaetzpunkten + 1/2-Marke
+  const W=700,padL=34,padR=30,y=58, maxVal=2;
+  const x=v=>padL+(v/maxVal)*(W-padL-padR);
+  let s="";
+  s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${C.axis}" stroke-width="2"/>`;
+  s+=`<path d="M${W-padR},${y} l-9,-5 l0,10 z" fill="${C.axis}"/>`;
+  for(let v=0;v<=maxVal;v++){ const px=x(v);
+    s+=`<line x1="${px}" y1="${y-11}" x2="${px}" y2="${y+11}" stroke="#e8edf6" stroke-width="2.2"/>`;
+    s+=`<text x="${px}" y="${y+28}" fill="#e8edf6" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${v}</text>`;
+  }
+  // 1/2-Marke
+  const hx=x(0.5);
+  s+=`<line x1="${hx}" y1="${y-9}" x2="${hx}" y2="${y+9}" stroke="${C.inkdim}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  s+=`<text x="${hx}" y="${y-15}" fill="${C.inkdim}" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1/2</text>`;
+  // tippbare Schaetzpunkte (groessere Trefferflaeche)
+  scItem.guesses.forEach((g,idx)=>{
+    const v=g[0]/g[1]; const px=x(v);
+    s+=`<g class="guesspt" data-i="${idx}" style="cursor:pointer">`;
+    s+=`<circle cx="${px}" cy="${y}" r="16" fill="#5aa0ff" fill-opacity="0.0"/>`;
+    s+=`<circle cx="${px}" cy="${y}" r="8" fill="#1c2536" stroke="${C.a}" stroke-width="2"/>`;
+    s+=`<text x="${px}" y="${y-18}" fill="${C.a}" font-size="12" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${g[0]}/${g[1]}</text>`;
+    s+=`</g>`;
+  });
+  $("scGuessNL").innerHTML=s;
+  // Klick-Handler
+  $("scGuessNL").querySelectorAll(".guesspt").forEach(el=>{
+    el.onclick=()=>scGuess(Number(el.dataset.i));
+  });
+}
+function scGuess(i){
+  if(scDone) return; scDone=true;
+  const g=scItem.guesses[i];
+  const gv=g[0]/g[1];
+  const ansV=scItem.ans[0]/scItem.ans[1];
+  // "richtig geschaetzt" = der Punkt, der dem echten Ergebnis am naechsten liegt
+  let bestI=0, bestD=1e9;
+  scItem.guesses.forEach((gg,k)=>{ const d=Math.abs(gg[0]/gg[1]-ansV); if(d<bestD){bestD=d;bestI=k;} });
+  const right=(i===bestI);
+  // Markiere gewaehlten Punkt im Schaetz-Strahl
+  scMarkGuess(i, bestI);
+  // decke auf
+  scReveal(g, right);
+}
+function scMarkGuess(picked, best){
+  // re-render mit Farbcodierung
+  const W=700,padL=34,padR=30,y=58, maxVal=2;
+  const x=v=>padL+(v/maxVal)*(W-padL-padR);
+  let s="";
+  s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${C.axis}" stroke-width="2"/>`;
+  s+=`<path d="M${W-padR},${y} l-9,-5 l0,10 z" fill="${C.axis}"/>`;
+  for(let v=0;v<=maxVal;v++){ const px=x(v);
+    s+=`<line x1="${px}" y1="${y-11}" x2="${px}" y2="${y+11}" stroke="#e8edf6" stroke-width="2.2"/>`;
+    s+=`<text x="${px}" y="${y+28}" fill="#e8edf6" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${v}</text>`;
+  }
+  const hx=x(0.5);
+  s+=`<line x1="${hx}" y1="${y-9}" x2="${hx}" y2="${y+9}" stroke="${C.inkdim}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  s+=`<text x="${hx}" y="${y-15}" fill="${C.inkdim}" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1/2</text>`;
+  scItem.guesses.forEach((g,idx)=>{
+    const v=g[0]/g[1]; const px=x(v);
+    let col=C.a;
+    if(idx===best) col=C.good;
+    else if(idx===picked) col=C.bad;
+    s+=`<circle cx="${px}" cy="${y}" r="8" fill="#1c2536" stroke="${col}" stroke-width="${idx===best||idx===picked?3:2}"/>`;
+    s+=`<text x="${px}" y="${y-18}" fill="${col}" font-size="12" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${g[0]}/${g[1]}</text>`;
+  });
+  $("scGuessNL").innerHTML=s;
+}
+function scReveal(picked, right){
+  $("scStepB").style.display="";
+  const d=scItem.ld, W=700, x0=40, w=W-80, h=30;
+  // Streifen: Summe in ld Faecher
+  const ln1=scItem.n1*(d/scItem.d1), ln2=scItem.n2*(d/scItem.d2);
+  let s="";
+  s+=stripSVGoffset(x0,40,w,h,ln1,ln2,d,C.res,C.a);
+  s+=`<text x="${x0-6}" y="${40+h/2+4}" fill="${C.res}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${scItem.ans[0]}/${d}</text>`;
+  $("scStrip").innerHTML=s;
+  // Strahl 0..2: echtes Ergebnis (gruen), Falle 2/5 falls vorhanden (rot), 1/2-Marke
+  const ansV=scItem.ans[0]/scItem.ans[1];
+  const marks=[ {v:ansV, lbl:scItem.ans[0]+"/"+scItem.ans[1], col:C.res, big:true} ];
+  // falsche Wahl markieren, wenn nicht die richtige
+  if(!right){ const pv=picked[0]/picked[1]; marks.push({v:pv, lbl:"deine "+picked[0]+"/"+picked[1], col:C.bad, below:true}); }
+  drawNL02("scNL", ansV, marks);
+  if(right){
+    progSC++; document.querySelector('[data-mode="schaetzen"] .st').textContent="✓"+progSC;
+    $("scFeedback").innerHTML="Gut geschätzt! "+scItem.fb;
+    $("scFeedback").className="feedback good"; ding(true);
+  } else {
+    $("scFeedback").innerHTML=scItem.fb;
+    $("scFeedback").className="feedback bad"; ding(false);
+  }
+  $("scNext").style.display="";
+}
+function drawNL02(svgId, ansV, marks){
+  const W=700,padL=34,padR=30,y=58,maxVal=2;
+  const x=v=>padL+(v/maxVal)*(W-padL-padR);
+  let s="";
+  s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${C.axis}" stroke-width="2"/>`;
+  s+=`<path d="M${W-padR},${y} l-9,-5 l0,10 z" fill="${C.axis}"/>`;
+  for(let v=0;v<=maxVal;v++){ const px=x(v);
+    s+=`<line x1="${px}" y1="${y-11}" x2="${px}" y2="${y+11}" stroke="#e8edf6" stroke-width="2.2"/>`;
+    s+=`<text x="${px}" y="${y+28}" fill="#e8edf6" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${v}</text>`;
+  }
+  // 1/2-Marke
+  const hx=x(0.5);
+  s+=`<line x1="${hx}" y1="${y-9}" x2="${hx}" y2="${y+9}" stroke="${C.inkdim}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  s+=`<text x="${hx}" y="${y-15}" fill="${C.inkdim}" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">1/2</text>`;
+  (marks||[]).forEach(m=>{ const px=x(m.v); const col=m.col||C.a; const r=m.big?9:7;
+    s+=`<circle cx="${px}" cy="${y}" r="${r}" fill="${col}" stroke="#0e1320" stroke-width="2"/>`;
+    if(m.lbl!=null){ const ly=m.below?y+28:y-16;
+      s+=`<text x="${px}" y="${ly}" fill="${col}" font-size="13" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${m.lbl}</text>`; }
+  });
+  $(svgId).innerHTML=s;
+}
+
+/* ==========================================================================
+   MODUS 4 — SUBTRAHIEREN
+   Fehlvorstellung: Nenner subtrahieren ((3-1)/(4-6)); ungleiche Stuecke.
+   Mechanik: Streifen a, davon b wegnehmen -> gemeinsame Stuecke.
+   ========================================================================== */
+const MI=[
+  {n1:3,d1:4, n2:1,d2:4, ld:4, ln1:3, ln2:1, ans:[2,4], kuerz:[1,2], gleich:true,
+   wrongs:[ {lbl:"2/0", bad:"den"}, {lbl:"4/4"}, {lbl:"2/8"} ],
+   fb:"3 Viertel − 1 Viertel = <b>2 Viertel</b>. Gleiche Stücke: nimm 1 weg, 2 bleiben. 2/4 = 1/2."},
+  {n1:3,d1:4, n2:1,d2:6, ld:12, ln1:9, ln2:2, ans:[7,12],
+   wrongs:[ {lbl:"2/-2", bad:"den"}, {lbl:"4/10"}, {lbl:"2/2"} ],
+   fb:"Verschiedene Stücke! Erst gemeinsame Größe (Zwölftel): 3/4 = 9/12, 1/6 = 2/12. Dann 9/12 − 2/12 = <b>7/12</b>."},
+  {n1:5,d1:6, n2:1,d2:4, ld:12, ln1:10, ln2:3, ans:[7,12],
+   wrongs:[ {lbl:"4/2", bad:"den"}, {lbl:"6/10"}, {lbl:"4/12"} ],
+   fb:"5/6 und 1/4 in Zwölfteln: 10/12 − 3/12 = <b>7/12</b>. Nenner werden nie subtrahiert."},
+  {n1:1,d1:2, n2:1,d2:3, ld:6, ln1:3, ln2:2, ans:[1,6],
+   wrongs:[ {lbl:"0/-1", bad:"den"}, {lbl:"0/1"}, {lbl:"1/1"} ],
+   fb:"1/2 = 3/6, 1/3 = 2/6. Dann 3/6 − 2/6 = <b>1/6</b>. Ein kleiner Rest bleibt — nicht null."}
+];
+let miPos=0, miItem=null, miDone=false, progMI=0;
+
+function miLoad(){
+  if(miPos>=MI.length) miPos=0;
+  miItem=MI[miPos]; miDone=false;
+  $("miFeedback").textContent=""; $("miFeedback").className="feedback"; $("miNext").style.display="none";
+  $("miTask").innerHTML="<span class='tlab'>Subtrahieren</span> "+(miItem.gleich?"Gleicher Nenner — Stücke wegnehmen.":"Verschiedene Stücke — erst gleich machen, dann wegnehmen.");
+  $("miQ").innerHTML = fracHTML(miItem.n1,miItem.d1)+"<span class='op'>−</span>"+fracHTML(miItem.n2,miItem.d2)+"<span class='op'>=</span><span class='blank'>?</span>";
+  // Antworten: richtige (ans, ggf. gekuerzt zeigen wir spaeter) + Distraktoren als Text-Brueche
+  const ansLbl=miItem.ans[0]+"/"+miItem.ans[1];
+  const opts=[{lbl:ansLbl,correct:true}, ...miItem.wrongs.map(w=>({lbl:w.lbl,bad:w.bad}))];
+  const arranged=deterShuffle(opts, miPos+7);
+  const box=$("miChoices"); box.innerHTML="";
+  arranged.forEach(o=>{
+    const b=document.createElement("button");
+    const parts=o.lbl.split("/");
+    b.innerHTML=fracHTML(parts[0],parts[1]);
+    b.dataset.lbl=o.lbl; b.dataset.correct=o.correct?"1":""; b.dataset.bad=o.bad||"";
+    b.onclick=()=>miAnswer(o,b); box.appendChild(b);
+  });
+  miDrawStart();
+}
+function miDrawStart(){
+  // Streifen a (n1/d1), darunter Hinweis "minus b"
+  const W=700,x0=40,w=W-80,h=30;
+  let s="";
+  s+=stripSVG(x0,18,w,h,miItem.n1,miItem.d1,C.a,{});
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${miItem.n1}/${miItem.d1}</text>`;
+  s+=stripSVG(x0,66,w,h,miItem.n2,miItem.d2,C.bad,{});
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${C.bad}" font-size="13" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">−${miItem.n2}/${miItem.d2}</text>`;
+  $("miStrip").innerHTML=s;
+  drawNLfrac("miNL",700,96,1,[{v:miItem.n1/miItem.d1, lbl:miItem.n1+"/"+miItem.d1, col:C.a}],{ticksDen:miItem.ld,y:40});
+}
+function miAnswer(o,btn){
+  if(miDone) return; miDone=true;
+  const right=!!o.correct;
+  $("miChoices").querySelectorAll("button").forEach(x=>{
+    x.disabled=true;
+    if(x.dataset.correct) x.classList.add("right");
+    else if(x.dataset.lbl===o.lbl) x.classList.add("wrong");
+  });
+  miDrawResult();
+  const kuerz=miItem.kuerz ? " = "+fracHTML(miItem.kuerz[0],miItem.kuerz[1]) : "";
+  if(right){
+    progMI++; document.querySelector('[data-mode="minus"] .st').textContent="✓"+progMI;
+    $("miFeedback").innerHTML="Richtig! "+miItem.fb+" Ergebnis: <b>"+fracHTML(miItem.ans[0],miItem.ans[1])+kuerz+"</b>.";
+    $("miFeedback").className="feedback good"; ding(true);
+  } else {
+    let diag="";
+    if(o.bad==="den"){
+      diag="Du hast die <b>Nenner subtrahiert</b> — das gibt keinen sinnvollen Bruch (ein Nenner 0 oder negativ existiert nicht). Wie beim Plus brauchst du gleiche Stücke. ";
+    }
+    $("miFeedback").innerHTML=diag+miItem.fb+" Richtig ist <b>"+fracHTML(miItem.ans[0],miItem.ans[1])+kuerz+"</b>.";
+    $("miFeedback").className="feedback bad"; ding(false);
+  }
+  $("miNext").style.display="";
+}
+function miDrawResult(){
+  const W=700,x0=40,w=W-80,h=30,d=miItem.ld;
+  let s="";
+  // Streifen a in ld Faecher (ln1 gefaerbt), die letzten ln2 davon "weggenommen" markiert
+  s+=stripSVGremove(x0,18,w,h,miItem.ln1,miItem.ln2,d,C.a,C.bad);
+  s+=`<text x="${x0-6}" y="${18+h/2+4}" fill="${C.a}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${miItem.ln1}/${d}</text>`;
+  // Ergebnis-Streifen: ans gefaerbt gruen
+  s+=stripSVG(x0,66,w,h,miItem.ans[0],d,C.res,{});
+  s+=`<text x="${x0-6}" y="${66+h/2+4}" fill="${C.res}" font-size="12" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${miItem.ans[0]}/${d}</text>`;
+  $("miStrip").innerHTML=s;
+  const marks=[
+    {v:miItem.n1/miItem.d1, lbl:miItem.n1+"/"+miItem.d1, col:C.a, below:true},
+    {v:miItem.ans[0]/miItem.ans[1], lbl:miItem.ans[0]+"/"+miItem.ans[1], col:C.res, big:true}
+  ];
+  drawNLfrac("miNL",700,96,1,marks,{ticksDen:d,y:40});
+}
+/* Streifen mit 'keep'-Faecher gefaerbt, davon die letzten 'remove' als weggenommen (rote Schraffur/Kreuz) */
+function stripSVGremove(x0,y,w,h,keep,remove,den,col,remCol){
+  let s=""; const cw=w/den;
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="#0e1320" stroke="${C.line}" stroke-width="1.5"/>`;
+  for(let i=0;i<den;i++){
+    const fx=x0+i*cw;
+    if(i<keep-remove){ s+=`<rect x="${fx+1}" y="${y+1}" width="${cw-2}" height="${h-2}" fill="${col}" fill-opacity="0.42"/>`; }
+    else if(i<keep){
+      // weggenommen: rot, durchgestrichen
+      s+=`<rect x="${fx+1}" y="${y+1}" width="${cw-2}" height="${h-2}" fill="${remCol}" fill-opacity="0.30"/>`;
+      s+=`<line x1="${fx+2}" y1="${y+2}" x2="${fx+cw-2}" y2="${y+h-2}" stroke="${remCol}" stroke-width="1.6"/>`;
+      s+=`<line x1="${fx+cw-2}" y1="${y+2}" x2="${fx+2}" y2="${y+h-2}" stroke="${remCol}" stroke-width="1.6"/>`;
+    }
+    if(i>0){ s+=`<line x1="${fx}" y1="${y}" x2="${fx}" y2="${y+h}" stroke="${C.grid}" stroke-width="1"/>`; }
+  }
+  s+=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="5" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+  return s;
+}
+
+/* ---------- deterministische Reihenfolge (kein Math.random) ---------- */
+function deterShuffle(arr, salt){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=(i*7+salt*3+5)%(i+1); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* ==========================================================================
+   MODUS-WECHSEL + Events
+   ========================================================================== */
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  if(m==="gleich") glLoad();
+  if(m==="ungleich") unLoad();
+  if(m==="schaetzen") scLoad();
+  if(m==="minus") miLoad();
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+$("glNext").onclick=()=>{ glPos++; glLoad(); };
+$("unCut").onclick=()=>unCutNow();
+$("unNext").onclick=()=>{ unPos++; unLoad(); };
+$("scNext").onclick=()=>{ scPos++; scLoad(); };
+$("miNext").onclick=()=>{ miPos++; miLoad(); };
+
+$("tglSound").onclick=()=>{ soundOn=!soundOn; $("tglSound").classList.toggle("on",soundOn); if(soundOn)ding(true); };
+
+/* ---- Start ---- */
+setMode("gleich");
+</script>
+</body>
+</html>

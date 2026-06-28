@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zufalls-Labor — Wahrscheinlichkeit, Baumdiagramm &amp; Simulation</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+
+  .ctl{display:none}
+  .ctl.on{display:block}
+
+  /* Buttons */
+  .btn{font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 17px;cursor:pointer;transition:.14s;min-height:44px}
+  .btn:hover{background:#284273}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .btn.ghost:hover{border-color:#3d4d70;color:#fff}
+  .btn.sm{font-size:13.5px;padding:9px 13px}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .row+.row{margin-top:12px}
+
+  /* Chips / Auswahl */
+  .pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .pick button{font:inherit;font-size:13.5px;color:#cdd8ec;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:9px 13px;cursor:pointer;transition:.12s;min-height:44px}
+  .pick button:hover{border-color:#3d4d70;color:#fff}
+  .pick button.on{background:#26365a;border-color:var(--accent);color:#fff}
+
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:10px}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .tlab.ok{color:var(--good);border-color:#3f6f5c}
+
+  /* Antwort-Optionen (Distraktoren) */
+  .opts{display:flex;flex-direction:column;gap:8px;margin:6px 0 2px}
+  .opt{font:inherit;font-size:15px;text-align:left;color:#e8edf6;background:var(--panel2);
+    border:1.5px solid var(--line);border-radius:11px;padding:13px 15px;cursor:pointer;transition:.14s;min-height:44px;display:flex;align-items:center;gap:12px}
+  .opt:hover{border-color:#3d4d70}
+  .opt .frac{font-family:var(--mono);font-size:17px;font-weight:600;color:#bcd6ff;flex:none}
+  .opt .lab{color:#c2cde2;font-size:13.5px}
+  .opt.right{border-color:var(--good);background:#16302a}
+  .opt.wrong{border-color:var(--bad);background:#2e1c26}
+  .opt:disabled{cursor:default}
+
+  /* Schätz-Slider (Simulator) */
+  .guess{display:flex;align-items:center;gap:14px;margin:10px 0 6px;flex-wrap:wrap}
+  .guess .lab{font-family:var(--mono);font-size:15px;color:#fff;min-width:120px}
+  input[type=range]{flex:1;min-width:160px;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:#dfe8f6;border:2px solid #4a597a;cursor:pointer;box-shadow:0 1px 4px #0006}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#dfe8f6;border:2px solid #4a597a;cursor:pointer}
+
+  /* Mono-Zahlen / Werte */
+  .mono{font-family:var(--mono)}
+  .big{font-family:var(--mono);font-weight:600}
+
+  /* SVG */
+  svg.viz{width:100%;height:auto;display:block;margin:6px auto}
+  .svgwrap{display:flex;justify-content:center}
+
+  /* Mess-Anzeige Simulator */
+  .meter{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 4px}
+  .mcell{flex:1 1 0;min-width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;text-align:center}
+  .mcell .h{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .mcell .v{font-family:var(--mono);font-size:24px;font-weight:600;color:#fff;margin-top:4px}
+  .mcell.true .v{color:var(--good)}
+  .mcell.sim .v{color:var(--accent)}
+  .mcell.n .v{color:#cdd8ec}
+
+  /* Baum-Eingabe / Auswahl mit oder ohne */
+  .swrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{font:inherit;font-size:13.5px;color:#c2cde2;background:var(--panel2);border:0;padding:10px 14px;cursor:pointer;min-height:44px;transition:.12s}
+  .seg button.on{background:#21345c;color:#fff}
+  .seg button+button{border-left:1px solid var(--line)}
+
+  .note{font-size:13px;color:var(--muted);margin-top:12px}
+  .note b{color:#d6e0f2}
+
+  .feedback{min-height:22px;font-size:14px;margin-top:14px;color:var(--muted);transition:.2s;line-height:1.55}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+  .feedback b{color:#fff}
+
+  .tools{display:flex;gap:8px;align-items:center}
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s;min-height:34px}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 7–8 · Daten &amp; Zufall</div>
+    <h1>Zufalls-Labor <span class="hl">⚄</span></h1>
+    <div class="sub">Schätzen, rechnen, simulieren — und sehen, wo die Bauchgefühl-Antwort scheitert.</div>
+  </header>
+
+  <div class="thesis">
+    Wahrscheinlichkeit ist ein <b>Anteil zwischen 0 und 1</b>. Am Baum gilt:
+    <b>entlang</b> eines Pfades wird <b>malgenommen</b> (und dann …), <b>über</b> mehrere Pfade wird <b>addiert</b> (… oder …).
+    Eine Simulation kann eine falsche Vermutung <b>widerlegen</b> — die relative Häufigkeit nähert sich der wahren Wahrscheinlichkeit, beweist sie aber nicht.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="sim">Simulator <span class="st"></span></button>
+    <button class="tab" data-mode="pfad">Pfad-Regel <span class="st"></span></button>
+    <button class="tab" data-mode="urne">Mit/ohne Zurücklegen <span class="st"></span></button>
+    <button class="tab" data-mode="gegen">Gegenereignis <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <!-- ===================== SIMULATOR ===================== -->
+    <div class="ctl on" id="ctl-sim">
+      <div class="pick" id="simPick"></div>
+      <div class="task" id="simTask"></div>
+
+      <div class="svgwrap"><svg class="viz" id="simSvg" viewBox="0 0 440 150" role="img" aria-label="Zufallsgerät"></svg></div>
+
+      <div class="guess" id="simGuessRow">
+        <span class="lab" id="simGuessLab">deine Schätzung</span>
+        <input type="range" id="simGuess" min="0" max="100" step="1" value="50">
+      </div>
+      <div class="row" style="justify-content:center">
+        <button class="btn ghost sm" id="simRun10">10×</button>
+        <button class="btn ghost sm" id="simRun100">100×</button>
+        <button class="btn sm" id="simRun1000">1000×</button>
+        <button class="btn ghost sm" id="simReset">Zurücksetzen</button>
+      </div>
+
+      <div class="meter">
+        <div class="mcell n"><div class="h">Versuche</div><div class="v" id="simN">0</div></div>
+        <div class="mcell sim"><div class="h">rel. Häufigkeit</div><div class="v" id="simRel">—</div></div>
+        <div class="mcell true"><div class="h">wahre W.</div><div class="v" id="simTrue">—</div></div>
+      </div>
+
+      <div class="svgwrap"><svg class="viz" id="simBar" viewBox="0 0 440 90" role="img" aria-label="Häufigkeits-Balken"></svg></div>
+      <div class="feedback" id="simFeedback"></div>
+    </div>
+
+    <!-- ===================== PFAD-REGEL ===================== -->
+    <div class="ctl" id="ctl-pfad">
+      <div class="task" id="pfTask"></div>
+      <div class="svgwrap"><svg class="viz" id="pfSvg" viewBox="0 0 440 260" role="img" aria-label="Baumdiagramm"></svg></div>
+      <div class="opts" id="pfOpts"></div>
+      <div class="feedback" id="pfFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:6px"><button class="btn ghost" id="pfNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- ===================== MIT / OHNE ZURÜCKLEGEN ===================== -->
+    <div class="ctl" id="ctl-urne">
+      <div class="swrow">
+        <span class="note" style="margin:0">Urne: <b>3 rote</b>, <b>2 blaue</b> Kugeln · zwei Züge nacheinander</span>
+        <span class="seg" id="urneSeg">
+          <button data-z="mit" class="on">mit Zurücklegen</button>
+          <button data-z="ohne">ohne Zurücklegen</button>
+        </span>
+      </div>
+      <div class="task" id="urneTask"></div>
+      <div class="svgwrap"><svg class="viz" id="urneSvg" viewBox="0 0 440 260" role="img" aria-label="Urnen-Baum"></svg></div>
+      <div class="opts" id="urneOpts"></div>
+      <div class="row" style="justify-content:center;margin-top:4px">
+        <button class="btn ghost sm" id="urneRun1000">Simulation 1000×</button>
+      </div>
+      <div class="meter">
+        <div class="mcell n"><div class="h">Versuche</div><div class="v" id="urneN">0</div></div>
+        <div class="mcell sim"><div class="h">rel. Häufigkeit</div><div class="v" id="urneRel">—</div></div>
+        <div class="mcell true"><div class="h">wahre W.</div><div class="v" id="urneTrue">—</div></div>
+      </div>
+      <div class="feedback" id="urneFeedback"></div>
+    </div>
+
+    <!-- ===================== GEGENEREIGNIS ===================== -->
+    <div class="ctl" id="ctl-gegen">
+      <div class="task" id="ggTask"></div>
+      <div class="svgwrap"><svg class="viz" id="ggSvg" viewBox="0 0 440 200" role="img" aria-label="Gegenereignis"></svg></div>
+      <div class="opts" id="ggOpts"></div>
+      <div class="feedback" id="ggFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:6px"><button class="btn ghost" id="ggNext" style="display:none">Nächste →</button></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   ZUFALLS-LABOR — Wahrscheinlichkeit, mehrstufige Versuche & Daten (Jg. 7/8)
+   Zwei ehrliche Engines:
+     (a) Baumdiagramm: längs multiplizieren, quer addieren (eigenes SVG).
+     (b) Live-Simulator: relative Häufigkeit nähert sich der wahren W.
+   Zufall via Math.random(). Komplett offline, kein eval.
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+/* ---------- Bruch-Hilfen (ganzzahlig, keine Rundungsfehler) ---------- */
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
+function frac(n,d){ const g=gcd(n,d); return {n:n/g,d:d/g}; }
+function fracStr(f){ return f.d===1?String(f.n):f.n+"/"+f.d; }
+function fracDec(f){ return f.n/f.d; }
+function pct(x){ return (Math.round(x*1000)/10)+"%"; }
+
+/* ---------- Ton (offline) ---------- */
+let actx=null, soundOn=false;
+function ding(ok){ if(!soundOn)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type='sine'; o.connect(g); g.connect(actx.destination);
+  const n=actx.currentTime; g.gain.value=0.0001; g.gain.exponentialRampToValueAtTime(0.12,n+0.02); g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+  o.frequency.setValueAtTime(ok?660:300,n); if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13); o.start(n); o.stop(n+0.32);
+}catch(e){} }
+
+const HINTS={
+  sim:"<b>Simulator:</b> Erst schätzen, dann laufen lassen. Die relative Häufigkeit nähert sich der wahren Wahrscheinlichkeit — nicht jeder einzelne Wurf.",
+  pfad:"<b>Pfad-Regel:</b> Entlang eines Astes <i>malnehmen</i> (und dann), über mehrere Äste <i>addieren</i> (oder).",
+  urne:"<b>Mit/ohne Zurücklegen:</b> Schalte um — und sieh, wie sich die zweite Stufe ändert (oder eben nicht).",
+  gegen:"<b>Gegenereignis:</b> 'Mindestens eins' rechnet man kurz: 1 minus 'keins'."
+};
+
+/* ---------- kleine SVG-Helfer ---------- */
+function el(tag,attrs,inner){ let s="<"+tag; for(const k in attrs) s+=" "+k+'="'+attrs[k]+'"'; s+=">"; if(inner!=null)s+=inner; s+="</"+tag+">"; return s; }
+function svgText(x,y,t,fill,size,anchor,mono){ const f=mono?'ui-monospace,Menlo,Consolas,monospace':'var(--sans)';
+  return `<text x="${x}" y="${y}" fill="${fill}" font-size="${size}" text-anchor="${anchor||'start'}" font-family="${f}" font-weight="600">${t}</text>`; }
+const COL={good:"#4fd6a0",bad:"#ff6f6f",accent:"#5aa0ff",muted:"#93a0b8",ink:"#eaf1ff",line:"#3a4a68",
+  red:"#ff6f6f",blue:"#5aa0ff",gold:"#f4b740",panel:"#1c2536"};
+
+/* ==========================================================================
+   MODUS 1 — SIMULATOR  (W1, W4, W5, PF4)
+   Geraete mit ehrlicher wahrer W.; Distraktor = Gleichwahrscheinlichkeit/Ausgleich.
+   ========================================================================== */
+const SIM=[
+  { key:"muenze", name:"Münze — Kopf", true_n:1, true_d:2,
+    trial:()=>Math.random()<0.5,
+    confront:"Zwei Ausgaenge — und tatsächlich je 1/2. Aber Achtung: 'zwei Möglichkeiten' heißt <b>nicht</b> automatisch 50% (siehe Würfel und Glücksrad).",
+    draw:s=>coinSvg(s) },
+  { key:"wuerfel", name:"Würfel — eine Sechs", true_n:1, true_d:6,
+    trial:()=>Math.floor(Math.random()*6)===5,
+    confront:"Auch hier gibt es nur 'Sechs' oder 'keine Sechs' — zwei Ausgaenge. Trotzdem ist es <b>nicht</b> 50%, sondern 1/6. Die Anzahl der Sorten sagt nichts über die Wahrscheinlichkeit.",
+    draw:s=>dieSvg(s) },
+  { key:"rad", name:"Glücksrad — Feld Rot", true_n:3, true_d:8,
+    trial:()=>Math.random()<3/8,
+    confront:"Das Rad hat 3 rote und 5 graue Felder. 'Rot oder nicht' sind zwei Ausgaenge — die wahre W. ist aber 3/8, nicht 1/2. Ungleich große Felder, ungleiche Chance.",
+    draw:s=>wheelSvg(s) },
+  { key:"gambler", name:"Münze nach 5x Kopf", true_n:1, true_d:2,
+    trial:()=>Math.random()<0.5,
+    confront:"Die Münze hat <b>kein Gedächtnis</b>. Egal wie oft vorher Kopf kam — der nächste Wurf ist wieder 1/2. Kein 'Ausgleich', der Zahl jetzt wahrscheinlicher macht.",
+    draw:s=>coinSvg(s,true) }
+];
+let simIdx=0, simHits=0, simN=0, simRunning=false, simGuessLocked=false, simProg=0, simDone=new Set();
+let simTrueF=frac(1,2);
+
+function simInit(){
+  const box=$("simPick"); box.innerHTML="";
+  SIM.forEach((it,i)=>{ const b=document.createElement("button"); b.textContent=it.name;
+    b.className=(i===simIdx?"on":""); b.onclick=()=>{ if(simRunning)return; simIdx=i; simLoad(); }; box.appendChild(b); });
+}
+function simLoad(){
+  const it=SIM[simIdx]; simTrueF=frac(it.true_n,it.true_d);
+  simHits=0; simN=0; simGuessLocked=false;
+  $("simGuess").value=50; $("simGuessLab").textContent="deine Schätzung: 50%";
+  $("simN").textContent="0"; $("simRel").textContent="—"; $("simTrue").textContent="—";
+  $("simTask").innerHTML = "<span class='tlab'>Frage</span> Wie wahrscheinlich ist <b>"+(it.name.split(" — ")[1]||it.name)+"</b>? Schätze zuerst mit dem Regler, dann simuliere.";
+  $("simFeedback").textContent=""; $("simFeedback").className="feedback";
+  simInit(); it.draw(it); simBarRender();
+}
+function simRender(){
+  const it=SIM[simIdx];
+  $("simN").textContent=simN;
+  if(simN>0){ $("simRel").textContent=pct(simHits/simN); } else { $("simRel").textContent="—"; }
+  if(simGuessLocked){ $("simTrue").textContent=fracStr(simTrueF)+" ≈ "+pct(fracDec(simTrueF)); } else { $("simTrue").textContent="—"; }
+  simBarRender();
+}
+function simBarRender(){
+  const W=440,H=90,x0=20,x1=420,y0=18,y1=70;
+  const rel = simN>0 ? simHits/simN : null;
+  const tr = fracDec(simTrueF);
+  let s="";
+  // Achse 0..1
+  s+=el("rect",{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:"#141d30",stroke:COL.line,"stroke-width":1,rx:6});
+  // wahre W.-Linie (nur wenn aufgedeckt)
+  if(simGuessLocked){
+    const tx=x0+(x1-x0)*tr;
+    s+=el("line",{x1:tx,y1:y0-6,x2:tx,y2:y1+6,stroke:COL.good,"stroke-width":2,"stroke-dasharray":"4 3"});
+    s+=svgText(tx,y1+22,"wahre W. "+fracStr(simTrueF),COL.good,11,"middle");
+  }
+  // Schätzung
+  const gv=parseInt($("simGuess").value,10)/100;
+  const gx=x0+(x1-x0)*gv;
+  s+=el("line",{x1:gx,y1:y0-6,x2:gx,y2:y1+6,stroke:COL.muted,"stroke-width":1.5,"stroke-dasharray":"2 3"});
+  s+=svgText(gx,y0-9,"Schätzung",COL.muted,10,"middle");
+  // rel. Häufigkeit als Fuell-Balken
+  if(rel!=null){
+    const bw=(x1-x0)*rel;
+    s+=el("rect",{x:x0,y:y0+8,width:bw,height:y1-y0-16,fill:COL.accent,opacity:0.85,rx:4});
+    s+=svgText(x0+Math.min(bw+6,x1-x0-60),(y0+y1)/2+4,pct(rel),COL.ink,12,"start",true);
+  }
+  // Skala 0 / 0.5 / 1
+  s+=svgText(x0,y1+22,"0",COL.muted,10,"middle");
+  s+=svgText((x0+x1)/2,y1+22,"0,5",COL.muted,10,"middle");
+  s+=svgText(x1,y1+22,"1",COL.muted,10,"middle");
+  $("simBar").innerHTML=s;
+}
+/* Geraete-Grafiken */
+function coinSvg(it,gambler){
+  let s="";
+  if(gambler){
+    // 5 kleine Münzen "Kopf" + große Frage-Münze
+    for(let i=0;i<5;i++){ s+=el("circle",{cx:50+i*40,cy:40,r:16,fill:"#2a3650",stroke:COL.gold,"stroke-width":2});
+      s+=svgText(50+i*40,45,"K",COL.gold,15,"middle",true); }
+    s+=el("circle",{cx:320,cy:90,r:34,fill:"#192a47",stroke:COL.accent,"stroke-width":3});
+    s+=svgText(320,98,"?",COL.accent,30,"middle",true);
+    s+=svgText(320,142,"nächster Wurf",COL.muted,11,"middle");
+  } else {
+    s+=el("circle",{cx:160,cy:75,r:42,fill:"#2a3650",stroke:COL.gold,"stroke-width":3});
+    s+=svgText(160,85,"K",COL.gold,30,"middle",true);
+    s+=svgText(160,140,"Kopf",COL.muted,11,"middle");
+    s+=el("circle",{cx:280,cy:75,r:42,fill:"#222a3c",stroke:COL.muted,"stroke-width":2});
+    s+=svgText(280,85,"Z",COL.muted,30,"middle",true);
+    s+=svgText(280,140,"Zahl",COL.muted,11,"middle");
+  }
+  $("simSvg").innerHTML=s;
+}
+function dieSvg(){
+  let s="";
+  // großer Würfel mit 6 Augen hervorgehoben
+  s+=el("rect",{x:150,y:25,width:90,height:90,rx:14,fill:"#2a3650",stroke:COL.good,"stroke-width":3});
+  const pos=[[170,45],[220,45],[170,70],[220,70],[170,95],[220,95]];
+  pos.forEach(p=>{ s+=el("circle",{cx:p[0],cy:p[1],r:7,fill:COL.good}); });
+  s+=svgText(195,138,"genau die Sechs",COL.muted,11,"middle");
+  s+=svgText(330,60,"1 von 6",COL.ink,16,"middle",true);
+  s+=svgText(330,80,"Seiten",COL.muted,11,"middle");
+  $("simSvg").innerHTML=s;
+}
+function wheelSvg(){
+  // Rad mit 8 Sektoren, 3 rot
+  const cx=120,cy=75,r=58; let s="";
+  for(let i=0;i<8;i++){
+    const a0=(i/8)*2*Math.PI - Math.PI/2, a1=((i+1)/8)*2*Math.PI - Math.PI/2;
+    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const fill=i<3?COL.red:"#34405a";
+    s+=el("path",{d:`M ${cx} ${cy} L ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`,fill,stroke:"#0e1320","stroke-width":1.5});
+  }
+  s+=el("circle",{cx,cy,r:6,fill:"#e8edf6"});
+  s+=svgText(cx,cy+r+22,"3 rot von 8",COL.muted,11,"middle");
+  s+=svgText(300,55,"3 rote Felder",COL.red,14,"middle");
+  s+=svgText(300,80,"5 graue Felder",COL.muted,14,"middle");
+  s+=svgText(300,108,"P(rot) = 3/8",COL.ink,15,"middle",true);
+  $("simSvg").innerHTML=s;
+}
+/* Simulation in Häppchen (requestAnimationFrame) — blockiert nicht. */
+function simRun(total){
+  if(simRunning) return;
+  const it=SIM[simIdx];
+  simGuessLocked=true;
+  $("simGuessLab").textContent="deine Schätzung: "+$("simGuess").value+"%";
+  simRunning=true; setSimButtons(false);
+  let left=total;
+  // setTimeout-Chunking statt requestAnimationFrame: läuft auch in
+  // Hintergrund-Tabs zuverlässig durch und blockiert den Browser nicht.
+  const chunk=()=>{
+    const step=Math.min(left, total>=1000?40: total>=100?8:1);
+    for(let i=0;i<step;i++){ if(it.trial())simHits++; simN++; }
+    left-=step;
+    simRender();
+    if(left>0){ setTimeout(chunk, total>=1000?16:60); }
+    else { simRunning=false; setSimButtons(true); simFinish(); }
+  };
+  setTimeout(chunk,0);
+}
+function setSimButtons(on){
+  ["simRun10","simRun100","simRun1000","simReset"].forEach(id=>$(id).disabled=!on);
+  $("simPick").querySelectorAll("button").forEach(b=>b.disabled=!on);
+}
+function simFinish(){
+  const it=SIM[simIdx];
+  const rel=simHits/simN, tr=fracDec(simTrueF);
+  const guess=parseInt($("simGuess").value,10)/100;
+  let msg="<b>"+simN+" Versuche:</b> relative Häufigkeit "+pct(rel)+" — wahre Wahrscheinlichkeit "+fracStr(simTrueF)+" ≈ "+pct(tr)+". ";
+  let cls="feedback think";
+  if(simN>=1000){
+    msg+="Nah dran. "+it.confront;
+    cls="feedback good";
+    if(!simDone.has(simIdx)){ simDone.add(simIdx); simProg++; document.querySelector('[data-mode="sim"] .st').textContent="✓"+simProg; ding(true); }
+  } else {
+    // Bei kleinem n: zeigen, dass es noch schwankt
+    msg+="Bei wenigen Versuchen schwankt der Wert stark — die Schätzung laesst sich so noch nicht prüfen. Lass <b>1000×</b> laufen.";
+    if(Math.abs(guess-tr)>0.12 && Math.abs(guess-0.5)<0.04 && tr!==0.5){
+      msg="Du hast <b>50%</b> getippt. "+it.confront+" — prüf es mit 1000 Versuchen.";
+      cls="feedback bad";
+    }
+  }
+  $("simFeedback").innerHTML=msg; $("simFeedback").className=cls;
+}
+
+/* ==========================================================================
+   MODUS 2 — PFAD-REGEL  (PF1 addieren statt mal, PF2 Pfade mal statt plus, PF6 Reihenfolge)
+   Baumdiagramm zeigt: längs mal, quer plus. Distraktoren = genau diese Fehler.
+   ========================================================================== */
+/* Jeder Item: zweistufiger Baum. stages: [{label, branches:[{lab,n,d}]}, ...]
+   target: welche Endpfade zählen (Liste von [i0,i1]); answer als Bruch. */
+const PFAD=[
+  { q:"Du wirfst eine Münze <b>zweimal</b>. Wie wahrscheinlich ist <b>zweimal Kopf</b>?",
+    s1:[{lab:"K",n:1,d:2},{lab:"Z",n:1,d:2}], s2:[{lab:"K",n:1,d:2},{lab:"Z",n:1,d:2}],
+    target:[[0,0]], ansN:1, ansD:4,
+    opts:[ {n:1,d:1,lab:"1/2 + 1/2 — entlang addiert"}, {n:1,d:4,lab:"1/2 · 1/2 — entlang malgenommen"}, {n:1,d:2,lab:"nur eine Stufe gezählt"} ],
+    right:1,
+    fb:["<b>Addiert statt malgenommen.</b> Zwei Stufen heißt 'und dann' = mal. Schau die vier Pfade: nur <b>einer</b> ist KK, also 1/4. Würde 'zweimal' Kopf leichter sein als 'einmal'? Nein — also muss die W. <b>kleiner</b> werden, nicht 1.",
+        "Genau: ein Pfad von vier, 1/2 · 1/2 = 1/4.",
+        "Du hast nur die erste Stufe betrachtet. Der zweite Wurf zählt mit — längs malnehmen."] },
+
+  { q:"Eine Münze, <b>zweimal</b> geworfen. Wie wahrscheinlich ist <b>genau einmal Kopf</b>?",
+    s1:[{lab:"K",n:1,d:2},{lab:"Z",n:1,d:2}], s2:[{lab:"K",n:1,d:2},{lab:"Z",n:1,d:2}],
+    target:[[0,1],[1,0]], ansN:1, ansD:2,
+    opts:[ {n:1,d:16,lab:"1/4 · 1/4 — Pfade malgenommen"}, {n:1,d:4,lab:"nur einen Pfad gezählt"}, {n:1,d:2,lab:"beide Pfade addiert"} ],
+    right:2,
+    fb:["<b>Pfade malgenommen statt addiert.</b> KZ und ZK sind <b>verschiedene Wege</b> zum selben Ereignis — verschiedene Wege verbindet man mit <b>plus</b>: 1/4 + 1/4 = 1/2. Kann 'genau einmal Kopf' kleiner sein als ein einzelner Pfad (1/4)? Nein.",
+        "Du hast nur KZ <b>oder</b> ZK gezählt. 'Genau einmal Kopf' geht auf zwei Wegen — beide zählen: 1/4 + 1/4.",
+        "Genau: zwei Pfade (KZ, ZK), je 1/4, über die Äste addiert = 1/2."] },
+
+  { q:"Du würfelst <b>zweimal</b>. Wie wahrscheinlich ist <b>genau eine Sechs</b>?",
+    s1:[{lab:"6",n:1,d:6},{lab:"keine 6",n:5,d:6}], s2:[{lab:"6",n:1,d:6},{lab:"keine 6",n:5,d:6}],
+    target:[[0,1],[1,0]], ansN:10, ansD:36,
+    opts:[ {n:5,d:36,lab:"nur einen Pfad: 1/6 · 5/6"}, {n:10,d:36,lab:"beide Pfade: 5/36 + 5/36"}, {n:1,d:36,lab:"zwei Sechsen verlangt"} ],
+    right:1,
+    fb:["<b>Reihenfolge übersehen.</b> 'Genau eine Sechs' geht auf zwei Wegen: Sechs–keine Sechs <b>und</b> keine Sechs–Sechs. Beide zählen: 5/36 + 5/36 = 10/36.",
+        "Genau: zwei gleichwertige Pfade, je 1/6 · 5/6 = 5/36, addiert = 10/36.",
+        "Das wäre 'zweimal Sechs' (1/6 · 1/6 = 1/36). Gefragt ist genau <b>eine</b> Sechs."] }
+];
+let pfIdx=0, pfDone=false, pfProg=0, pfHit=new Set();
+function pfLoad(){
+  const it=PFAD[pfIdx]; pfDone=false;
+  $("pfTask").innerHTML="<span class='tlab'>Aufgabe</span> "+it.q;
+  drawTree("pfSvg",it,null);
+  const box=$("pfOpts"); box.innerHTML="";
+  it.opts.forEach((o,i)=>{ const b=document.createElement("button"); b.className="opt"; b.disabled=false;
+    b.innerHTML="<span class='frac'>"+fracStr(frac(o.n,o.d))+"</span><span class='lab'>"+o.lab+"</span>";
+    b.onclick=()=>pfAnswer(i); box.appendChild(b); });
+  $("pfFeedback").textContent=""; $("pfFeedback").className="feedback"; $("pfNext").style.display="none";
+}
+function pfAnswer(i){
+  if(pfDone)return; const it=PFAD[pfIdx];
+  const btns=$("pfOpts").querySelectorAll(".opt");
+  btns.forEach(b=>b.disabled=true);
+  const correct=(i===it.right);
+  btns[i].classList.add(correct?"right":"wrong");
+  if(!correct){ btns[it.right].classList.add("right"); }
+  // Baum mit markierten Zielpfaden aufdecken
+  drawTree("pfSvg",it,it.target);
+  pfDone=true;
+  const af=frac(it.ansN,it.ansD);
+  if(correct){
+    $("pfFeedback").innerHTML="<b>Richtig — "+fracStr(af)+".</b> "+it.fb[i]; $("pfFeedback").className="feedback good";
+    if(!pfHit.has(pfIdx)){ pfHit.add(pfIdx); pfProg++; document.querySelector('[data-mode="pfad"] .st').textContent="✓"+pfProg; }
+    ding(true);
+  } else {
+    $("pfFeedback").innerHTML=it.fb[i]+" <b>Richtig ist "+fracStr(af)+".</b>"; $("pfFeedback").className="feedback bad";
+    ding(false);
+  }
+  $("pfNext").style.display="";
+}
+
+/* Baumdiagramm-Zeichner: zwei Stufen, markierte Pfade längs malnehmen, quer addieren. */
+function drawTree(svgId,it,target){
+  const W=440,H=260, rootX=30,rootY=130;
+  const s1x=170, s2x=330;
+  const n1=it.s1.length, n2=it.s2.length;
+  // y-Positionen Stufe 1
+  const y1=[], gap1=180/(n1), top1=40;
+  for(let i=0;i<n1;i++) y1.push(top1 + gap1*i + gap1/2 - 10 + (n1===2? (i===0?0:20):0));
+  // gleichmaessig:
+  for(let i=0;i<n1;i++) y1[i]= 50 + (160/(n1-1||1))*i;
+  // Stufe-2 Endknoten: n1*n2, gleichmaessig verteilt
+  const tot=n1*n2, ey=[];
+  for(let k=0;k<tot;k++) ey.push(30 + (200/(tot-1))*k);
+  const targetSet = new Set((target||[]).map(t=>t[0]*n2+t[1]));
+  let s="";
+  // root
+  s+=el("circle",{cx:rootX,cy:rootY,r:5,fill:COL.ink});
+  for(let i=0;i<n1;i++){
+    const br1=it.s1[i];
+    // Stufe-1-Ast
+    const onPath1 = [...targetSet].some(k=>Math.floor(k/n2)===i);
+    const col1 = target? (onPath1?COL.good:COL.line) : COL.line;
+    s+=el("line",{x1:rootX,y1:rootY,x2:s1x,y2:y1[i],stroke:col1,"stroke-width":onPath1&&target?2.5:1.5});
+    s+=svgText((rootX+s1x)/2-2,(rootY+y1[i])/2-6,br1.lab,target&&onPath1?COL.good:COL.muted,12,"middle");
+    s+=svgText((rootX+s1x)/2-2,(rootY+y1[i])/2+12,fracStr(frac(br1.n,br1.d)),target&&onPath1?COL.good:COL.muted,12,"middle",true);
+    s+=el("circle",{cx:s1x,cy:y1[i],r:4,fill:COL.ink});
+    for(let j=0;j<n2;j++){
+      const k=i*n2+j; const br2=it.s2[j];
+      const isTarget=targetSet.has(k);
+      const col2 = target? (isTarget?COL.good:COL.line) : COL.line;
+      s+=el("line",{x1:s1x,y1:y1[i],x2:s2x,y2:ey[k],stroke:col2,"stroke-width":isTarget?2.5:1.2});
+      s+=svgText((s1x+s2x)/2,(y1[i]+ey[k])/2-4,br2.lab,target&&isTarget?COL.good:COL.muted,11,"middle");
+      s+=svgText((s1x+s2x)/2,(y1[i]+ey[k])/2+11,fracStr(frac(br2.n,br2.d)),target&&isTarget?COL.good:COL.muted,11,"middle",true);
+      s+=el("circle",{cx:s2x,cy:ey[k],r:3.5,fill:isTarget?COL.good:COL.ink});
+      // Endpfad-Produkt
+      if(target){
+        const pf=frac(br1.n*br2.n, br1.d*br2.d);
+        s+=svgText(s2x+10,ey[k]+4,fracStr(pf),isTarget?COL.good:COL.muted,11,"start",true);
+      }
+    }
+  }
+  // Legende längs/quer
+  s+=svgText(W-8,18,"längs ·  quer +",COL.muted,10,"end");
+  $(svgId).innerHTML=s;
+}
+
+/* ==========================================================================
+   MODUS 3 — MIT / OHNE ZURUECKLEGEN  (PF3, PF4)
+   Urne 3 rot / 2 blau, zwei Zuege. Schalter ändert 2. Stufe sichtbar.
+   Aufgabe: P(zweimal rot). Distraktoren = nicht angepasst (PF3), je 1/2 (PF4).
+   ========================================================================== */
+let urneZ="mit", urneDone=false, urneProg=0, urneHit=new Set(), urneRunning=false;
+function urneTreeData(){
+  // Stufe 1: rot 3/5, blau 2/5
+  // Stufe 2 mit: rot 3/5; ohne (nach rot): rot 2/4
+  const mit = urneZ==="mit";
+  return {
+    s1:[{lab:"rot",n:3,d:5},{lab:"blau",n:2,d:5}],
+    // zweite Stufe abhängig vom ersten Zug -> wir zeichnen je Verzweigung eigene Äste
+    s2after:{
+      rot: mit? [{lab:"rot",n:3,d:5},{lab:"blau",n:2,d:5}] : [{lab:"rot",n:2,d:4},{lab:"blau",n:2,d:4}],
+      blau:mit? [{lab:"rot",n:3,d:5},{lab:"blau",n:2,d:5}] : [{lab:"rot",n:3,d:4},{lab:"blau",n:1,d:4}]
+    }
+  };
+}
+function urneAnswerFrac(){ // P(zweimal rot)
+  const mit=urneZ==="mit";
+  return mit? frac(9,25) : frac(6,20); // 3/5*3/5=9/25 ; 3/5*2/4=6/20=3/10
+}
+function urneLoad(){
+  urneDone=false; urneRunning=false;
+  $("urneTask").innerHTML="<span class='tlab'>Aufgabe</span> Du ziehst <b>zwei Kugeln nacheinander</b>. Wie wahrscheinlich ist <b>zweimal rot</b> — <span class='mono'>"+(urneZ==="mit"?"mit":"ohne")+" Zurücklegen</span>?";
+  drawUrneTree(false);
+  buildUrneOpts();
+  $("urneN").textContent="0"; $("urneRel").textContent="—"; $("urneTrue").textContent="—";
+  $("urneFeedback").textContent=""; $("urneFeedback").className="feedback";
+}
+function buildUrneOpts(){
+  const mit=urneZ==="mit";
+  const af=urneAnswerFrac();
+  // Optionen: PF3 (nicht angepasst -> 9/25 immer), PF4 (1/2*1/2=1/4), korrekt
+  let opts;
+  if(mit){
+    opts=[ {f:frac(9,25),lab:"3/5 · 3/5 — beide Stufen 3/5"}, {f:frac(1,4),lab:"1/2 · 1/2 — zwei Äste je 1/2 (PF4)"}, {f:frac(6,25),lab:"3/5 + 3/5 vereinfacht"} ];
+    return renderUrneOpts(opts, 0, af);
+  } else {
+    opts=[ {f:frac(9,25),lab:"3/5 · 3/5 — wie mit Zurücklegen (PF3)"}, {f:frac(6,20),lab:"3/5 · 2/4 — Bestand angepasst"}, {f:frac(1,4),lab:"1/2 · 1/2 — je 1/2 (PF4)"} ];
+    return renderUrneOpts(opts, 1, af);
+  }
+}
+function renderUrneOpts(opts, right, af){
+  const box=$("urneOpts"); box.innerHTML="";
+  opts.forEach((o,i)=>{ const b=document.createElement("button"); b.className="opt";
+    b.innerHTML="<span class='frac'>"+fracStr(o.f)+"</span><span class='lab'>"+o.lab+"</span>";
+    b.onclick=()=>urneAnswer(i,right,o,af); box.appendChild(b); });
+  urneOptState={opts,right,af};
+}
+let urneOptState=null;
+function urneAnswer(i,right,o,af){
+  if(urneDone)return; urneDone=true;
+  const btns=$("urneOpts").querySelectorAll(".opt"); btns.forEach(b=>b.disabled=true);
+  const correct=(i===right);
+  btns[i].classList.add(correct?"right":"wrong");
+  if(!correct) btns[right].classList.add("right");
+  drawUrneTree(true);
+  const mit=urneZ==="mit";
+  if(correct){
+    $("urneFeedback").innerHTML="<b>Richtig — "+fracStr(af)+".</b> "+(mit
+      ? "Mit Zurücklegen kommt die Kugel zurück — der Bestand bleibt 3 rot von 5, also wieder 3/5."
+      : "Ohne Zurücklegen liegt nach 'erst rot' nur noch <b>2 rote von 4</b> Kugeln. Die zweite Stufe ist 2/4, nicht 3/5.")
+      +" Prüf es mit der Simulation.";
+    $("urneFeedback").className="feedback good";
+    const key=urneZ; if(!urneHit.has(key)){ urneHit.add(key); urneProg++; document.querySelector('[data-mode="urne"] .st').textContent="✓"+urneProg; }
+    ding(true);
+  } else {
+    let why;
+    if(Math.abs(fracDec(o.f)-0.25)<1e-9) why="<b>Zwei Äste heißt nicht je 1/2.</b> Es sind 3 rote von 5 — der Ast 'rot' ist 3/5, nicht 1/2.";
+    else if(!mit && fracDec(o.f)===9/25) why="<b>Bestand nicht angepasst.</b> Ohne Zurücklegen fehlt nach dem ersten Zug eine Kugel: 2 rote von 4. Die zweite Stufe darf nicht 3/5 bleiben.";
+    else why="Schau die zweite Stufe im Baum — längs malnehmen, Bestand prüfen.";
+    $("urneFeedback").innerHTML=why+" <b>Richtig ist "+fracStr(af)+".</b>";
+    $("urneFeedback").className="feedback bad"; ding(false);
+  }
+}
+function drawUrneTree(reveal){
+  const d=urneTreeData();
+  const rootX=30,rootY=130,s1x=180,s2x=330;
+  const y1=[70,190];
+  // Endknoten je Stufe-1-Ast: rot->[35,95], blau->[165,225]
+  const ey=[[35,95],[165,225]];
+  const af=urneAnswerFrac();
+  let s="";
+  s+=el("circle",{cx:rootX,cy:rootY,r:5,fill:COL.ink});
+  const branchKeys=["rot","blau"];
+  for(let i=0;i<2;i++){
+    const b1=d.s1[i]; const isRedPath=(i===0);
+    const col1=reveal&&isRedPath?COL.good:COL.line;
+    s+=el("line",{x1:rootX,y1:rootY,x2:s1x,y2:y1[i],stroke:col1,"stroke-width":reveal&&isRedPath?2.5:1.5});
+    s+=svgText((rootX+s1x)/2,(rootY+y1[i])/2-6,b1.lab,isRedPath&&reveal?COL.good:(i===0?COL.red:COL.blue),12,"middle");
+    s+=svgText((rootX+s1x)/2,(rootY+y1[i])/2+12,fracStr(frac(b1.n,b1.d)),isRedPath&&reveal?COL.good:COL.muted,12,"middle",true);
+    s+=el("circle",{cx:s1x,cy:y1[i],r:4,fill:COL.ink});
+    const s2=d.s2after[branchKeys[i]];
+    for(let j=0;j<2;j++){
+      const b2=s2[j]; const isTarget=(i===0&&j===0); // zweimal rot
+      const col2=reveal&&isTarget?COL.good:COL.line;
+      s+=el("line",{x1:s1x,y1:y1[i],x2:s2x,y2:ey[i][j],stroke:col2,"stroke-width":isTarget&&reveal?2.5:1.2});
+      s+=svgText((s1x+s2x)/2,(y1[i]+ey[i][j])/2-4,b2.lab,isTarget&&reveal?COL.good:(j===0?COL.red:COL.blue),11,"middle");
+      s+=svgText((s1x+s2x)/2,(y1[i]+ey[i][j])/2+11,fracStr(frac(b2.n,b2.d)),isTarget&&reveal?COL.good:COL.muted,11,"middle",true);
+      s+=el("circle",{cx:s2x,cy:ey[i][j],r:3.5,fill:isTarget&&reveal?COL.good:COL.ink});
+      if(reveal){
+        const pf=frac(b1.n*b2.n,b1.d*b2.d);
+        s+=svgText(s2x+10,ey[i][j]+4,fracStr(pf),isTarget?COL.good:COL.muted,11,"start",true);
+      }
+    }
+  }
+  if(reveal) s+=svgText(s2x+10,ey[0][0]-12,"= "+fracStr(af),COL.good,12,"start",true);
+  $("urneSvg").innerHTML=s;
+}
+function urneSim(){
+  if(urneRunning)return; urneRunning=true;
+  $("urneRun1000").disabled=true;
+  const mit=urneZ==="mit";
+  let hits=0,n=0; const total=1000; let left=total;
+  const af=urneAnswerFrac();
+  const chunk=()=>{
+    const step=Math.min(left,40);
+    for(let t=0;t<step;t++){
+      // Urne: 3 rot (1), 2 blau (0)
+      let urn=[1,1,1,0,0];
+      const i1=Math.floor(Math.random()*urn.length); const c1=urn[i1];
+      if(!mit) urn.splice(i1,1);
+      const i2=Math.floor(Math.random()*urn.length); const c2=urn[i2];
+      if(c1===1&&c2===1)hits++; n++;
+    }
+    left-=step;
+    $("urneN").textContent=n; $("urneRel").textContent=pct(hits/n); $("urneTrue").textContent=fracStr(af)+" ≈ "+pct(fracDec(af));
+    if(left>0) setTimeout(chunk,16);
+    else { urneRunning=false; $("urneRun1000").disabled=false;
+      $("urneFeedback").innerHTML="<b>Simulation:</b> "+pct(hits/n)+" gemessen, "+fracStr(af)+" ≈ "+pct(fracDec(af))+" gerechnet. Die relative Häufigkeit nähert sich der berechneten Wahrscheinlichkeit.";
+      $("urneFeedback").className="feedback good"; }
+  };
+  setTimeout(chunk,0);
+}
+
+/* ==========================================================================
+   MODUS 4 — GEGENEREIGNIS  (PF7)
+   "Mindestens eine Sechs bei 2 Würfen" — mühsam vs. kurz: 1 - P(keins).
+   ========================================================================== */
+const GEGEN=[
+  { q:"Du würfelst <b>zweimal</b>. Wie wahrscheinlich ist <b>mindestens eine Sechs</b>?",
+    keine_n:25, keine_d:36, ansN:11, ansD:36,
+    opts:[ {n:25,d:36,lab:"5/6 · 5/6 — das ist 'keine Sechs'"}, {n:11,d:36,lab:"1 − 25/36 — Gegenereignis"}, {n:10,d:36,lab:"nur 'genau eine' gezählt"} ],
+    right:1,
+    long:"Mühsam: genau eine (10/36) + genau zwei (1/36) = 11/36.",
+    fb:["<b>Das ist das Gegenteil.</b> 5/6 · 5/6 = 25/36 ist 'keine einzige Sechs'. Davon musst du noch <b>auf 1 ergänzen</b>: 1 − 25/36 = 11/36.",
+        "Genau: das Gegenereignis von 'mindestens eine' ist 'keine'. 1 − 25/36 = 11/36 — viel kürzer als alle Faelle einzeln.",
+        "Du hast 'genau eine Sechs' (10/36) gerechnet. 'Mindestens eine' schliesst auch 'zwei Sechsen' ein: 10/36 + 1/36 = 11/36 = 1 − 25/36."] },
+
+  { q:"Du wirfst eine Münze <b>dreimal</b>. Wie wahrscheinlich ist <b>mindestens einmal Kopf</b>?",
+    keine_n:1, keine_d:8, ansN:7, ansD:8,
+    opts:[ {n:1,d:8,lab:"1/2·1/2·1/2 — das ist 'nie Kopf'"}, {n:7,d:8,lab:"1 − 1/8 — Gegenereignis"}, {n:3,d:8,lab:"genau einmal Kopf"} ],
+    right:1,
+    long:"Mühsam: genau 1× (3/8) + genau 2× (3/8) + genau 3× (1/8) = 7/8.",
+    fb:["<b>Das ist 'nie Kopf'.</b> 1/2·1/2·1/2 = 1/8 ist der einzige Pfad ohne Kopf. 'Mindestens einmal' ist der ganze Rest: 1 − 1/8 = 7/8.",
+        "Genau: nur ein Pfad (ZZZ) hat keinen Kopf. 1 − 1/8 = 7/8 — alle anderen sieben Pfade haben mindestens einen Kopf.",
+        "Das ist nur 'genau einmal'. 'Mindestens einmal' schliesst zwei- und dreimal ein. Kurz: 1 − P(nie) = 1 − 1/8 = 7/8."] }
+];
+let ggIdx=0, ggDone=false, ggProg=0, ggHit=new Set();
+function ggLoad(){
+  const it=GEGEN[ggIdx]; ggDone=false;
+  $("ggTask").innerHTML="<span class='tlab'>Aufgabe</span> "+it.q;
+  drawGegen(it,false);
+  const box=$("ggOpts"); box.innerHTML="";
+  it.opts.forEach((o,i)=>{ const b=document.createElement("button"); b.className="opt";
+    b.innerHTML="<span class='frac'>"+fracStr(frac(o.n,o.d))+"</span><span class='lab'>"+o.lab+"</span>";
+    b.onclick=()=>ggAnswer(i); box.appendChild(b); });
+  $("ggFeedback").textContent=""; $("ggFeedback").className="feedback"; $("ggNext").style.display="none";
+}
+function ggAnswer(i){
+  if(ggDone)return; const it=GEGEN[ggIdx]; ggDone=true;
+  const btns=$("ggOpts").querySelectorAll(".opt"); btns.forEach(b=>b.disabled=true);
+  const correct=(i===it.right); btns[i].classList.add(correct?"right":"wrong");
+  if(!correct) btns[it.right].classList.add("right");
+  drawGegen(it,true);
+  const af=frac(it.ansN,it.ansD);
+  if(correct){
+    $("ggFeedback").innerHTML="<b>Richtig — "+fracStr(af)+".</b> "+it.fb[i]+" <span class='note' style='display:block'>"+it.long+" Beide Wege liefern "+fracStr(af)+".</span>";
+    $("ggFeedback").className="feedback good";
+    if(!ggHit.has(ggIdx)){ ggHit.add(ggIdx); ggProg++; document.querySelector('[data-mode="gegen"] .st').textContent="✓"+ggProg; }
+    ding(true);
+  } else {
+    $("ggFeedback").innerHTML=it.fb[i]+" <b>Richtig ist "+fracStr(af)+".</b>"; $("ggFeedback").className="feedback bad"; ding(false);
+  }
+  $("ggNext").style.display="";
+}
+function drawGegen(it,reveal){
+  // Streifen 0..1: links P(keins) rot, rechts P(mindestens eins) grün
+  const W=440,H=200, x0=30,x1=410,y=60,h=46;
+  const keinsF=frac(it.keine_n,it.keine_d), restF=frac(it.ansN,it.ansD);
+  const k=fracDec(keinsF);
+  let s="";
+  s+=svgText((x0+x1)/2,30,"Der ganze Streifen = 1 (alle Faelle)",COL.muted,12,"middle");
+  s+=el("rect",{x:x0,y,width:x1-x0,height:h,fill:"none",stroke:COL.line,"stroke-width":1.5,rx:6});
+  if(reveal){
+    const kw=(x1-x0)*k;
+    s+=el("rect",{x:x0,y,width:kw,height:h,fill:"#3a2230",stroke:COL.bad,"stroke-width":1.5,rx:4});
+    s+=el("rect",{x:x0+kw,y,width:(x1-x0)-kw,height:h,fill:"#15281f",stroke:COL.good,"stroke-width":1.5,rx:4});
+    s+=svgText(x0+kw/2,y+h/2+5,"keins "+fracStr(keinsF),COL.bad,12,"middle",true);
+    s+=svgText(x0+kw+((x1-x0)-kw)/2,y+h/2+5,"mind. eins "+fracStr(restF),COL.good,12,"middle",true);
+    s+=svgText((x0+x1)/2,y+h+34,"P(mindestens eins) = 1 − "+fracStr(keinsF)+" = "+fracStr(restF),COL.ink,14,"middle",true);
+    s+=svgText((x0+x1)/2,y+h+58,"kurzer Weg: nur 'keins' rechnen, dann von 1 abziehen",COL.muted,11,"middle");
+  } else {
+    s+=svgText((x0+x1)/2,y+h/2+5,"?",COL.muted,28,"middle",true);
+    s+=svgText((x0+x1)/2,y+h+34,"Was ist das Gegenteil von 'mindestens eins'?",COL.muted,12,"middle");
+  }
+  $("ggSvg").innerHTML=s;
+}
+
+/* ==========================================================================
+   MODUS-WECHSEL + Events
+   ========================================================================== */
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  if(m==="sim"){ simLoad(); }
+  if(m==="pfad"){ pfLoad(); }
+  if(m==="urne"){ urneLoad(); }
+  if(m==="gegen"){ ggLoad(); }
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+/* Simulator */
+$("simGuess").oninput=()=>{ $("simGuessLab").textContent="deine Schätzung: "+$("simGuess").value+"%"; simBarRender(); };
+$("simRun10").onclick=()=>simRun(10);
+$("simRun100").onclick=()=>simRun(100);
+$("simRun1000").onclick=()=>simRun(1000);
+$("simReset").onclick=()=>{ if(simRunning)return; simHits=0; simN=0; simRender(); $("simFeedback").textContent=""; $("simFeedback").className="feedback"; };
+
+/* Pfad */
+$("pfNext").onclick=()=>{ pfIdx=(pfIdx+1)%PFAD.length; pfLoad(); };
+
+/* Urne */
+$("urneSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  if(urneRunning)return;
+  $("urneSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); urneZ=b.dataset.z; urneLoad();
+});
+$("urneRun1000").onclick=()=>urneSim();
+
+/* Gegen */
+$("ggNext").onclick=()=>{ ggIdx=(ggIdx+1)%GEGEN.length; ggLoad(); };
+
+/* Ton */
+$("tglSound").onclick=()=>{ soundOn=!soundOn; $("tglSound").classList.toggle("on",soundOn); if(soundOn)ding(true); };
+
+/* ---- Start ---- */
+setMode("sim");
+</script>
+</body>
+</html>

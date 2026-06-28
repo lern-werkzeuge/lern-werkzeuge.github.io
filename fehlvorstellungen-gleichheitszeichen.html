@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fehlvorstellungen zum Gleichheitszeichen</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --ink:      #121211;
+  --ink-soft: #3c3c38;
+  --gray:     #8a8a85;
+  --gray-2:   #b3b3ad;
+  --hair:     #e4e4de;
+  --hair-2:   #d3d3cb;
+  --paper:    #fcfcfa;
+  --fill:     #f2f2ee;
+  --fill-2:   #ebebe6;
+  --box:      #141412;
+  --serif: "Newsreader", Georgia, serif;
+  --sans:  "Hanken Grotesk", -apple-system, system-ui, sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+body { margin: 0; color: var(--ink); font-family: var(--serif); }
+em, i { font-style: italic; }
+strong { font-weight: 500; color: var(--ink); }
+a { color: inherit; }
+code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  color: var(--ink);
+  background: var(--fill);
+  padding: 1px 4px;
+}
+
+body.sw-screen {
+  padding: 30px 0;
+  background: #e6e4dd;
+}
+
+.sheet {
+  width: 794px;
+  min-height: 1123px;
+  margin: 0 auto 30px;
+  background: var(--paper);
+  padding: 60px 64px 50px;
+  position: relative;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 26px 70px -38px rgba(0,0,0,.30);
+  display: flex;
+  flex-direction: column;
+}
+
+.mast {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-bottom: 1.5px solid var(--ink);
+  padding-bottom: 11px; margin-bottom: 30px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--sans); font-weight: 600; font-size: 15px; letter-spacing: .02em;
+}
+.brand-name {
+  font-family: var(--sans); font-weight: 700; font-size: 12px;
+  letter-spacing: .17em; text-transform: uppercase; color: var(--ink); line-height: 1.1;
+}
+.brand-sub { font-style: italic; font-size: 13px; color: var(--gray); margin-top: 3px; }
+.mast-meta {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gray); text-align: right; line-height: 1.6;
+}
+
+.kicker {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--gray); margin: 0 0 12px;
+}
+.title {
+  font-family: var(--serif); font-size: 42px; font-weight: 340;
+  letter-spacing: -.02em; line-height: 1.06; color: var(--ink);
+  margin: 0 0 14px; text-wrap: balance;
+}
+.title em { font-style: italic; color: var(--ink); }
+.subtitle {
+  font-family: var(--serif); font-style: italic; font-size: 16.5px;
+  font-weight: 300; color: var(--ink-soft); margin: 0; line-height: 1.45;
+}
+.lead {
+  font-size: 14px; line-height: 1.6; color: var(--ink-soft);
+  margin: 18px 0 0; border-top: 1px solid var(--hair); padding-top: 14px;
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+}
+
+.sec { display: flex; align-items: center; gap: 13px; margin: 28px 0 14px; }
+.sec-num {
+  font-family: var(--mono); font-weight: 500; font-size: 11px;
+  color: var(--paper); background: var(--ink); padding: 3px 7px; line-height: 1;
+}
+.sec-text {
+  font-family: var(--sans); font-weight: 700; font-size: 12px;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--ink); white-space: nowrap;
+}
+.sec-rule { flex: 1 1 auto; height: 0; border-top: 1px solid var(--hair); }
+
+p.body { font-size: 13.5px; line-height: 1.62; margin: 0 0 12px; color: var(--ink-soft);
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+p.body:last-child { margin-bottom: 0; }
+.body strong { color: var(--ink); font-weight: 500; }
+
+.grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+
+.card {
+  background: #fff; border: 1px solid var(--hair-2); padding: 17px 18px 15px;
+  display: flex; flex-direction: column;
+}
+.card.key {
+  background: var(--fill); border: none; border-top: 2px solid var(--ink);
+  padding-top: 16px;
+}
+.card-head { display: flex; align-items: baseline; gap: 11px; margin-bottom: 9px; }
+.card-num {
+  font-family: var(--serif); font-weight: 300; font-size: 28px;
+  color: var(--ink); line-height: .8;
+}
+.card-num.dia { font-size: 15px; color: var(--gray); }
+.card-title {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  color: var(--ink); margin: 0; line-height: 1.2;
+}
+.card-body { font-size: 12.5px; color: var(--ink-soft); margin: 0; line-height: 1.55;
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+
+.faustregel { background: #565652; color: var(--paper); padding: 20px 24px; margin: 18px 0; }
+.faustregel .fr-lab {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--gray-2); margin: 0 0 9px;
+}
+.faustregel p {
+  font-family: var(--serif); font-style: italic; font-weight: 300;
+  font-size: 18px; line-height: 1.42; margin: 0; color: #f4f3ef;
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+}
+
+.loop { margin: 6px 0 0; border-left: 1.5px solid var(--hair-2); padding-left: 0; }
+.loop-step {
+  display: flex; align-items: baseline; gap: 14px; position: relative;
+  padding: 9px 0 9px 18px;
+}
+.loop-step::before {
+  content: ""; position: absolute; left: -5px; top: 15px;
+  width: 8px; height: 8px; background: var(--gray); border-radius: 50%;
+}
+.loop-time {
+  font-family: var(--mono); font-weight: 500; font-size: 10px;
+  letter-spacing: .04em; color: var(--ink); white-space: nowrap;
+  min-width: 28px; padding-top: 1px;
+}
+.loop-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft);
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.loop-text b { color: var(--ink); font-weight: 500; font-family: var(--sans); font-size: 12.5px; }
+
+.gate-note { border: 1px dashed var(--gray); padding: 13px 16px; margin: 14px 0 0; }
+.gate-note .gn-lab {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
+  display: block; margin-bottom: 5px;
+}
+.gate-note p { font-size: 12px; line-height: 1.55; color: var(--ink-soft); margin: 0; }
+.gate-note p + p { margin-top: 5px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0; }
+th {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; text-align: left;
+  color: var(--gray); padding: 8px 10px; border-bottom: 1.5px solid var(--ink);
+}
+td {
+  padding: 8px 10px; border-bottom: 1px solid var(--hair);
+  vertical-align: middle; color: var(--ink-soft); line-height: 1.45;
+}
+td.math { font-family: var(--sans); font-weight: 600; color: var(--ink); white-space: nowrap; width: 130px; }
+td.mono { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+tr:last-child td { border-bottom: 0; }
+.badge {
+  font-family: var(--mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 7px; white-space: nowrap; display: inline-block;
+}
+.badge.voll { background: var(--ink); color: var(--paper); }
+.badge.basis { border: 1px solid var(--ink); color: var(--ink); }
+.badge.mid { background: var(--gray-2); color: var(--ink); }
+
+blockquote.quote { margin: 16px 0; padding: 0 0 0 20px; border-left: 2px solid var(--ink); }
+blockquote.quote p {
+  font-family: var(--serif); font-style: italic; font-weight: 300;
+  font-size: 19px; line-height: 1.38; color: var(--ink); margin: 0;
+  text-wrap: balance;
+}
+blockquote.quote cite {
+  display: block; font-family: var(--mono); font-style: normal;
+  font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gray); margin-top: 10px;
+}
+
+.finding {
+  font-size: 13px; line-height: 1.55; margin: 0 0 11px; padding-left: 18px;
+  position: relative; color: var(--ink-soft);
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+}
+.finding::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 6px; height: 6px; background: var(--ink);
+}
+.finding b { color: var(--ink); font-weight: 500; font-family: var(--sans); font-size: 12.5px; }
+.finding:last-child { margin-bottom: 0; }
+
+.verdict {
+  background: var(--fill); border-top: 2px solid var(--ink);
+  padding: 18px 22px; margin: 18px 0 0;
+}
+.verdict .v-lab {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--gray); margin: 0 0 10px;
+}
+.verdict p { font-size: 13.5px; line-height: 1.6; margin: 0 0 8px; color: var(--ink-soft);
+  text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.verdict p:last-child { margin-bottom: 0; }
+.verdict p.em { font-style: italic; color: var(--ink); }
+
+.foot {
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hair);
+  font-family: var(--mono); font-size: 9px; color: var(--gray);
+  display: flex; justify-content: space-between; letter-spacing: .06em;
+}
+
+/* Stat-Kacheln (3-spaltig) */
+.stats-3 {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--ink); margin: 18px 0 8px;
+}
+.stat { padding: 18px 14px 18px 0; border-right: 1px solid var(--hair); }
+.stat:last-child { border-right: 0; }
+.stat .n {
+  font-family: var(--serif); font-weight: 300; font-size: 42px;
+  line-height: 1; letter-spacing: -.02em; color: var(--ink);
+}
+.stat .n .u { font-size: 18px; color: var(--gray); margin-left: 3px; }
+.stat .k { font-family: var(--sans); font-size: 11px; font-weight: 500; line-height: 1.35; color: var(--ink-soft); margin-top: 10px; }
+
+/* Diagramm */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 34px; }
+figure.fig { margin: 16px 0; }
+.fig-head {
+  display: flex; align-items: baseline; gap: 14px;
+  border-top: 1px solid var(--hair-2); padding-top: 10px; margin-bottom: 18px;
+}
+.fig-head .abb {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--gray);
+}
+.fig-head .ti { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink); }
+figcaption {
+  font-family: var(--sans); font-size: 11.5px; line-height: 1.5; color: var(--gray);
+  margin-top: 14px;
+  border-left: 1px solid var(--hair-2); padding-left: 14px;
+}
+.chart { width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--mono); }
+
+/* Anhang-Items */
+.items-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+.item-block {
+  border: 1px solid var(--hair-2);
+  padding: 12px 14px;
+}
+.item-label {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--gray);
+  display: block; margin-bottom: 7px;
+}
+.item-list {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  line-height: 1.75; margin: 0; padding: 0; list-style: none;
+}
+.item-list li::before { content: "›  "; color: var(--gray); }
+
+/* Stufendiagramm */
+.stufen-wrap {
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body.sw-screen { padding: 0; background: #fff; }
+  .screen-only { display: none !important; }
+  .sheet {
+    width: auto; min-height: auto; height: 100vh; margin: 0; box-shadow: none;
+    break-after: page; padding: 0.62in 0.66in;
+  }
+  .sheet:last-child { break-after: auto; }
+  .card, .faustregel, .loop-step, .gate-note,
+  blockquote.quote, .verdict, table, tr, .finding { break-inside: avoid; }
+  .sec { break-after: avoid; }
+  p.body { orphans: 3; widows: 3; }
+}
+</style>
+</head>
+<body class="sw-screen">
+
+<button class="print-btn screen-only" onclick="window.print()" style="position:fixed;top:22px;right:22px;z-index:50;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.04em;background:var(--ink);color:#fff;border:0;border-radius:999px;padding:11px 20px;cursor:pointer;box-shadow:0 8px 24px -10px rgba(0,0,0,.5);">Als PDF speichern</button>
+
+
+<!-- ═══════════════════════════════════════════════════════ SEITE 1 -->
+<section class="sheet">
+  <div class="mast">
+    <div class="brand">
+      <div class="brand-mark">MS</div>
+      <div>
+        <div class="brand-name">Michael Schippers</div>
+        <div class="brand-sub">Mathematik · IGS Delmenhorst</div>
+      </div>
+    </div>
+    <div class="mast-meta">Fachdidaktik<br>Arbeitsübersicht</div>
+  </div>
+
+  <p class="kicker">Fachdidaktik Mathematik · Prävention ab Jg. 5</p>
+  <h1 class="title">Fehlvorstellungen zum <em>Gleichheitszeichen</em></h1>
+  <p class="subtitle">Befunde, Entwicklungsmodell und didaktische Empfehlungen.</p>
+  <p class="lead">Viele Schüler:innen deuten das „=" <strong>operational</strong> — als Aufforderung „rechne aus, hier kommt das Ergebnis" — statt <strong>relational</strong> als Aussage „beide Seiten sind gleich viel wert". Diese Fehldeutung wird durch die jahrelange Übermacht der kanonischen Form <code>a + b = c</code> täglich eingeschliffen und bricht spätestens beim Termumformen und Gleichungslösen in der Algebra. Der wirksamste Hebel ist nicht spätere Reparatur, sondern frühe und durchgängige Prävention ab Jahrgang 5.</p>
+
+  <div class="sec">
+    <span class="sec-num">01</span>
+    <span class="sec-text">Die Grundunterscheidung</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:130px"></th>
+        <th>Operationale Deutung</th>
+        <th>Relationale Deutung</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="math">„=" heißt</td>
+        <td>„rechne aus → Ergebnis"</td>
+        <td>„ist gleich viel wert wie"</td>
+      </tr>
+      <tr>
+        <td class="math">gelesen als</td>
+        <td>„ergibt", „macht"</td>
+        <td>„ist gleich" / „gleich viel wie"</td>
+      </tr>
+      <tr>
+        <td class="math">Leitbild</td>
+        <td>Pfeil: Eingabe → Ausgabe</td>
+        <td>Waage: linke Seite = rechte Seite</td>
+      </tr>
+      <tr>
+        <td class="math">akzeptiert</td>
+        <td>nur <code>a + b = c</code></td>
+        <td>auch <code>c = a+b</code> · <code>a = a</code> · <code>a+b = c+d</code></td>
+      </tr>
+      <tr>
+        <td class="math">Tragweite</td>
+        <td>bricht außerhalb der Standardform</td>
+        <td>trägt bis Algebra und darüber hinaus</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="faustregel" style="margin-top:22px;">
+    <p class="fr-lab">Kerngedanke</p>
+    <p>Die operationale Deutung ist kein Fehler — sie ist ein sinnvoller erster Zugang. Das Problem ist die <em>isolierte</em> operationale Deutung, die nie um die relationale erweitert wird. Das Ziel ist nicht, operational zu ersetzen, sondern relational zu ergänzen.</p>
+  </div>
+
+  <div class="sec" style="margin-top:28px;">
+    <span class="sec-num">02</span>
+    <span class="sec-text">Konsequenzen für die Algebra</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="body">Ein relationales Verständnis des „=" ist die Voraussetzung für <strong>Äquivalenzumformungen</strong>: Wer das „=" nicht als Gleichgewicht versteht, dem erscheint „auf beiden Seiten dasselbe tun" als willkürliche Regel ohne Grund — nicht als logische Notwendigkeit. Die Fehlvorstellung ist damit kein Randproblem der Unterstufe.</p>
+
+  <blockquote class="quote">
+    <p>„Das relationale Verständnis des Gleichheitszeichens sagt den Erfolg beim Gleichungslösen in der Mittelstufe vorher — über die reine Rechenfertigkeit hinaus."</p>
+    <cite>Knuth, Stephens, McNeil &amp; Alibali (2006) · Journal for Research in Mathematics Education</cite>
+  </blockquote>
+
+  <p class="body" style="margin-top:12px;">Die Fehlvorstellung ist eine <strong>Hypothek auf die gesamte spätere Algebra</strong>: Termumformung, Variablenbegriff, Funktionen — alle setzen das relationale Verständnis voraus.</p>
+
+  <div class="foot">
+    <span>Gleichheitszeichen — Fehlvorstellungen &amp; Empfehlungen · Seite 1/4</span>
+    <span>IGS Delmenhorst · 2026</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════ SEITE 2 -->
+<section class="sheet">
+  <div class="mast">
+    <div class="brand">
+      <div class="brand-mark">MS</div>
+      <div>
+        <div class="brand-name">Michael Schippers</div>
+        <div class="brand-sub">Mathematik · IGS Delmenhorst</div>
+      </div>
+    </div>
+    <div class="mast-meta">Fachdidaktik<br>Arbeitsübersicht</div>
+  </div>
+
+  <div class="sec" style="margin-top:0;">
+    <span class="sec-num">03</span>
+    <span class="sec-text">Entwicklungsmodell: vier Stufen</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="body">Nach Rittle-Johnson et al. (2011) und Matthews et al. (2012) entwickelt sich das Verständnis in einer geordneten Progression. Das Modell ist <strong>diagnostisch nutzbar</strong>: An welcher Gleichungsform jemand scheitert, verrät die Stufe.</p>
+
+  <!-- Stufen-Progression SVG -->
+  <figure class="fig" style="margin:18px 0 14px;">
+    <div class="fig-head">
+      <span class="abb">Abb. 01</span>
+      <span class="ti">Progression des Gleichheitszeichen-Verständnisses</span>
+    </div>
+    <svg class="chart" viewBox="0 0 666 92" role="img" aria-label="Vier-Stufen-Progression">
+      <!-- Verbindungslinien -->
+      <line x1="150" y1="44" x2="170" y2="44" stroke="#d3d3cb" stroke-width="1.5"/>
+      <polygon points="168,40 174,44 168,48" fill="#d3d3cb"/>
+      <!-- Sprung 2→3: deutlicher -->
+      <line x1="316" y1="44" x2="332" y2="44" stroke="#121211" stroke-width="2.5"/>
+      <polygon points="330,38 338,44 330,50" fill="#121211"/>
+      <text x="324" y="84" text-anchor="middle" font-size="9" fill="#8a8a85" font-family="'Hanken Grotesk', sans-serif" font-weight="600" letter-spacing="0.06em">SPRUNG</text>
+      <!-- Linie 3→4 -->
+      <line x1="482" y1="44" x2="498" y2="44" stroke="#d3d3cb" stroke-width="1.5"/>
+      <polygon points="496,40 502,44 496,48" fill="#d3d3cb"/>
+
+      <!-- Stufe 1 -->
+      <rect x="0" y="4" width="150" height="72" fill="#f2f2ee" stroke="#d3d3cb" stroke-width="1"/>
+      <text x="75" y="26" text-anchor="middle" font-size="9.5" fill="#8a8a85" font-family="'Hanken Grotesk', sans-serif" font-weight="600" letter-spacing="0.12em">STUFE 1</text>
+      <text x="75" y="45" text-anchor="middle" font-size="13" fill="#121211" font-weight="500">rigide</text>
+      <text x="75" y="62" text-anchor="middle" font-size="12" fill="#5e5e58">operational</text>
+
+      <!-- Stufe 2 -->
+      <rect x="174" y="4" width="142" height="72" fill="#f2f2ee" stroke="#d3d3cb" stroke-width="1"/>
+      <text x="245" y="26" text-anchor="middle" font-size="9.5" fill="#8a8a85" font-family="'Hanken Grotesk', sans-serif" font-weight="600" letter-spacing="0.12em">STUFE 2</text>
+      <text x="245" y="45" text-anchor="middle" font-size="13" fill="#121211" font-weight="500">flexibel</text>
+      <text x="245" y="62" text-anchor="middle" font-size="12" fill="#5e5e58">operational</text>
+
+      <!-- Stufe 3 -->
+      <rect x="338" y="4" width="144" height="72" fill="#f2f2ee" stroke="#121211" stroke-width="1.5"/>
+      <text x="410" y="26" text-anchor="middle" font-size="9.5" fill="#8a8a85" font-family="'Hanken Grotesk', sans-serif" font-weight="600" letter-spacing="0.12em">STUFE 3</text>
+      <text x="410" y="45" text-anchor="middle" font-size="13" fill="#121211" font-weight="500">basal</text>
+      <text x="410" y="62" text-anchor="middle" font-size="12" fill="#5e5e58">relational</text>
+
+      <!-- Stufe 4 -->
+      <rect x="502" y="4" width="164" height="72" fill="#141412"/>
+      <text x="584" y="26" text-anchor="middle" font-size="9.5" fill="#8a8a85" font-family="'Hanken Grotesk', sans-serif" font-weight="600" letter-spacing="0.12em">STUFE 4</text>
+      <text x="584" y="45" text-anchor="middle" font-size="13" fill="#f4f3ef" font-weight="500">vergleichend</text>
+      <text x="584" y="62" text-anchor="middle" font-size="12" fill="#b3b3ad">relational</text>
+    </svg>
+    <figcaption>Der entscheidende Sprung liegt zwischen Stufe 2 und 3. Stufe 4 ist das eigentliche algebraische Denken: <code>27 + 48 = 27 + ☐</code> wird durch Vergleichen gelöst — ohne zu rechnen.</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:72px">Stufe</th>
+        <th style="width:160px">Bezeichnung</th>
+        <th>Verständnis</th>
+        <th>Akzeptiert / kann</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="math">1</td>
+        <td>rigide operational</td>
+        <td>„= = rechne, Ergebnis rechts"</td>
+        <td>nur <code>a + b = c</code></td>
+      </tr>
+      <tr>
+        <td class="math">2</td>
+        <td>flexibel operational</td>
+        <td>Ergebnis darf auch links stehen</td>
+        <td>auch <code>c = a+b</code>, <code>a = a</code></td>
+      </tr>
+      <tr>
+        <td class="math">3</td>
+        <td>basal relational</td>
+        <td>„=" als Gleichwertigkeit</td>
+        <td>auch <code>a+b = c+d</code></td>
+      </tr>
+      <tr>
+        <td class="math">4</td>
+        <td>vergleichend relational</td>
+        <td>Struktur sehen statt rechnen</td>
+        <td><code>a+b = c+d</code> durch <em>Vergleichen</em> lösen</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sec">
+    <span class="sec-num">04</span>
+    <span class="sec-text">Typische Fehlvorstellungen &amp; Symptome</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="finding"><b>Platzhalter-Fehler.</b> Bei <code>8 + 4 = ☐ + 5</code> tragen die meisten <strong>12</strong> ein (nur links gerechnet, „+5" ignoriert), manche <strong>17</strong> (alles addiert). In der Studie von Falkner, Levi &amp; Carpenter (1999) gaben in Klasse 1/2 nur <strong>5 %</strong> die richtige Antwort 7. Das Muster hält sich bis weit in die Sekundarstufe.</p>
+
+  <p class="finding"><b>Die „und-dann"-Kette.</b> Notiert wird <code>3 + 4 = 7 + 2 = 9</code>. Das „=" wird als „und weiter" gelesen — die Aussage ist als Gleichung falsch, denn <code>7 ≠ 9</code>. Die Kette ist ein direktes Abbild der operationalen Lesart und taucht regelmäßig auch an der Tafel auf.</p>
+
+  <p class="finding"><b>Ablehnung nichtkanonischer Formen.</b> <code>8 = 8</code> wird abgelehnt: „da fehlt eine Rechnung". <code>9 = 5 + 4</code> gilt als „verkehrt herum". <code>13 − 0 = 14 − 1</code> wird nicht ohne Ausrechnen beider Seiten als wahr erkannt.</p>
+
+  <p class="finding"><b>Compulsion to calculate.</b> Selbst wo Struktur reichen würde — <code>345 + 0 = ☐</code> — wird gerechnet statt geschaut. Stufe 4 (vergleichend relational) ist nicht erreicht.</p>
+
+  <div class="foot">
+    <span>Gleichheitszeichen — Fehlvorstellungen &amp; Empfehlungen · Seite 2/4</span>
+    <span>IGS Delmenhorst · 2026</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════ SEITE 3 -->
+<section class="sheet">
+  <div class="mast">
+    <div class="brand">
+      <div class="brand-mark">MS</div>
+      <div>
+        <div class="brand-name">Michael Schippers</div>
+        <div class="brand-sub">Mathematik · IGS Delmenhorst</div>
+      </div>
+    </div>
+    <div class="mast-meta">Fachdidaktik<br>Arbeitsübersicht</div>
+  </div>
+
+  <div class="sec" style="margin-top:0;">
+    <span class="sec-num">05</span>
+    <span class="sec-text">Warum die Fehlvorstellung entsteht</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:12px;">
+    <div class="card key">
+      <div class="card-head"><span class="card-num">1</span><h3 class="card-title">Übermacht der Standardform</h3></div>
+      <p class="card-body">Im Heft, an der Tafel, im Kopfrechnen erscheint fast ausschließlich <code>a + b = c</code>. Die relationale Lesart wird nie gebraucht, also nie gebildet.</p>
+    </div>
+    <div class="card key">
+      <div class="card-head"><span class="card-num">2</span><h3 class="card-title">Sprache</h3></div>
+      <p class="card-body">„3 plus 4 <em>macht</em> 7", „<em>ergibt</em>" — die Alltagssprache kodiert das „=" als Ergebnisansage, nicht als Gleichheit.</p>
+    </div>
+    <div class="card key">
+      <div class="card-head"><span class="card-num">3</span><h3 class="card-title">Schulbuchstruktur</h3></div>
+      <p class="card-body">Das „=" wird in Klasse 1 eingeführt und danach kaum thematisiert. Es wird vorausgesetzt, nicht aufgebaut (Powell 2012).</p>
+    </div>
+  </div>
+  <div class="grid" style="margin-bottom:0;">
+    <div class="card key">
+      <div class="card-head"><span class="card-num">4</span><h3 class="card-title">Tafelpraxis</h3></div>
+      <p class="card-body">Wird an der Tafel selbst in Ketten gerechnet (<code>3 + 4 = 7 · 2 = 14</code>), stützt das Vorbild die Fehldeutung aktiv.</p>
+    </div>
+    <div class="card key">
+      <div class="card-head"><span class="card-num">5</span><h3 class="card-title">Taschenrechner</h3></div>
+      <p class="card-body">Die „="-Taste <em>führt aus</em> — sie verstärkt täglich die Lesart „= heißt: jetzt kommt das Ergebnis".</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <span class="sec-num">06</span>
+    <span class="sec-text">Diagnose — Fehlvorstellung sichtbar machen</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="body">Standardaufgaben (<code>a + b = c</code>) decken <em>nichts</em> auf, weil operationale und relationale Deutung dort dasselbe Ergebnis liefern. Sichtbar wird die Fehlvorstellung nur an <strong>nichtkanonischen</strong> Aufgaben. Die Antwortmuster lassen sich direkt auf die vier Stufen abbilden.</p>
+
+  <div class="items-grid">
+    <div class="item-block">
+      <span class="item-label">Leerstellen (beide Seiten)</span>
+      <ul class="item-list">
+        <li><code>8 + 4 = ☐ + 5</code></li>
+        <li><code>5 + ☐ = 4 + 3</code></li>
+        <li><code>☐ + 2 = 6 + 1</code></li>
+        <li><code>9 + 3 = ☐ + 7</code></li>
+      </ul>
+      <p style="font-family:var(--sans);font-size:11px;color:var(--gray);margin:8px 0 0;line-height:1.4;">Antwort „12" = operational. Richtige Antwort zeigt Stufe 3+.</p>
+    </div>
+    <div class="item-block">
+      <span class="item-label">Wahr / Falsch (ohne Ergebnisseite)</span>
+      <ul class="item-list">
+        <li><code>7 = 3 + 4</code></li>
+        <li><code>5 + 2 = 4 + 3</code></li>
+        <li><code>8 = 8</code></li>
+        <li><code>13 − 0 = 14 − 1</code></li>
+      </ul>
+      <p style="font-family:var(--sans);font-size:11px;color:var(--gray);margin:8px 0 0;line-height:1.4;">Ablehnung von <code>8 = 8</code> oder <code>7 = 3+4</code> = Stufe 1–2.</p>
+    </div>
+    <div class="item-block">
+      <span class="item-label">Ohne Rechnen begründen</span>
+      <ul class="item-list">
+        <li><code>27 + 48 = 27 + ☐</code></li>
+        <li><code>345 + 0 = ☐</code></li>
+        <li><code>a + 5 = a + ☐</code></li>
+      </ul>
+      <p style="font-family:var(--sans);font-size:11px;color:var(--gray);margin:8px 0 0;line-height:1.4;">Wer rechnet statt vergleicht, ist noch nicht auf Stufe 4.</p>
+    </div>
+    <div class="item-block">
+      <span class="item-label">Offene Definitionsfrage</span>
+      <ul class="item-list" style="list-style:none;">
+        <li style="padding-left:0;"><span style="color:var(--gray)">„</span>Was bedeutet das Zeichen <code>=</code>? Erkläre mit eigenen Worten und einem Beispiel.<span style="color:var(--gray)">"</span></li>
+      </ul>
+      <p style="font-family:var(--sans);font-size:11px;color:var(--gray);margin:8px 0 0;line-height:1.4;">„Da kommt das Ergebnis" vs. „beide Seiten sind gleich" trennen direkt.</p>
+    </div>
+  </div>
+
+  <div class="gate-note" style="margin-top:16px;">
+    <span class="gn-lab">Hinge-Fragen</span>
+    <p>Die Aufgaben eignen sich als Hinge-Fragen im Sinne der formativen Diagnostik (ReMa): kurze Diagnosepunkte, die den Unterrichtsfluss minimal unterbrechen und die nächste Differenzierungsentscheidung treiben.</p>
+  </div>
+
+  <div class="foot">
+    <span>Gleichheitszeichen — Fehlvorstellungen &amp; Empfehlungen · Seite 3/4</span>
+    <span>IGS Delmenhorst · 2026</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════ SEITE 4 -->
+<section class="sheet">
+  <div class="mast">
+    <div class="brand">
+      <div class="brand-mark">MS</div>
+      <div>
+        <div class="brand-name">Michael Schippers</div>
+        <div class="brand-sub">Mathematik · IGS Delmenhorst</div>
+      </div>
+    </div>
+    <div class="mast-meta">Fachdidaktik<br>Arbeitsübersicht</div>
+  </div>
+
+  <div class="sec" style="margin-top:0;">
+    <span class="sec-num">07</span>
+    <span class="sec-text">Didaktische Empfehlungen</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="body" style="margin-bottom:14px;"><strong>Leitprinzip: Prävention statt Reparatur.</strong> Eine einmal eingeschliffene operationale Deutung umzudeuten ist deutlich schwerer, als von Anfang an beide Deutungen aufzubauen. Die folgenden Maßnahmen brauchen kein Extra-Material und laufen nebenher.</p>
+
+  <div class="loop">
+    <div class="loop-step">
+      <span class="loop-time">Ab Jg. 5</span>
+      <span class="loop-text"><b>Formenvielfalt von Anfang an.</b> <code>a = b+c</code>, <code>a = a</code>, <code>a+b = c+d</code> regelmäßig neben <code>a+b = c</code> verwenden, damit die Standardform nicht zur heimlichen Definition des „=" wird.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Leitbild</span>
+      <span class="loop-text"><b>Waage als Grundbild.</b> Das Gleichgewichtsbild früh und durchgängig einsetzen: „Was links gilt, gilt auch rechts." Trägt später bruchlos zu den Äquivalenzumformungen.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Sprache</span>
+      <span class="loop-text"><b>Relationale Sprache konsequent.</b> „Ist gleich viel wie" statt „ergibt / macht". Das „=" beim Vorrechnen nicht als Ergebnis-Trenner sprechen.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Routine</span>
+      <span class="loop-text"><b>Wahr/Falsch- und Leerstellen-Aufgaben.</b> Als kurze, wiederkehrende Einstiege (Carpenter, Franke &amp; Levi 2003). Zwei Minuten pro Stunde genügen — der Effekt liegt in der Regelmäßigkeit.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Stufe 4</span>
+      <span class="loop-text"><b>Strukturblick fördern.</b> Aufgaben „ohne Rechnen" lösen lassen (<code>27 + 48 = 27 + ☐</code>) und das Vergleichen explizit wertschätzen. Das zielt direkt auf vergleichend-relationales Denken.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Vorbild</span>
+      <span class="loop-text"><b>Keine Ketten an der Tafel.</b> Kein <code>3 + 4 = 7 · 2 = 14</code>. Jede Zeile eine wahre Gleichung — die Tafel ist das stärkste Modell, das Lernende täglich sehen.</span>
+    </div>
+    <div class="loop-step">
+      <span class="loop-time">Sek I</span>
+      <span class="loop-text"><b>Reparatur, wo Fehlvorstellung sitzt.</b> Gezielt nichtkanonische Formen vorlegen, die Fehldeutung explizit thematisieren — und über die Waage neu verankern, <em>bevor</em> Äquivalenzumformungen eingeführt werden.</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <span class="sec-num">08</span>
+    <span class="sec-text">Kerncurriculum Niedersachsen · IGS</span>
+    <span class="sec-rule"></span>
+  </div>
+
+  <p class="body">Das KC behandelt das „=" als Äquivalenzzeichen <strong>fachlich vorbildlich</strong> — aber erst im Lernbereich „Gleichungen" in <strong>Jahrgang 8</strong>. Bis dahin ist die operationale Lesart in Jg. 5/6 fünf Jahre lang täglich eingeschliffen worden. Das KC betreibt damit Reparatur statt Prävention an einer Stelle, an der Prävention nahezu kostenlos wäre.</p>
+
+  <div class="verdict">
+    <p class="v-lab">Fachkonferenz-Vorschlag</p>
+    <p>Die relationalen Bausteine — Formenvielfalt, Wahr/Falsch-Routine, Waage-Sprache — als schuleigene Vorgabe <strong>ab Jahrgang 5</strong> verankern. Nicht als neues Thema, sondern als durchgängiges Sprach- und Aufgabenprinzip.</p>
+    <p class="em">Das ist ein konkreter, beschlussfähiger Vorschlag und schließt die Lücke, die das KC offenlässt.</p>
+  </div>
+
+  <div class="gate-note" style="margin-top:18px;">
+    <span class="gn-lab">Forschungsbasis</span>
+    <p>Behr, Erlwanger &amp; Nichols (1980) · Carpenter, Franke &amp; Levi (2003) · Falkner, Levi &amp; Carpenter (1999) · Kieran (1981) · Knuth, Stephens, McNeil &amp; Alibali (2006) · Matthews, Rittle-Johnson, McEldoon &amp; Taylor (2012) · McNeil &amp; Alibali (2005) · Powell (2012) · Rittle-Johnson, Matthews, Taylor &amp; McEldoon (2011) · vom Hofe (1995).</p>
+  </div>
+
+  <div class="foot">
+    <span>Gleichheitszeichen — Fehlvorstellungen &amp; Empfehlungen · Seite 4/4</span>
+    <span>IGS Delmenhorst · 2026</span>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figuren-Werkstatt · Klasse 5</title>
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     GEMEINSAMES DESIGN-SYSTEM "Mathe-Werkstatt Klasse 5"
+     (hell & verspielt — 1:1 aus Koordinaten-Werkstatt, Akzent = Grün)
+     ========================================================= */
+  :root{
+    --bg:#fef7ec; --bg2:#fff1dc;
+    --card:#ffffff; --ink:#2b2d42; --muted:#6b7280; --dim:#9aa3b2;
+    --line:#efe6d6; --line2:#e4d8c4;
+    --coral:#ff6b6b; --teal:#1db5a4; --sky:#2f93dd; --sun:#ffbf3c;
+    --grass:#54bf63; --grape:#8b5cf6;
+    /* Tool-Akzent: Figuren = Grün */
+    --accent:#2f9e57; --accent-d:#1f7a41; --accent-soft:#e6f6ec;
+    --ok:#54bf63; --ok-soft:#e6f6e9; --no:#ff6b6b; --no-soft:#ffe9e9;
+    --head:'Fredoka',system-ui,sans-serif;
+    --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;
+    -webkit-font-smoothing:antialiased}
+  body{background:
+      radial-gradient(900px 500px at 88% -6%, #fff6e0, transparent 60%),
+      radial-gradient(700px 500px at 0% 102%, #eafaf0, transparent 55%),
+      var(--bg);
+    min-height:100vh;padding:0 0 70px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+
+  /* ---- Header ---- */
+  header{padding:26px 0 18px}
+  .kicker{font-family:var(--head);font-weight:600;font-size:13px;letter-spacing:.04em;
+    color:var(--accent-d);background:var(--accent-soft);display:inline-flex;align-items:center;gap:8px;
+    padding:6px 14px;border-radius:999px}
+  h1{font-family:var(--head);font-weight:700;font-size:38px;line-height:1.05;margin-top:14px;letter-spacing:-.01em}
+  h1 .em{color:var(--accent)}
+  .lead{font-size:17px;color:var(--muted);margin-top:8px;max-width:680px}
+  .mascot{font-size:42px;line-height:1}
+
+  /* ---- Stepper ---- */
+  .steps{display:flex;gap:10px;margin:22px 0 18px;flex-wrap:wrap}
+  .step{flex:1;min-width:200px;cursor:pointer;background:var(--card);border:2px solid var(--line);
+    border-radius:18px;padding:13px 15px;display:flex;gap:12px;align-items:center;transition:.15s;
+    box-shadow:0 2px 0 var(--line)}
+  .step:hover{transform:translateY(-2px);border-color:var(--line2)}
+  .step.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 3px 0 var(--accent-d)}
+  .step .badge{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--bg2);
+    display:flex;align-items:center;justify-content:center;font-size:21px}
+  .step.on .badge{background:#fff}
+  .step .stxt .n{font-family:var(--head);font-weight:600;font-size:12px;color:var(--dim)}
+  .step.on .stxt .n{color:var(--accent-d)}
+  .step .stxt .t{font-family:var(--head);font-weight:600;font-size:15.5px;margin-top:1px}
+
+  /* ---- Grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch}
+  #panelHost{display:flex;flex-direction:column}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+  .toolbar-hint{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:500;
+    font-size:14px;color:var(--accent-d);background:var(--accent-soft);border:2px dashed var(--accent);
+    border-radius:14px;padding:9px 14px;margin-bottom:10px}
+  .toolbar-hint .pop{font-size:20px}
+
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;overflow:hidden;
+    box-shadow:0 3px 0 var(--line)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;
+    border-bottom:2px solid var(--line);background:#fffdf8}
+  .card-top .tt{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);
+    display:flex;align-items:center;gap:8px}
+
+  .stage{position:relative;background:#fff}
+  #ggb{width:100%;min-height:500px}
+  .ovl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    gap:12px;text-align:center;padding:36px;background:#fff}
+  .ovl.show{display:flex}
+  .ovl .big{font-size:42px}
+  .ovl.load{color:var(--dim);font-family:var(--head)}
+  .spin{width:32px;height:32px;border:4px solid var(--line2);border-top-color:var(--accent);
+    border-radius:50%;animation:rot .9s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* ---- Panel (rechts) ---- */
+  .panel{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;
+    box-shadow:0 3px 0 var(--line);flex:1;overflow-y:auto}
+  .panel + .panel{margin-top:14px}
+  .panel h3{font-family:var(--head);font-weight:600;font-size:17px;margin-bottom:4px;
+    display:flex;align-items:center;gap:8px}
+  .panel .task{font-size:15px;color:var(--ink);margin:8px 0}
+  .panel .hint{font-size:13.5px;color:var(--muted)}
+
+  /* Mess-/Zahl-Chips */
+  .coords{display:flex;gap:10px;margin:14px 0}
+  .chip{flex:1;border-radius:16px;padding:12px;text-align:center;border:2px solid}
+  .chip.x{background:#e6f6ec;border-color:#bfe6cd}
+  .chip.y{background:#fff3df;border-color:#ffe0a8}
+  .chip .lab{font-family:var(--head);font-weight:600;font-size:13px;color:var(--muted)}
+  .chip .num{font-family:var(--head);font-weight:700;font-size:34px;line-height:1.1}
+  .chip.x .num{color:var(--accent)} .chip.y .num{color:var(--sun)}
+
+  /* Buttons */
+  .btn{font-family:var(--head);font-weight:600;font-size:15px;cursor:pointer;border:none;
+    border-radius:14px;padding:11px 18px;transition:.12s;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-d)}
+  .btn.primary:hover{transform:translateY(-1px)}
+  .btn.primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-d)}
+  .btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line2)}
+  .btn.ghost:hover{border-color:var(--accent)}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+
+  /* Aufgaben-Fortschritt / Begriffs-Chips */
+  .targets{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+  .tg{font-family:var(--head);font-weight:600;font-size:14px;border-radius:12px;padding:7px 11px;
+    border:2px solid var(--line2);background:#fff;color:var(--muted);cursor:pointer}
+  .tg.cur{border-color:var(--accent);color:var(--accent-d);background:var(--accent-soft)}
+  .tg.done{border-color:var(--ok);color:#2f7d3a;background:var(--ok-soft)}
+  .tg.done::before{content:"✓ "}
+
+  /* Feedback */
+  .feedback{border-radius:14px;padding:12px 14px;font-size:14.5px;font-weight:600;margin-top:12px;
+    display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--ok-soft);color:#2f7d3a;border:2px solid var(--ok)}
+  .feedback.no{background:var(--no-soft);color:#c0392b;border:2px solid var(--no)}
+  .feedback.info{background:var(--accent-soft);color:var(--accent-d);border:2px solid #bfe6cd}
+
+  /* Lese-/Mess-Eingaben */
+  .readrow{display:flex;align-items:center;gap:8px;margin:9px 0;flex-wrap:wrap}
+  .readrow .pt{font-family:var(--head);font-weight:700;font-size:18px;width:34px}
+  .readrow input{width:64px;font-family:var(--head);font-weight:700;font-size:17px;text-align:center;
+    border:2px solid var(--line2);border-radius:10px;padding:7px 4px;color:var(--ink)}
+  .readrow input:focus{outline:none;border-color:var(--accent)}
+  .readrow .paren{font-family:var(--head);font-weight:700;font-size:16px;color:var(--muted)}
+  .readrow .unit{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted)}
+
+  /* Slider-Reihe (parametrisch) */
+  .sliders{margin:12px 0}
+  .sl{display:flex;align-items:center;gap:10px;margin:10px 0}
+  .sl label{font-family:var(--head);font-weight:600;font-size:14px;width:88px;color:var(--ink)}
+  .sl input[type=range]{flex:1;accent-color:var(--accent)}
+  .sl .val{font-family:var(--head);font-weight:700;font-size:16px;color:var(--accent-d);width:46px;text-align:right}
+
+  /* Anleitungs-Box */
+  .howto{background:#fffdf8;border:2px solid var(--line);border-radius:16px;padding:13px 15px;margin-top:14px}
+  .howto h4{font-family:var(--head);font-weight:600;font-size:14.5px;margin-bottom:6px;color:var(--accent-d)}
+  .howto ol{margin:0 0 0 18px;font-size:14px;color:var(--ink)}
+  .howto li{margin:5px 0}
+
+  /* Profi-Bereich (Differenzierung) */
+  .profi{margin-top:14px;border-top:2px dashed var(--line2);padding-top:12px}
+  .profi-toggle{font-family:var(--head);font-weight:600;font-size:14.5px;cursor:pointer;width:100%;
+    text-align:left;background:#fff7e8;color:var(--accent-d);border:2px solid #ffe0a8;border-radius:14px;
+    padding:10px 14px;transition:.12s}
+  .profi-toggle span{font-weight:500;color:var(--muted);font-size:12.5px}
+  .profi-toggle:hover{border-color:var(--sun)}
+  .profi-toggle.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-d)}
+  .profi-body{display:none;margin-top:10px}
+  .profi-body.show{display:block}
+
+  footer{margin-top:34px;text-align:center;color:var(--dim);font-size:13px;font-family:var(--head)}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span class="mascot">📐</span>
+      <div>
+        <span class="kicker">📐 Mathe-Werkstatt · Klasse 5</span>
+        <h1>Die <span class="em">Figuren</span>-Werkstatt</h1>
+      </div>
+    </div>
+    <p class="lead">Vielecke haben <b>Ecken</b> und <b>Seiten</b>. Du baust Figuren selbst,
+      misst ihre Seiten, rechnest den <b>Umfang</b> aus und lernst, wie man einen Würfel als
+      <b>Schrägbild</b> zeichnet. Los geht's! 🧱</p>
+  </header>
+
+  <!-- STEPPER -->
+  <div class="steps" id="steps">
+    <div class="step on" data-st="0"><span class="badge">🔺</span><div class="stxt"><div class="n">Station 1</div><div class="t">Vielecke bauen</div></div></div>
+    <div class="step" data-st="1"><span class="badge">📏</span><div class="stxt"><div class="n">Station 2</div><div class="t">Längen messen</div></div></div>
+    <div class="step" data-st="2"><span class="badge">🟩</span><div class="stxt"><div class="n">Station 3</div><div class="t">Rechteck & Umfang</div></div></div>
+    <div class="step" data-st="3"><span class="badge">🧱</span><div class="stxt"><div class="n">Station 4</div><div class="t">Schrägbild</div></div></div>
+  </div>
+
+  <div class="grid">
+    <!-- LINKS: GeoGebra -->
+    <div>
+      <div class="toolbar-hint"><span class="pop">🧰</span> Dein <b>Werkzeugkasten</b> ist oben im weißen Bild — dort wählst du Werkzeuge (z.&nbsp;B. das&nbsp;Vieleck).</div>
+      <div class="card">
+        <div class="card-top">
+          <span class="tt">🖥️ GeoGebra</span>
+          <button class="btn ghost" id="resetView" style="padding:7px 12px;font-size:13px">↺ Ansicht</button>
+        </div>
+        <div class="stage">
+          <div id="ggb"></div>
+          <div class="ovl load show" id="ovlLoad"><div class="spin"></div>GeoGebra wird geladen …</div>
+          <div class="ovl" id="ovlFail"><div class="big">😕</div><b>GeoGebra lädt nicht.</b>
+            <div style="color:var(--muted)">Dafür braucht das Tablet/der Computer Internet.<br>Bitte Seite neu laden.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Aufgaben/Steuerung -->
+    <div id="panelHost"></div>
+  </div>
+
+  <footer>Figuren-Werkstatt · zum Bauen, Messen und Schrägbilder zeichnen</footer>
+</div>
+
+<script>
+/* ============================================================
+   Figuren-Werkstatt — GeoGebra-gesteuert (Klasse 5)
+   Stationen: Vielecke · Längen messen · Rechteck & Umfang · Schrägbild
+   ============================================================ */
+var api=null, ready=false, curSt=0;
+var ignoreAdds=true;          // ignoriert Objekte, die das Programm selbst anlegt
+var mode=null;                // 'poly' | null
+
+/* Objekte sicher anlegen, ohne den Add-Listener auszulösen */
+function ggbSilent(fn){ ignoreAdds=true; try{fn();}catch(e){} setTimeout(function(){ignoreAdds=false;},90); }
+
+/* Alle Objekte löschen (für sauberen Stationswechsel) */
+function clearAll(){
+  if(!api) return;
+  ignoreAdds=true;
+  try{ api.evalCommand('Delete[]'); }catch(e){}
+  try{
+    var all=api.getAllObjectNames();
+    for(var i=all.length-1;i>=0;i--){ try{api.deleteObject(all[i]);}catch(e){} }
+  }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},80);
+}
+
+function num(x){ return Math.round(x*100)/100; }
+function near(a,b){ return Math.abs(a-b)<0.22; }
+
+function resetView(){ if(api){ try{api.setCoordSystem(-1.5,11.5,-1.5,9.5);}catch(e){} } }
+
+/* Einrasten aufs Gitter erneut erzwingen (nach Moduswechsel / vor Kind-Konstruktion) */
+function snapOn(){ if(api){ try{ api.setPointCapturing(1,3); }catch(e){} } }
+
+/* ---------- Applet ---------- */
+function onLoad(g){
+  api=g;
+  try{ api.setPerspective('G'); }catch(e){}
+  try{ api.setGridVisible(true); api.setAxesVisible(true,true); }catch(e){}
+  /* Einrasten aufs ganzzahlige Gitter — Feinmotorik am Tablet (großzügig) */
+  try{ api.setPointCapturing(1,3); }catch(e){}   // 1 = an, 3 = automatisch/fix aufs Gitter
+  resetView();
+  api.registerAddListener(function(name){
+    if(ignoreAdds) return;
+    handleUserObject(name);
+  });
+  ready=true;
+  document.getElementById('ovlLoad').classList.remove('show');
+  applyStation(0);
+}
+function showFail(){ document.getElementById('ovlLoad').classList.remove('show');
+  document.getElementById('ovlFail').classList.add('show'); }
+
+/* ============================================================
+   STATIONEN
+   ============================================================ */
+var STATIONS=[
+
+ {/* 0 — Vielecke bauen */
+  title:'🔺 Vielecke selber bauen',
+  build:function(){
+    return '<div class="word">Ein <b>Vieleck</b> ist eine Figur mit geraden Seiten — '+
+        'zum Beispiel ein Dreieck oder ein Viereck.</div>'+
+      '<div class="howto step"><h4>So baust du eine Figur</h4><ol>'+
+        '<li>Oben das <b>Vieleck-Werkzeug</b> antippen <span class="ico">🔺</span> '+
+          '(<b>3. Knopf</b> von links).</li>'+
+        '<li>Eine <b>Ecke</b> antippen, dann die nächste, dann die nächste …</li>'+
+        '<li><b>Zum Schließen die allererste Ecke nochmal antippen.</b> Erst dann ist die Figur fertig.</li>'+
+      '</ol><div class="snaphint">✨ Die Ecken <b>rasten von selbst</b> auf die Gitterpunkte ein — du musst nicht genau treffen.</div></div>'+
+      '<div class="task" style="margin-top:12px">Bau diese Figuren. Tippe eine an, dann ist sie dein Ziel:</div>'+
+      '<div class="targets" id="tgs"></div>'+
+      '<div class="feedback show info" id="fb0">📌 <b>Dreieck</b> = 3 Ecken &amp; 3 Seiten · '+
+      '<b>Viereck</b> = 4 · <b>Fünfeck</b> = 5. Ecken und Seiten sind immer gleich viele!</div>'+
+      '<div class="btn-row"><button class="btn ghost" id="clr0">🗑️ Alles löschen</button></div>';
+  },
+  enter:function(){
+    polyTargets=[{n:3,t:'Dreieck'},{n:4,t:'Viereck'},{n:5,t:'Fünfeck'}];
+    polyIdx=0; mode='poly';
+    clearAll();
+    try{ api.setMode(16); }catch(e){} // Vieleck-Werkzeug
+    snapOn();                          // Einrasten aufs Gitter sicherstellen
+    renderPolyTargets();
+    document.getElementById('clr0').onclick=function(){ clearAll(); snapOn(); try{api.setMode(16);}catch(e){} fb('fb0','info','Sauber! Bau die nächste Figur.'); };
+  }},
+
+ {/* 1 — Längen messen */
+  title:'📏 Seiten messen & Umfang rechnen',
+  build:function(){
+    return '<div class="word">Der <b>Umfang</b> ist der Weg <b>einmal außen um die Figur herum</b>. '+
+        'Du misst jede Seite und zählst alle zusammen.</div>'+
+      '<div class="howto step"><h4>So misst du eine Seite</h4><ol>'+
+        '<li>Oben das <b>Strecken-Werkzeug</b> antippen <span class="ico">📏</span> '+
+          '(<b>2. Knopf</b> von links).</li>'+
+        '<li>Auf die <b>eine Ecke</b> tippen, dann auf die <b>andere Ecke</b> derselben Seite.</li>'+
+        '<li>GeoGebra schreibt die <b>Länge</b> direkt an die Strecke. Diese Zahl trägst du unten ein.</li>'+
+      '</ol></div>'+
+      '<div class="task" style="margin-top:12px">Trag jede Seite ein — die App zählt sie unten <b>von selbst zusammen</b>:</div>'+
+      '<div id="measRows"></div>'+
+      '<div class="livesum" id="liveSum"><span>Zusammen bis jetzt:</span><b id="liveSumVal">0</b><span class="unit">Kästchen</span></div>'+
+      '<div class="readrow" style="margin-top:10px"><span class="pt" style="color:var(--accent-d)">U =</span>'+
+      '<input id="umf" type="number" inputmode="numeric"><span class="unit">Kästchen</span></div>'+
+      '<div class="btn-row"><button class="btn primary" id="chk1">✓ Umfang prüfen</button>'+
+      '<button class="btn ghost" id="next1">Nächste Figur ➜</button></div>'+
+      '<div class="feedback" id="fb1"></div>'+
+      '<div class="profi" id="profiBox1">'+
+        '<button class="profi-toggle" id="profiBtn1">⭐ Profi: knifflige Figuren <span>(schräge Seiten, mehr Ecken)</span></button>'+
+      '</div>';
+  },
+  enter:function(){
+    mode='measure'; clearAll();
+    try{ api.setMode(15); }catch(e){} // Strecken-Werkzeug (zeigt Länge als Label)
+    snapOn();
+    measProfi=false; measStage=0;
+    spawnMeasureFigure();
+    document.getElementById('chk1').onclick=checkUmfang;
+    document.getElementById('next1').onclick=nextMeasureFigure;
+    document.getElementById('profiBtn1').onclick=toggleMeasProfi;
+  }},
+
+ {/* 2 — Rechteck & Umfang (parametrisch) */
+  title:'🟩 Rechteck erkunden',
+  build:function(){
+    return '<div class="word"><b>Umfang</b> = einmal außen um das Rechteck herum. '+
+        '<b>Fläche</b> = wie viele Kästchen <b>innen</b> hineinpassen.</div>'+
+      '<div class="task">Zieh an den Reglern <b>Breite</b> und <b>Höhe</b>. Schau, wie sich die Zahlen mitverändern.</div>'+
+      '<div class="sliders">'+
+        '<div class="sl"><label>Breite b</label><input type="range" id="slb" min="1" max="12" step="1" value="6"><span class="val" id="vb">6</span></div>'+
+        '<div class="sl"><label>Höhe h</label><input type="range" id="slh" min="1" max="10" step="1" value="4"><span class="val" id="vh">4</span></div>'+
+      '</div>'+
+      '<div class="coords">'+
+        '<div class="chip x"><div class="lab">Umfang U = 2·(b+h)</div><div class="num" id="cU">20</div></div>'+
+        '<div class="chip y"><div class="lab">Fläche A = b·h</div><div class="num" id="cA">24</div></div>'+
+      '</div>'+
+      '<div class="howto"><h4>Selbst prüfen</h4><ol>'+
+        '<li>Zähl die Kästchen <b>am Rand</b>: das ist der Umfang.</li>'+
+        '<li>Zähl die Kästchen <b>im</b> Rechteck: das ist die Fläche.</li>'+
+        '<li>Stimmt es mit den Zahlen oben überein? 👍</li>'+
+      '</ol></div>'+
+      '<div class="profi">'+
+        '<button class="profi-toggle" id="profiBtn2">⭐ Profi: erst schätzen, dann prüfen</button>'+
+        '<div class="profi-body" id="profiBody2">'+
+          '<div class="task" style="margin:2px 0 8px">Die Zahlen sind versteckt. Stell ein Rechteck ein, '+
+            '<b>rate</b> Umfang und Fläche — dann aufdecken:</div>'+
+          '<div class="readrow"><span class="pt" style="font-size:14px;color:var(--accent-d)">U?</span>'+
+            '<input id="guessU" type="number" inputmode="numeric"><span class="unit">Umfang raten</span></div>'+
+          '<div class="readrow"><span class="pt" style="font-size:14px;color:var(--accent-d)">A?</span>'+
+            '<input id="guessA" type="number" inputmode="numeric"><span class="unit">Fläche raten</span></div>'+
+          '<div class="btn-row"><button class="btn primary" id="reveal2">🔍 Aufdecken &amp; prüfen</button></div>'+
+          '<div class="feedback" id="fb2"></div>'+
+        '</div>'+
+      '</div>';
+  },
+  enter:function(){
+    mode=null; clearAll();
+    try{ api.setMode(0); }catch(e){}
+    rectHidden=false;
+    buildRectangle();
+    var slb=document.getElementById('slb'), slh=document.getElementById('slh');
+    slb.oninput=slh.oninput=updateRectangle;
+    document.getElementById('profiBtn2').onclick=toggleRectProfi;
+    document.getElementById('reveal2').onclick=revealRect;
+    updateRectangle();
+  }},
+
+ {/* 3 — Schrägbild */
+  title:'🧱 Schrägbild eines Quaders',
+  build:function(){
+    return '<div class="task">So zeichnet man einen Quader auf flaches Papier: die '+
+      '<b style="color:var(--accent-d)">Vorderfläche</b> in wahrer Größe, die '+
+      '<b>Tiefenkanten</b> schräg nach hinten (45°) und nur <b>halb so lang</b>. '+
+      'Verdeckte Kanten werden <b>gestrichelt</b>.</div>'+
+      '<div class="sliders">'+
+        '<div class="sl"><label>Breite</label><input type="range" id="sw" min="2" max="7" step="1" value="5"><span class="val" id="vw">5</span></div>'+
+        '<div class="sl"><label>Höhe</label><input type="range" id="sh" min="2" max="6" step="1" value="3"><span class="val" id="vhh">3</span></div>'+
+        '<div class="sl"><label>Tiefe</label><input type="range" id="sd" min="2" max="6" step="1" value="4"><span class="val" id="vd">4</span></div>'+
+      '</div>'+
+      '<div class="btn-row"><button class="btn ghost" id="cube">Würfel (alle gleich)</button></div>'+
+      '<div class="howto"><h4>So zeichnest du ein Schrägbild</h4><ol>'+
+        '<li>Zeichne die <b>Vorderfläche</b> in wahrer Größe (Rechteck).</li>'+
+        '<li>Von jeder Ecke eine Kante <b>schräg nach hinten</b> unter <b>45°</b>.</li>'+
+        '<li>Diese Tiefenkanten nur <b>halb so lang</b> zeichnen (q = 0,5).</li>'+
+        '<li>Die <b>Rückfläche</b> genauso wie die Vorderfläche verbinden.</li>'+
+        '<li>Verdeckte Kanten <b>gestrichelt</b>, sichtbare durchgezogen.</li>'+
+      '</ol></div>'+
+      '<div class="feedback info show" style="margin-top:12px">🔎 Zieh an den Reglern und beobachte, '+
+      'wie das Bild entsteht. Die gestrichelten Kanten liegen <b>hinten</b> und werden vom Körper verdeckt.</div>';
+  },
+  enter:function(){
+    mode=null; clearAll();
+    try{ api.setMode(0); }catch(e){}
+    try{ api.setCoordSystem(-1.5,12.5,-1.5,9.5); }catch(e){}
+    buildSchraegbild();
+    var sw=document.getElementById('sw'), sh=document.getElementById('sh'), sd=document.getElementById('sd');
+    sw.oninput=sh.oninput=sd.oninput=updateSchraegbild;
+    document.getElementById('cube').onclick=function(){
+      sw.value=4; sh.value=4; sd.value=4; updateSchraegbild();
+    };
+    updateSchraegbild();
+  }}
+];
+
+/* ============================================================
+   Station 1: Vielecke bauen
+   ============================================================ */
+var polyTargets=[], polyIdx=0;
+function renderPolyTargets(){
+  var h=polyTargets.map(function(p,i){
+    var cls=p.got?'tg done':(i===polyIdx?'tg cur':'tg');
+    return '<span class="'+cls+'" data-i="'+i+'">'+p.t+' ('+p.n+' Ecken)</span>';
+  }).join('');
+  var box=document.getElementById('tgs');
+  box.innerHTML=h;
+  box.querySelectorAll('.tg').forEach(function(el){
+    el.onclick=function(){ polyIdx=parseInt(this.getAttribute('data-i'),10); renderPolyTargets(); };
+  });
+}
+function handleUserObject(name){
+  var type;
+  try{ type=api.getObjectType(name); }catch(e){ return; }
+  // Mess-Station: jede vom Kind gezogene Strecke zeigt ihre Länge als Label
+  if(mode==='measure'){
+    if(type==='segment'){
+      ggbSilent(function(){
+        try{
+          api.setLabelVisible(name,true);
+          api.setLabelStyle(name,2);            // 2 = Wert (Länge) anzeigen
+          api.setColor(name,255,107,107);
+          api.setLineThickness(name,4);
+        }catch(e){}
+      });
+    }
+    return;
+  }
+  if(mode!=='poly') return;
+  // GeoGebra liefert je nach Eckenzahl: triangle / quadrilateral / pentagon / polygon …
+  var polyTypes={polygon:1,triangle:1,quadrilateral:1,pentagon:1,hexagon:1};
+  if(!polyTypes[type]) return;
+  // Eckenzahl = Anzahl der Vertices des Polygons
+  var ecken=0;
+  try{
+    var verts=api.getCommandString ? null : null;
+    // Zuverlässig: Value liefert nichts zu Vertices; wir zählen über Vertex bis Fehler
+    for(var k=1;k<=12;k++){
+      var vn=name+'_vtx_'+k;
+      var ok=api.evalCommand(vn+'=Vertex['+name+','+k+']');
+      if(!ok){ break; }
+      var vx=api.getXcoord(vn), vy=api.getYcoord(vn);
+      try{api.deleteObject(vn);}catch(e){}
+      if(isNaN(vx)){ break; }
+      ecken++;
+    }
+  }catch(e){}
+  if(ecken<3){
+    // Fallback: über Anzahl der Seiten (Segmente des Polygons) — selten nötig
+    ecken = countPolySides(name) || ecken;
+  }
+  var target=polyTargets[polyIdx];
+  if(target && ecken===target.n){
+    target.got=true;
+    ggbSilent(function(){
+      try{ api.setColor(name,84,191,99); api.setLineThickness(name,3); }catch(e){}
+    });
+    fb('fb0','ok','🎉 Super! Du hast ein '+target.t+' mit '+ecken+' Ecken und '+ecken+' Seiten gebaut!');
+    // nächstes offenes Ziel wählen
+    var next=polyTargets.findIndex(function(p){return !p.got;});
+    if(next>=0) polyIdx=next;
+    renderPolyTargets();
+    if(polyTargets.every(function(p){return p.got;}))
+      fb('fb0','ok','🏆 Klasse! Dreieck, Viereck und Fünfeck — alle gebaut!');
+  } else if(ecken>=3){
+    var name2 = ecken===3?'Dreieck':ecken===4?'Viereck':ecken===5?'Fünfeck':ecken+'-Eck';
+    if(target)
+      fb('fb0','no','Das ist ein '+name2+' ('+ecken+' Ecken). Gesucht ist gerade ein '+
+        target.t+' ('+target.n+' Ecken). Tipp es nochmal — oder wähl ein anderes Ziel.');
+    else
+      fb('fb0','info','Du hast ein '+name2+' mit '+ecken+' Ecken gebaut.');
+  }
+}
+function countPolySides(name){
+  // Anzahl der zugehörigen Segmente name_1, name_2, ...
+  var c=0;
+  for(var k=1;k<=12;k++){
+    try{ if(api.exists(name+'_'+k)) c++; else break; }catch(e){ break; }
+  }
+  return c;
+}
+
+/* ============================================================
+   Station 2: Längen messen & Umfang
+   ============================================================ */
+var measFig=null;       // {pts:[[x,y],...], sides:[len,...], umfang}
+var measStage=0;        // Index in der jeweiligen Figuren-Reihe (vom Leichten zum Schweren)
+var measProfi=false;    // Profi-Modus an/aus
+
+// Standard-Reihe: erst einfach (Quadrat/Rechteck), dann Steigerung (L-Form)
+var MEAS_STD=[
+  {name:'Quadrat', pts:[[2,2],[6,2],[6,6],[2,6]]},                   // 4,4,4,4 -> 16
+  {name:'Rechteck', pts:[[1,1],[8,1],[8,4],[1,4]]},                  // 7,3,7,3 -> 20
+  {name:'L-Form', pts:[[1,1],[6,1],[6,3],[3,3],[3,6],[1,6]]}         // 5,2,3,3,3,5 -> 21
+];
+// Profi-Reihe: schräge Seiten (pythagoreisch glatt) + mehr Ecken
+var MEAS_PRO=[
+  {name:'rechtwinkliges Dreieck', pts:[[1,1],[5,1],[1,4]]},          // 4,3,5 -> 12 (schräge Seite!)
+  {name:'Drachen-Form', pts:[[4,1],[7,4],[4,8],[1,4]]},              // alle 5 (3-4-5) -> Schrägen, U=20
+  {name:'Sechseck (Treppe)', pts:[[1,1],[5,1],[5,3],[8,3],[8,6],[1,6]]} // 4,2,3,3,7,5 -> 24
+];
+function curMeasSet(){ return measProfi?MEAS_PRO:MEAS_STD; }
+
+function spawnMeasureFigure(){
+  clearAll();
+  try{ api.setMode(15); }catch(e){} // Strecken-Werkzeug
+  snapOn();
+  var set=curMeasSet();
+  if(measStage>=set.length) measStage=set.length-1;
+  var f=set[measStage];
+  var pts=f.pts, sides=[], umf=0;
+  for(var i=0;i<pts.length;i++){
+    var a=pts[i], b=pts[(i+1)%pts.length];
+    var len=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1]));
+    sides.push(len); umf+=len;
+  }
+  measFig={pts:pts,sides:sides,umfang:umf,name:f.name};
+  ggbSilent(function(){
+    var letters='ABCDEFGH', list=[];
+    for(var i=0;i<pts.length;i++){
+      var L=letters[i];
+      api.evalCommand(L+'=('+pts[i][0]+','+pts[i][1]+')');
+      api.setLabelVisible(L,true); api.setCaption(L,L); api.setPointSize(L,5);
+      api.setColor(L,47,122,65);
+      list.push(L);
+    }
+    api.evalCommand('poly1=Polygon('+list.join(',')+')');
+    try{ api.setLineThickness('poly1',3); api.setColor('poly1',47,158,87); api.setFilling('poly1',0.12); }catch(e){}
+    api.setLabelVisible('poly1',false);
+  });
+  // Eingabezeilen je Seite
+  var letters='ABCDEFGH';
+  var rh='';
+  for(var i=0;i<pts.length;i++){
+    var L1=letters[i], L2=letters[(i+1)%pts.length];
+    rh+='<div class="readrow"><span class="pt" style="color:var(--accent-d)">'+L1+L2+'</span>'+
+        '<input data-side="'+i+'" type="number" inputmode="numeric"><span class="unit">Kästchen</span></div>';
+  }
+  document.getElementById('measRows').innerHTML=rh;
+  // Live-Summe an die Seiten-Eingaben hängen
+  document.querySelectorAll('input[data-side]').forEach(function(inp){ inp.oninput=updateLiveSum; });
+  document.getElementById('umf').value='';
+  updateLiveSum();
+  var fb1=document.getElementById('fb1'); fb1.className='feedback';
+  var stepTxt = (set.length>1) ? (' (Figur '+(measStage+1)+' von '+set.length+')') : '';
+  fb('fb1','info','Figur: <b>'+f.name+'</b> mit '+pts.length+' Seiten'+stepTxt+'. Miss jede Seite und trag sie ein.');
+}
+
+// Zwischenstand: addiert die schon eingetragenen Seiten live
+function updateLiveSum(){
+  var sum=0;
+  document.querySelectorAll('input[data-side]').forEach(function(inp){
+    var v=parseInt(inp.value,10); if(!isNaN(v)) sum+=v;
+  });
+  var el=document.getElementById('liveSumVal'); if(el) el.textContent=sum;
+}
+
+// Zur nächsten Figur der Reihe (Steigerung); am Ende: Lob + von vorn
+function nextMeasureFigure(){
+  var set=curMeasSet();
+  if(measStage < set.length-1){ measStage++; }
+  else { measStage=0; }
+  spawnMeasureFigure();
+}
+
+function toggleMeasProfi(){
+  measProfi=!measProfi; measStage=0;
+  var btn=document.getElementById('profiBtn1');
+  if(btn) btn.classList.toggle('on', measProfi);
+  spawnMeasureFigure();
+  if(measProfi) fb('fb1','info','⭐ <b>Profi-Modus!</b> Jetzt mit <b>schrägen Seiten</b> — die musst du wirklich genau messen.');
+}
+
+function checkUmfang(){
+  if(!measFig) return;
+  // Seiten prüfen (optional als Hilfe), Umfang ist Pflicht
+  var sideOk=true;
+  document.querySelectorAll('input[data-side]').forEach(function(inp){
+    var idx=parseInt(inp.getAttribute('data-side'),10);
+    var v=parseInt(inp.value,10);
+    var ok = v===measFig.sides[idx];
+    inp.style.borderColor = (inp.value==='')?'var(--line2)':(ok?'var(--ok)':'var(--no)');
+    if(!ok) sideOk=false;
+  });
+  var uIn=parseInt(document.getElementById('umf').value,10);
+  var set=curMeasSet();
+  if(uIn===measFig.umfang){
+    var more = (measStage<set.length-1) ? ' Tipp auf <b>Nächste Figur</b> für die nächste Stufe!' : '';
+    fb('fb1','ok','🎉 Richtig! Der Umfang ist '+measFig.umfang+' Kästchen. '+
+      (sideOk?'Und alle Seiten stimmen auch!':'(Schau die einzelnen Seiten ruhig nochmal an.)')+more);
+  } else if(isNaN(uIn)){
+    fb('fb1','no','Trag erst den Umfang ein. Tipp: Schau auf "Zusammen bis jetzt" — das ist schon fast die Antwort!');
+  } else {
+    fb('fb1','no','Noch nicht. Du hast U = '+uIn+'. Zähl alle Seiten zusammen ("Zusammen bis jetzt" hilft) und prüf die einzelnen Längen.');
+  }
+}
+
+/* ============================================================
+   Station 3: Rechteck (parametrisch)
+   ============================================================ */
+function buildRectangle(){
+  ggbSilent(function(){
+    api.evalCommand('b=Slider(1,10,1)'); api.setValue('b',6); api.setVisible('b',false);
+    api.evalCommand('h=Slider(1,8,1)');  api.setValue('h',4); api.setVisible('h',false);
+    api.evalCommand('R1=(1,1)');
+    api.evalCommand('R2=(1+b,1)');
+    api.evalCommand('R3=(1+b,1+h)');
+    api.evalCommand('R4=(1,1+h)');
+    ['R1','R2','R3','R4'].forEach(function(n){ api.setVisible(n,false); api.setLabelVisible(n,false); });
+    api.evalCommand('rect=Polygon(R1,R2,R3,R4)');
+    try{ api.setColor('rect',47,158,87); api.setLineThickness('rect',3); api.setFilling('rect',0.18); }catch(e){}
+    api.setLabelVisible('rect',false);
+  });
+}
+var rectHidden=false;   // Profi: U/A versteckt (erst schätzen)
+function updateRectangle(){
+  var b=parseInt(document.getElementById('slb').value,10);
+  var h=parseInt(document.getElementById('slh').value,10);
+  document.getElementById('vb').textContent=b;
+  document.getElementById('vh').textContent=h;
+  ggbSilent(function(){ try{ api.setValue('b',b); api.setValue('h',h);}catch(e){} });
+  if(rectHidden){
+    document.getElementById('cU').textContent='?';
+    document.getElementById('cA').textContent='?';
+  } else {
+    document.getElementById('cU').textContent=2*(b+h);
+    document.getElementById('cA').textContent=b*h;
+  }
+}
+/* Profi: erst schätzen, dann aufdecken */
+function toggleRectProfi(){
+  rectHidden=!rectHidden;
+  var btn=document.getElementById('profiBtn2'), body=document.getElementById('profiBody2');
+  if(btn) btn.classList.toggle('on', rectHidden);
+  if(body) body.classList.toggle('show', rectHidden);
+  var g;
+  if(g=document.getElementById('guessU')) g.value='';
+  if(g=document.getElementById('guessA')) g.value='';
+  var f=document.getElementById('fb2'); if(f) f.className='feedback';
+  updateRectangle();
+}
+function revealRect(){
+  var b=parseInt(document.getElementById('slb').value,10);
+  var h=parseInt(document.getElementById('slh').value,10);
+  var U=2*(b+h), A=b*h;
+  var gU=parseInt(document.getElementById('guessU').value,10);
+  var gA=parseInt(document.getElementById('guessA').value,10);
+  rectHidden=false; updateRectangle();    // Zahlen aufdecken
+  var parts=[];
+  parts.push(gU===U ? '✅ Umfang '+U+' — genau getroffen!' : '➡️ Umfang ist '+U+(isNaN(gU)?'':' (du hast '+gU+' geschätzt)'));
+  parts.push(gA===A ? '✅ Fläche '+A+' — genau getroffen!' : '➡️ Fläche ist '+A+(isNaN(gA)?'':' (du hast '+gA+' geschätzt)'));
+  var both=(gU===U && gA===A);
+  fb('fb2', both?'ok':'no', (both?'🌟 Beides richtig geschätzt! ':'')+parts.join('<br>'));
+}
+
+/* ============================================================
+   Station 4: Schrägbild (Kavalierperspektive, 2D von Hand)
+   q = 0,5 ; Tiefenrichtung 45°
+   ============================================================ */
+function buildSchraegbild(){
+  ggbSilent(function(){
+    // Parameter als feste Werte (werden per setValue gesteuert)
+    api.evalCommand('w=5'); api.evalCommand('hh=3'); api.evalCommand('d=4');
+    api.evalCommand('q=0.5'); api.evalCommand('ang=45°');
+    // Ursprung der Vorderfläche
+    api.evalCommand('Ox=1'); api.evalCommand('Oy=1');
+    // Tiefenvektor (q*d in Richtung 45°)
+    api.evalCommand('dx=q*d*cos(ang)');
+    api.evalCommand('dy=q*d*sin(ang)');
+    // Vorderfläche A B C D (gegen Uhrzeigersinn)
+    api.evalCommand('A=(Ox,Oy)');
+    api.evalCommand('B=(Ox+w,Oy)');
+    api.evalCommand('C=(Ox+w,Oy+hh)');
+    api.evalCommand('D=(Ox,Oy+hh)');
+    // Rückfläche E F G H (um Tiefenvektor verschoben)
+    api.evalCommand('E=(Ox+dx,Oy+dy)');
+    api.evalCommand('F=(Ox+w+dx,Oy+dy)');
+    api.evalCommand('G=(Ox+w+dx,Oy+hh+dy)');
+    api.evalCommand('H=(Ox+dx,Oy+hh+dy)');
+    ['A','B','C','D','E','F','G','H'].forEach(function(n){
+      api.setLabelVisible(n,false); api.setPointSize(n,3); api.setColor(n,150,150,150); api.setVisible(n,false);
+    });
+    // SICHTBARE Kanten (durchgezogen): Vorderfläche, obere Rückkanten + obere Tiefenkanten,
+    // sowie die rechte Tiefenkante und rechte Rückkante.
+    // Verdeckt beim Standard-Quader (Tiefe nach rechts-oben): die "hintere" untere/linke Ecke = E
+    //   -> verdeckt: A-E (Tiefe hinten links unten), E-F (untere Rückkante), E-H (linke Rückkante)
+    var solid=[['A','B'],['B','C'],['C','D'],['D','A'],          // Vorderfläche
+               ['B','F'],['C','G'],['D','H'],                    // sichtbare Tiefenkanten
+               ['F','G'],['G','H']];                             // sichtbare Rückkanten (oben/rechts)
+    var dashed=[['A','E'],['E','F'],['E','H']];                  // verdeckte Kanten
+    var idx=1;
+    solid.forEach(function(s){
+      var nm='s'+(idx++);
+      api.evalCommand(nm+'=Segment('+s[0]+','+s[1]+')');
+      try{ api.setColor(nm,47,122,65); api.setLineThickness(nm,4); api.setLineStyle(nm,0); }catch(e){}
+      api.setLabelVisible(nm,false);
+    });
+    dashed.forEach(function(s){
+      var nm='s'+(idx++);
+      api.evalCommand(nm+'=Segment('+s[0]+','+s[1]+')');
+      try{ api.setColor(nm,150,150,150); api.setLineThickness(nm,3); api.setLineStyle(nm,1); }catch(e){} // gestrichelt
+      api.setLabelVisible(nm,false);
+    });
+  });
+}
+function updateSchraegbild(){
+  var w=parseInt(document.getElementById('sw').value,10);
+  var hh=parseInt(document.getElementById('sh').value,10);
+  var d=parseInt(document.getElementById('sd').value,10);
+  document.getElementById('vw').textContent=w;
+  document.getElementById('vhh').textContent=hh;
+  document.getElementById('vd').textContent=d;
+  ggbSilent(function(){
+    try{ api.setValue('w',w); api.setValue('hh',hh); api.setValue('d',d); }catch(e){}
+  });
+}
+
+/* ============================================================
+   Helpers / Steuerung
+   ============================================================ */
+function fb(id,kind,msg){ var e=document.getElementById(id); if(!e) return;
+  e.className='feedback show '+kind; e.innerHTML=msg; }
+
+function applyStation(n){
+  curSt=n;
+  document.querySelectorAll('.step').forEach(function(s){
+    s.classList.toggle('on', s.getAttribute('data-st')==String(n)); });
+  var S=STATIONS[n];
+  document.getElementById('panelHost').innerHTML=
+    '<div class="panel"><h3>'+S.title+'</h3>'+S.build()+'</div>';
+  if(ready && S.enter) S.enter();
+}
+document.querySelectorAll('.step').forEach(function(s){
+  s.addEventListener('click',function(){ applyStation(parseInt(this.getAttribute('data-st'))); });
+});
+document.getElementById('resetView').addEventListener('click',resetView);
+
+/* ---------- Init ---------- */
+var params={ appName:'classic', showToolBar:true, customToolBar:'0 | 1 | 15 | 16 | 6',
+  showAlgebraInput:false, showMenuBar:false, showResetIcon:false,
+  enableShiftDragZoom:true, showZoomButtons:true, language:'de',
+  capturingThreshold:8, errorDialogsActive:false, appletOnLoad:onLoad };
+var app=new GGBApplet(params,true);
+window.addEventListener('load',function(){
+  if(typeof GGBApplet==='undefined'){ showFail(); return; }
+  try{ app.inject('ggb'); }catch(e){ showFail(); }
+  setTimeout(function(){ if(!ready) showFail(); },13000);
+});
+</script>
+</body>
+</html>

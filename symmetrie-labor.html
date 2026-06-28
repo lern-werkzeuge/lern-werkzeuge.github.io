@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symmetrie-Werkstatt · Klasse 5</title>
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     GEMEINSAMES DESIGN-SYSTEM "Mathe-Werkstatt Klasse 5"
+     (hell & verspielt — Symmetrie-Labor, Akzent = Lila)
+     ========================================================= */
+  :root{
+    --bg:#fef7ec; --bg2:#fff1dc;
+    --card:#ffffff; --ink:#2b2d42; --muted:#6b7280; --dim:#9aa3b2;
+    --line:#efe6d6; --line2:#e4d8c4;
+    --coral:#ff6b6b; --teal:#1db5a4; --sky:#2f93dd; --sun:#ffbf3c;
+    --grass:#54bf63; --grape:#8b5cf6;
+    /* Tool-Akzent: Symmetrie = Lila/Violett */
+    --accent:#8b5cf6; --accent-d:#6d36e0; --accent-soft:#efe9fe;
+    --ok:#54bf63; --ok-soft:#e6f6e9; --no:#ff6b6b; --no-soft:#ffe9e9;
+    --head:'Fredoka',system-ui,sans-serif;
+    --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;
+    -webkit-font-smoothing:antialiased}
+  body{background:
+      radial-gradient(900px 500px at 88% -6%, #fff6e0, transparent 60%),
+      radial-gradient(700px 500px at 0% 102%, #f1ecff, transparent 55%),
+      var(--bg);
+    min-height:100vh;padding:0 0 70px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+
+  /* ---- Header ---- */
+  header{padding:26px 0 18px}
+  .kicker{font-family:var(--head);font-weight:600;font-size:13px;letter-spacing:.04em;
+    color:var(--accent-d);background:var(--accent-soft);display:inline-flex;align-items:center;gap:8px;
+    padding:6px 14px;border-radius:999px}
+  h1{font-family:var(--head);font-weight:700;font-size:38px;line-height:1.05;margin-top:14px;letter-spacing:-.01em}
+  h1 .em{color:var(--accent)}
+  .lead{font-size:17px;color:var(--muted);margin-top:8px;max-width:680px}
+  .mascot{font-size:42px;line-height:1}
+
+  /* ---- Stepper ---- */
+  .steps{display:flex;gap:10px;margin:22px 0 18px;flex-wrap:wrap}
+  .step{flex:1;min-width:200px;cursor:pointer;background:var(--card);border:2px solid var(--line);
+    border-radius:18px;padding:13px 15px;display:flex;gap:12px;align-items:center;transition:.15s;
+    box-shadow:0 2px 0 var(--line)}
+  .step:hover{transform:translateY(-2px);border-color:var(--line2)}
+  .step.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 3px 0 var(--accent-d)}
+  .step .badge{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--bg2);
+    display:flex;align-items:center;justify-content:center;font-size:21px}
+  .step.on .badge{background:#fff}
+  .step .stxt .n{font-family:var(--head);font-weight:600;font-size:12px;color:var(--dim)}
+  .step.on .stxt .n{color:var(--accent-d)}
+  .step .stxt .t{font-family:var(--head);font-weight:600;font-size:15.5px;margin-top:1px}
+
+  /* ---- Grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch}
+  #panelHost{display:flex;flex-direction:column}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+  .toolbar-hint{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:500;
+    font-size:14px;color:var(--accent-d);background:var(--accent-soft);border:2px dashed var(--accent);
+    border-radius:14px;padding:9px 14px;margin-bottom:10px}
+  .toolbar-hint .pop{font-size:20px}
+
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;overflow:hidden;
+    box-shadow:0 3px 0 var(--line)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;
+    border-bottom:2px solid var(--line);background:#fffdf8}
+  .card-top .tt{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);
+    display:flex;align-items:center;gap:8px}
+
+  .stage{position:relative;background:#fff}
+  #ggb{width:100%;min-height:500px}
+  .ovl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    gap:12px;text-align:center;padding:36px;background:#fff}
+  .ovl.show{display:flex}
+  .ovl .big{font-size:42px}
+  .ovl.load{color:var(--dim);font-family:var(--head)}
+  .spin{width:32px;height:32px;border:4px solid var(--line2);border-top-color:var(--accent);
+    border-radius:50%;animation:rot .9s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* ---- Panel (rechts) ---- */
+  .panel{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;
+    box-shadow:0 3px 0 var(--line);flex:1;overflow-y:auto}
+  .panel + .panel{margin-top:14px}
+  .panel h3{font-family:var(--head);font-weight:600;font-size:17px;margin-bottom:4px;
+    display:flex;align-items:center;gap:8px}
+  .panel .task{font-size:15px;color:var(--ink);margin:8px 0}
+  .panel .hint{font-size:13.5px;color:var(--muted)}
+
+  /* Mess-Chips (Abstand zur Achse o.ä.) */
+  .coords{display:flex;gap:10px;margin:14px 0}
+  .chip{flex:1;border-radius:16px;padding:12px;text-align:center;border:2px solid}
+  .chip.x{background:#f1ecff;border-color:#d6c9fb}
+  .chip.y{background:#fff3df;border-color:#ffe0a8}
+  .chip .lab{font-family:var(--head);font-weight:600;font-size:13px;color:var(--muted)}
+  .chip .num{font-family:var(--head);font-weight:700;font-size:34px;line-height:1.1}
+  .chip.x .num{color:var(--grape)} .chip.y .num{color:var(--sun)}
+
+  /* Buttons */
+  .btn{font-family:var(--head);font-weight:600;font-size:15px;cursor:pointer;border:none;
+    border-radius:14px;padding:11px 18px;transition:.12s;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-d)}
+  .btn.primary:hover{transform:translateY(-1px)}
+  .btn.primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-d)}
+  .btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line2)}
+  .btn.ghost:hover{border-color:var(--accent)}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+
+  /* Aufgaben-Fortschritt / Auswahl-Knöpfe */
+  .targets{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+  .tg{font-family:var(--head);font-weight:600;font-size:14px;border-radius:12px;padding:7px 11px;
+    border:2px solid var(--line2);background:#fff;color:var(--muted)}
+  .tg.cur{border-color:var(--accent);color:var(--accent-d);background:var(--accent-soft)}
+  .tg.done{border-color:var(--ok);color:#2f7d3a;background:var(--ok-soft)}
+  .tg.done::before{content:"✓ "}
+
+  /* Echte Tab-Knöpfe (Station 3 — sahen vorher wie Beschriftung aus) */
+  .tabswitch{display:flex;gap:8px;margin:6px 0 12px}
+  .tabbtn{flex:1;font-family:var(--head);font-weight:600;font-size:14.5px;cursor:pointer;
+    border:2px solid var(--line2);background:#fff;color:var(--muted);border-radius:14px;
+    padding:11px 8px;text-align:center;transition:.12s;box-shadow:0 2px 0 var(--line)}
+  .tabbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .tabbtn.cur{border-color:var(--accent);background:var(--accent);color:#fff;
+    box-shadow:0 3px 0 var(--accent-d)}
+
+  /* Feedback */
+  .feedback{border-radius:14px;padding:12px 14px;font-size:14.5px;font-weight:600;margin-top:12px;
+    display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--ok-soft);color:#2f7d3a;border:2px solid var(--ok)}
+  .feedback.no{background:var(--no-soft);color:#c0392b;border:2px solid var(--no)}
+  .feedback.info{background:var(--accent-soft);color:var(--accent-d);border:2px solid #d6c9fb}
+
+  /* Symmetrie-Spiel */
+  .score{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);
+    display:flex;justify-content:space-between;margin-bottom:8px}
+  .score b{color:var(--accent-d);font-size:20px}
+  .figbox{background:#fff8e8;border:2px solid #ffe0a8;border-radius:16px;padding:14px;
+    text-align:center;margin:10px 0}
+  .figbox .fig{font-family:var(--head);font-weight:700;font-size:74px;line-height:1;color:var(--ink)}
+  .figbox .figsvg{display:flex;align-items:center;justify-content:center;min-height:140px}
+  .figbox .figsvg svg{width:150px;height:140px;display:block}
+  .figbox .fname{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);margin-top:6px}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}
+  .ans{font-family:var(--head);font-weight:600;font-size:14.5px;cursor:pointer;border:2px solid var(--line2);
+    background:#fff;color:var(--ink);border-radius:14px;padding:11px 8px;text-align:center;transition:.12s}
+  .ans:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .ans:disabled{cursor:default;opacity:.55;transform:none}
+  .ans.right{border-color:var(--ok);background:var(--ok-soft);color:#2f7d3a}
+  .ans.wrong{border-color:var(--no);background:var(--no-soft);color:#c0392b}
+
+  /* Wort-Erklärung (bildhaft, niedrigschwellig) */
+  .wort{border-bottom:2px dotted var(--accent);cursor:help}
+  .merk{display:flex;gap:8px;align-items:flex-start;background:var(--accent-soft);
+    border:2px solid #d6c9fb;border-radius:14px;padding:10px 12px;margin:10px 0;
+    font-size:13.5px;color:var(--accent-d)}
+  .merk .ic{font-size:20px;flex-shrink:0;line-height:1.2}
+  .merk b{color:var(--accent-d)}
+
+  /* Eingabe-Selbstkontrolle (x|y-Tippen) */
+  .checkrow{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+  .checkrow label{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted)}
+  .coordin{font-family:var(--head);font-weight:700;font-size:18px;width:64px;text-align:center;
+    border:2px solid var(--line2);border-radius:12px;padding:8px 6px;color:var(--ink);background:#fff}
+  .coordin:focus{outline:none;border-color:var(--accent)}
+  .coordsep{font-family:var(--head);font-weight:700;font-size:18px;color:var(--dim)}
+
+  /* Profi-Zusatz (Differenzierung) */
+  .profi{margin-top:12px;border:2px solid #ffe0a8;border-radius:16px;overflow:hidden;background:#fffdf6}
+  .profi-head{display:flex;align-items:center;gap:9px;cursor:pointer;padding:11px 14px;
+    font-family:var(--head);font-weight:600;font-size:14.5px;color:#b06a00;background:#fff6e0;
+    user-select:none}
+  .profi-head .star{font-size:18px}
+  .profi-head .arr{margin-left:auto;transition:.15s;color:var(--dim)}
+  .profi.open .profi-head .arr{transform:rotate(90deg)}
+  .profi-body{display:none;padding:12px 14px;font-size:14px}
+  .profi.open .profi-body{display:block}
+
+  /* live Koordinaten-Anzeige (kleine Zahlen) */
+  .coordlive{display:flex;gap:8px;margin:10px 0;font-family:var(--head);font-weight:600;font-size:13px}
+  .coordlive .cl{flex:1;background:#f7f4ff;border:2px solid #e4dcfb;border-radius:12px;
+    padding:8px 6px;text-align:center;color:var(--muted)}
+  .coordlive .cl b{display:block;font-size:18px;font-weight:700;margin-top:2px}
+  .coordlive .cl.a b{color:var(--sky)} .coordlive .cl.b b{color:var(--coral)}
+
+  footer{margin-top:34px;text-align:center;color:var(--dim);font-size:13px;font-family:var(--head)}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span class="mascot">🦋</span>
+      <div>
+        <span class="kicker">📐 Mathe-Werkstatt · Klasse 5</span>
+        <h1>Die <span class="em">Symmetrie</span>-Werkstatt</h1>
+      </div>
+    </div>
+    <p class="lead">Spiegeln, verschieben, entdecken! Du ziehst Punkte und schaust zu, wie ihr
+      <b>Spiegelbild</b> mitwandert. Am Ende erkennst du selbst, welche Figuren symmetrisch sind. 🪞<br>
+      <span style="font-size:14.5px">💡 <b>Neu hier?</b> Starte am besten mit <b>Station 2</b> (nur ziehen) oder dem <b>Quiz</b> — da brauchst du kein Werkzeug.</span></p>
+  </header>
+
+  <!-- STEPPER -->
+  <div class="steps" id="steps">
+    <div class="step on" data-st="0"><span class="badge">✏️</span><div class="stxt"><div class="n">Station 1</div><div class="t">Punkte & Strecken</div></div></div>
+    <div class="step" data-st="1"><span class="badge">🪞</span><div class="stxt"><div class="n">Station 2</div><div class="t">Spiegeln an einer Linie</div></div></div>
+    <div class="step" data-st="2"><span class="badge">🔄</span><div class="stxt"><div class="n">Station 3</div><div class="t">Punktspiegelung & Verschieben</div></div></div>
+    <div class="step" data-st="3"><span class="badge">🦋</span><div class="stxt"><div class="n">Station 4</div><div class="t">Symmetrie-Quiz</div></div></div>
+  </div>
+
+  <div class="grid">
+    <!-- LINKS: GeoGebra -->
+    <div id="ggbCol">
+      <div class="toolbar-hint" id="toolHint"><span class="pop">🧰</span> Dein <b>Werkzeugkasten</b> ist oben im weißen Bild — dort wählst du Werkzeuge (z.&nbsp;B. Punkt oder Strecke).</div>
+      <div class="card">
+        <div class="card-top">
+          <span class="tt">🖥️ GeoGebra</span>
+          <button class="btn ghost" id="resetView" style="padding:7px 12px;font-size:13px">↺ Ansicht</button>
+        </div>
+        <div class="stage">
+          <div id="ggb"></div>
+          <div class="ovl load show" id="ovlLoad"><div class="spin"></div>GeoGebra wird geladen …</div>
+          <div class="ovl" id="ovlFail"><div class="big">😕</div><b>GeoGebra lädt nicht.</b>
+            <div style="color:var(--muted)">Dafür braucht das Tablet/der Computer Internet.<br>Bitte Seite neu laden.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Aufgaben/Steuerung -->
+    <div id="panelHost"></div>
+  </div>
+
+  <footer>Symmetrie-Werkstatt · zum Spiegeln, Schieben und Entdecken</footer>
+</div>
+
+<script>
+/* ============================================================
+   Symmetrie-Werkstatt — GeoGebra-gesteuert (Klasse 5)
+   ============================================================ */
+var api=null, ready=false, curSt=0;
+var ignoreAdds=true;          // ignoriert Objekte, die das Programm selbst anlegt
+var mode=null;                // aktueller Prüf-Modus: 'draw' | null
+
+/* GeoGebra-Objekte sicher anlegen, ohne den Add-Listener auszulösen */
+function ggbSilent(fn){ ignoreAdds=true; try{fn();}catch(e){} setTimeout(function(){ignoreAdds=false;},90); }
+
+/* Alle Objekte löschen (für Stationswechsel) — kompletter Neuaufbau pro Station */
+function wipeAll(){
+  if(!api) return;
+  ignoreAdds=true;
+  try{
+    api.getAllObjectNames().slice().forEach(function(n){ try{api.deleteObject(n);}catch(e){} });
+  }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},80);
+}
+
+function num(x){ return Math.round(x*100)/100; }
+
+/* Punkt auf ganze Gitterkoordinaten einrasten (Toleranz ~0,4) */
+function snapPoint(name){
+  if(!api) return;
+  try{
+    var x=api.getXcoord(name), y=api.getYcoord(name);
+    var rx=Math.round(x), ry=Math.round(y);
+    if(Math.abs(x-rx)<0.4 && Math.abs(y-ry)<0.4 && (rx!==x || ry!==y)){
+      ggbSilent(function(){ api.setCoords(name,rx,ry); });
+    }
+  }catch(e){}
+}
+
+function resetView(){ if(!api) return;
+  try{
+    if(curSt===1) api.setCoordSystem(-7.5,7.5,-5,7);
+    else api.setCoordSystem(-1.5,11.5,-1.5,9.5);
+  }catch(e){}
+}
+
+/* ---------- Applet ---------- */
+function onLoad(g){
+  api=g;
+  try{ api.setPerspective('G'); }catch(e){}
+  try{ api.setGridVisible(true); api.setAxesVisible(true,true); }catch(e){}
+  // Einrasten aufs Gitter (bessere Feinmotorik am Tablet)
+  try{ api.setPointCapturing(1,3); }catch(e){}
+  api.registerAddListener(function(name){
+    if(ignoreAdds) return;
+    handleUserObject(name);
+  });
+  api.registerUpdateListener(function(n){ onObjectMove(n); });
+  ready=true;
+  document.getElementById('ovlLoad').classList.remove('show');
+  applyStation(0);
+}
+function showFail(){ document.getElementById('ovlLoad').classList.remove('show');
+  document.getElementById('ovlFail').classList.add('show'); }
+
+/* ============================================================
+   Stationen
+   ============================================================ */
+var STATIONS=[
+
+ {/* 0 — Punkte & Strecken zeichnen */
+  title:'✏️ Punkte und Strecken zeichnen',
+  toolbar:'0 | 1 | 15 | 6',
+  build:function(){
+    return '<div class="task">Eine <b>Strecke</b> ist eine gerade Linie zwischen <b>zwei Punkten</b>. '+
+      'Erst zwei Punkte setzen, dann die Linie dazwischen ziehen.</div>'+
+      '<div class="merk"><span class="ic">🧰</span><div>Im grauen Kasten oben tippst du das Werkzeug an:<br>'+
+        '<b>•&nbsp;A&nbsp;= Punkt</b> (zweites Symbol) &nbsp;·&nbsp; '+
+        '<b>╱&nbsp;= Strecke</b> (drittes Symbol). Erst ein Werkzeug wählen, dann ins Bild tippen.</div></div>'+
+      '<div class="task"><b>Deine Aufgabe:</b> Zeichne eine Strecke von '+
+        '<b style="color:var(--sky)">A&nbsp;(1|1)</b> nach <b style="color:var(--sky)">B&nbsp;(5|1)</b>. '+
+        'Die Punkte rasten von selbst aufs Gitter ein.</div>'+
+      '<div class="btn-row"><button class="btn primary" id="check0">Aufgabe prüfen</button>'+
+        '<button class="btn ghost" id="clr0">Alles löschen</button></div>'+
+      '<div class="feedback info show" id="fb0">📐 Tipp: Tippe die Punkte genau auf die Gitterkreuze. '+
+        'Du brauchst Punkt (1|1) und Punkt (5|1).</div>'+
+      '<div class="profi" id="profi0"><div class="profi-head" data-prof="0">'+
+          '<span class="star">⭐</span> Profi-Aufgabe <span class="arr">▶</span></div>'+
+        '<div class="profi-body">Schaffst du danach ein <b>Dach</b> (Dreieck △) aus 3 Strecken — '+
+          'oder sogar ein Viereck mit 4 Strecken? Zähle deine Strecken mit.</div></div>';
+  },
+  enter:function(){
+    mode='draw'; strCount=0;
+    wipeAll();
+    try{ api.setMode(1); }catch(e){} // Start mit Punkt-Werkzeug
+    wireProfi();
+    document.getElementById('clr0').onclick=function(){ wipeAll(); strCount=0;
+      fb('fb0','info','📐 Frisch geputzt! Setz Punkt (1|1) und Punkt (5|1) und verbinde sie.'); };
+    document.getElementById('check0').onclick=checkStation0;
+  }},
+
+ {/* 1 — Achsenspiegelung */
+  title:'🪞 Spiegeln an einer Linie',
+  toolbar:'0',
+  build:function(){
+    return '<div class="task">Die <b style="color:var(--grape)">lila Linie</b> ist ein <b>Spiegel</b> '+
+      '(man nennt sie <span class="wort" title="Spiegelachse = die Linie, an der gespiegelt wird">Spiegelachse</span>). '+
+      'Die <b style="color:var(--sky)">blaue Figur</b> ist echt, die '+
+      '<b style="color:var(--coral)">rote Figur</b> ist ihr <b>Spiegelbild</b>.</div>'+
+      '<div class="task">👉 <b>Zieh die blauen Ecken</b> A, B, C — das rote Bild wandert sofort mit, wie im Spiegel!</div>'+
+      '<div class="coordlive">'+
+        '<div class="cl a">Punkt A<b id="coA">–</b></div>'+
+        '<div class="cl b">Bild A\'<b id="coAs">–</b></div>'+
+      '</div>'+
+      '<div class="coords">'+
+        '<div class="chip x"><div class="lab">A → Spiegel (weit weg)</div><div class="num" id="dA">–</div></div>'+
+        '<div class="chip y"><div class="lab">A\' → Spiegel (weit weg)</div><div class="num" id="dAs">–</div></div>'+
+      '</div>'+
+      '<div class="feedback info show" id="fb1">🔍 Schau hin: Das Spiegelbild ist <b>genauso weit</b> '+
+      'vom Spiegel weg wie das Original — nur auf der <b>anderen Seite</b>.</div>'+
+      '<div class="task"><b>Mini-Aufgabe:</b> Zieh A auf <b style="color:var(--sky)">(2|3)</b>. '+
+        'Wo liegt dann das Spiegelbild A\'? Tippe es ein:</div>'+
+      '<div class="checkrow">'+
+        '<label>A\' = (</label>'+
+        '<input class="coordin" id="g1x" inputmode="numeric" placeholder="x">'+
+        '<span class="coordsep">|</span>'+
+        '<input class="coordin" id="g1y" inputmode="numeric" placeholder="y">'+
+        '<label>)</label>'+
+        '<button class="btn primary" id="check1" style="padding:9px 14px;font-size:14px">Prüfen</button>'+
+      '</div>'+
+      '<div class="btn-row"><button class="btn ghost" id="achseDir">Spiegel drehen ↔/↕</button>'+
+      '<button class="btn ghost" id="rst1">Figur zurück</button></div>'+
+      '<div class="profi" id="profi1"><div class="profi-head" data-prof="1">'+
+          '<span class="star">⭐</span> Profi: schräger Spiegel <span class="arr">▶</span></div>'+
+        '<div class="profi-body">Tippe auf den Knopf und probiere eine <b>schräge</b> Spiegelachse '+
+          '(die Linie <b>y = x</b>, also „von links unten nach rechts oben"). Wo landet das Bild dann? '+
+          '<div class="btn-row"><button class="btn ghost" id="achseSchraeg" style="margin-top:8px">Schräg spiegeln (y = x)</button></div></div></div>';
+  },
+  enter:function(){
+    mode=null; achseMode='v';
+    wipeAll();
+    buildAchsenspiegelung();
+    try{ api.setMode(0); }catch(e){} // nur ziehen
+    resetView();
+    wireProfi();
+    document.getElementById('achseDir').onclick=function(){
+      achseMode=(achseMode==='v')?'h':'v'; buildAchsenspiegelung(); updateAbstand();
+    };
+    var sb=document.getElementById('achseSchraeg');
+    if(sb) sb.onclick=function(){ achseMode='d'; buildAchsenspiegelung(); updateAbstand();
+      fb('fb1','info','📐 Jetzt ist der Spiegel schräg (y = x). Beim Spiegeln tauschen x und y die Plätze!'); };
+    document.getElementById('rst1').onclick=function(){ buildAchsenspiegelung(); updateAbstand(); };
+    document.getElementById('check1').onclick=checkStation1;
+    updateAbstand();
+  }},
+
+ {/* 2 — Punktspiegelung & Verschiebung */
+  title:'🔄 Punktspiegelung & Verschieben',
+  toolbar:'0',
+  build:function(){
+    return '<div class="task">Wähle einen Trick — tippe auf einen der zwei Knöpfe:</div>'+
+      '<div class="tabswitch">'+
+        '<button class="tabbtn" id="tabPS">🔄 Punktspiegelung</button>'+
+        '<button class="tabbtn" id="tabVS">➡️ Verschieben</button>'+
+      '</div>'+
+      '<div id="modeText"></div>'+
+      '<div class="feedback info show" id="fb2"></div>'+
+      '<div id="task23"></div>'+
+      '<div class="btn-row"><button class="btn ghost" id="rst2">Figur zurück</button></div>';
+  },
+  enter:function(){
+    mode=null; abbMode='ps';
+    wipeAll();
+    try{ api.setMode(0); }catch(e){}
+    resetView();
+    document.getElementById('tabPS').onclick=function(){ abbMode='ps'; build23(); };
+    document.getElementById('tabVS').onclick=function(){ abbMode='vs'; build23(); };
+    document.getElementById('rst2').onclick=function(){ build23(); };
+    build23();
+  }},
+
+ {/* 3 — Symmetrie-Quiz */
+  title:'🦋 Symmetrie entdecken',
+  toolbar:'0',
+  build:function(){
+    return '<div class="score"><span>Frage <b id="qn">1</b>/8</span><span>Punkte ⭐ <b id="qsc">0</b></span></div>'+
+      '<div class="merk"><span class="ic">🔎</span><div><b>Achsensymmetrisch</b> = man kann einen Spiegel '+
+        '(eine Linie) durchlegen. <b>Punktsymmetrisch</b> = eine halbe Drehung um den Mittelpunkt passt.</div></div>'+
+      '<div class="figbox"><div class="figsvg" id="figSvg"></div><div class="fname" id="figName"></div></div>'+
+      '<div class="task" id="qfrage">Welche Symmetrie hat diese Figur?</div>'+
+      '<div class="answers" id="qans"></div>'+
+      '<div class="feedback" id="fb3"></div>'+
+      '<div class="btn-row" id="qnext" style="margin-top:12px"></div>';
+  },
+  enter:function(){
+    mode=null;
+    wipeAll();
+    try{ api.setMode(0); }catch(e){}
+    try{ api.setGridVisible(false); api.setAxesVisible(false,false); }catch(e){}
+    qScore=0; qIdx=0; qOrder=shuffle(QUIZ.slice());
+    document.getElementById('qsc').textContent='0';
+    showQuestion();
+  }}
+];
+
+/* ============================================================
+   Station 1 — Punkte & Strecken (freies Zeichnen mit Lob)
+   ============================================================ */
+var strCount=0;
+function handleUserObject(name){
+  if(mode!=='draw') return;
+  var t='';
+  try{ t=api.getObjectType(name); }catch(e){ return; }
+  if(t==='point'){
+    snapPoint(name); // aufs Gitter einrasten (ganze Zahlen)
+    ggbSilent(function(){ api.setColor(name,139,92,246); api.setPointSize(name,6); });
+  } else if(t==='segment'){
+    strCount++;
+    ggbSilent(function(){ api.setColor(name,45,181,164); api.setLineThickness(name,6);
+      try{api.setLabelVisible(name,false);}catch(e){} });
+    if(strCount===1) fb('fb0','ok','✏️ Deine erste Strecke! Sie verbindet zwei Punkte. Jetzt auf „Aufgabe prüfen" tippen.');
+    else if(strCount===3) fb('fb0','ok','🎉 Drei Strecken — das könnte schon ein Dach sein! Weiter so.');
+    else fb('fb0','ok','👍 Strecke Nr. '+strCount+' gezeichnet!');
+  }
+}
+/* Selbstkontrolle Station 1: gibt es eine Strecke von (1|1) nach (5|1)? */
+function checkStation0(){
+  if(!api){ return; }
+  var found=false;
+  try{
+    api.getAllObjectNames('segment').forEach(function(n){
+      // Endpunkte einer Strecke ermitteln (Definition parsen ist heikel -> über Koordinaten der Punkte)
+    });
+    // robust: alle Punkte einsammeln und prüfen, ob (1|1) und (5|1) existieren + eine Strecke sie verbindet
+    var pts={};
+    api.getAllObjectNames('point').forEach(function(n){
+      pts[n]=[Math.round(api.getXcoord(n)),Math.round(api.getYcoord(n))];
+    });
+    var hasA=false, hasB=false;
+    for(var k in pts){ if(pts[k][0]===1&&pts[k][1]===1) hasA=true; if(pts[k][0]===5&&pts[k][1]===1) hasB=true; }
+    var segs=api.getAllObjectNames('segment');
+    found = hasA && hasB && segs.length>=1;
+  }catch(e){}
+  if(found) fb('fb0','ok','🌟 Super! Du hast eine Strecke von (1|1) nach (5|1) gezeichnet. '+
+    'Die liegt waagerecht und ist 4 Kästchen lang.');
+  else fb('fb0','no','Noch nicht ganz. Du brauchst <b>einen Punkt auf (1|1)</b> und '+
+    '<b>einen auf (5|1)</b> und eine <b>Strecke</b> dazwischen. Tipp die Punkte genau aufs Gitterkreuz.');
+}
+
+/* ============================================================
+   Station 2 — Achsenspiegelung (abhängiges Bild via Reflect)
+   ============================================================ */
+var achseMode='v'; // 'v'=senkrecht (x=0), 'h'=waagerecht (y=0), 'd'=schräg (y=x)
+function buildAchsenspiegelung(){
+  wipeAll();
+  ggbSilent(function(){
+    // Spiegelachse
+    if(achseMode==='v') api.evalCommand('s:x=0');
+    else if(achseMode==='h') api.evalCommand('s:y=0');
+    else api.evalCommand('s:y=x');
+    api.setColor('s',139,92,246); api.setLineThickness('s',5);
+    try{api.setLabelVisible('s',false);}catch(e){}
+    // Original-Eckpunkte (frei, ziehbar)
+    api.evalCommand('A=(2,1)'); api.evalCommand('B=(5,2)'); api.evalCommand('C=(3,4)');
+    ['A','B','C'].forEach(function(p){ api.setColor(p,47,147,221); api.setPointSize(p,6);
+      api.setLabelVisible(p,true); api.setCaption(p,p); });
+    // Original-Dreieck
+    api.evalCommand('orig=Polygon(A,B,C)');
+    api.setColor('orig',47,147,221); api.setLineThickness('orig',4);
+    try{ api.setFilling('orig',0.18); }catch(e){}
+    try{ api.setLabelVisible('orig',false); }catch(e){}
+    // Spiegelbild (abhängig!)
+    api.evalCommand("bild=Reflect(orig,s)");
+    api.setColor('bild',255,107,107); api.setLineThickness('bild',4);
+    try{ api.setFilling('bild',0.18); }catch(e){}
+    try{ api.setLabelVisible('bild',false); }catch(e){}
+    // Die Reflect-Funktion erzeugt automatisch die Bild-Eckpunkte A', B', C'.
+    // Sie in Rot einfärben und schön beschriften (didaktisch wertvoll).
+    ["A'","B'","C'"].forEach(function(p){
+      try{ api.setColor(p,255,107,107); api.setPointSize(p,6);
+        api.setLabelVisible(p,true); }catch(e){}
+    });
+  });
+  // Segment-Labels der Polygone ausblenden (Auto-Kanten)
+  hideSegmentLabels();
+}
+function hideSegmentLabels(){
+  ggbSilent(function(){
+    try{ api.getAllObjectNames('segment').forEach(function(n){ api.setLabelVisible(n,false); }); }catch(e){}
+  });
+}
+function fmtCoord(x,y){ return '('+String(num(x)).replace('.',',')+'|'+String(num(y)).replace('.',',')+')'; }
+function updateAbstand(){
+  if(curSt!==1||!ready) return;
+  try{
+    var ax=api.getXcoord('A'), ay=api.getYcoord('A');
+    var d, asx, asy;
+    if(achseMode==='v'){ d=Math.abs(ax); asx=-ax; asy=ay; }
+    else if(achseMode==='h'){ d=Math.abs(ay); asx=ax; asy=-ay; }
+    else { // y=x : Abstand = |x-y|/√2 ; Bildpunkt = (y,x)
+      d=Math.abs(ax-ay)/Math.SQRT2; asx=ay; asy=ax;
+    }
+    var ds = num(d);
+    var e;
+    if(e=document.getElementById('dA')) e.textContent = String(ds).replace('.',',');
+    if(e=document.getElementById('dAs')) e.textContent = String(ds).replace('.',',');
+    if(e=document.getElementById('coA')) e.textContent = fmtCoord(ax,ay);
+    if(e=document.getElementById('coAs')) e.textContent = fmtCoord(asx,asy);
+  }catch(e){}
+}
+/* Selbstkontrolle Station 2: A auf (2|3) -> Bild bei senkrechtem Spiegel (-2|3) */
+function checkStation1(){
+  if(!api) return;
+  var gx=parseInt(document.getElementById('g1x').value,10);
+  var gy=parseInt(document.getElementById('g1y').value,10);
+  if(isNaN(gx)||isNaN(gy)){ fb('fb1','no','✏️ Tippe erst beide Zahlen ein: x und y.'); return; }
+  // erwartetes Bild von (2|3) je nach Achse
+  var ex,ey,achsName;
+  if(achseMode==='v'){ ex=-2; ey=3; achsName='senkrechten Spiegel (x=0)'; }
+  else if(achseMode==='h'){ ex=2; ey=-3; achsName='waagerechten Spiegel (y=0)'; }
+  else { ex=3; ey=2; achsName='schrägen Spiegel (y=x)'; }
+  if(gx===ex && gy===ey){
+    fb('fb1','ok','🌟 Genau! Beim '+achsName+' liegt das Spiegelbild von (2|3) auf '+
+      '<b>('+ex+'|'+ey+')</b>. Zieh A ruhig auf (2|3) und schau, ob A\' dort sitzt.');
+  } else {
+    fb('fb1','no','Noch nicht. Tipp: Spiegle (2|3) am '+achsName+'. '+
+      'Zieh A auf (2|3) und lies oben bei „Bild A\'" ab, wo das rote Bild landet.');
+  }
+}
+
+/* ============================================================
+   Station 3 — Punktspiegelung / Verschiebung
+   ============================================================ */
+var abbMode='ps';
+function build23(){
+  wipeAll();
+  if(abbMode==='ps') buildPunktspiegelung();
+  else buildVerschiebung();
+  setTab();
+}
+function setTab(){
+  var ps=document.getElementById('tabPS'), vs=document.getElementById('tabVS');
+  if(!ps) return;
+  ps.className = 'tabbtn' + (abbMode==='ps'?' cur':'');
+  vs.className = 'tabbtn' + (abbMode==='vs'?' cur':'');
+  var mt=document.getElementById('modeText');
+  var tk=document.getElementById('task23');
+  if(abbMode==='ps'){
+    mt.innerHTML='<div class="task">Beim <b>Punktspiegeln</b> gibt es einen '+
+      '<span class="wort" title="Zentrum = der Dreh-Punkt, um den gespiegelt wird">Dreh-Punkt</span> '+
+      '<b style="color:var(--grape)">Z</b>. Jeder Punkt springt auf die andere Seite von Z — gleich weit weg. '+
+      'Das ist eine <b>halbe Drehung</b> um Z.</div>'+
+      '<div class="task">👉 <b>Zieh die blaue Figur</b> oder den Punkt Z und schau dem roten Bild zu.</div>';
+    fb('fb2','info','🔄 Tipp: Das Bild steht „auf dem Kopf" — als hättest du es um Z herumgedreht.');
+    tk.innerHTML='<div class="task"><b>Mini-Aufgabe:</b> Zieh Z genau auf einen Eckpunkt der blauen Figur. '+
+      'Was passiert mit dem roten Bild an dieser Ecke?</div>'+
+      '<div class="btn-row"><button class="btn primary" id="check2" style="padding:9px 14px;font-size:14px">Lösung zeigen</button></div>';
+    setTimeout(function(){ var b=document.getElementById('check2');
+      if(b) b.onclick=function(){ fb('fb2','ok','🌟 Liegt Z genau auf einer Ecke, bleibt diese Ecke '+
+        'beim Spiegeln <b>an Ort und Stelle</b> — sie ist ja schon im Dreh-Punkt. Probier es aus!'); }; },0);
+  } else {
+    mt.innerHTML='<div class="task">Beim <b>Verschieben</b> rutscht die ganze Figur entlang eines '+
+      '<b style="color:var(--grass)">grünen Pfeils</b> — gleiche Richtung, gleiche Weite. Nichts dreht sich.</div>'+
+      '<div class="task">👉 <b>Zieh die Pfeil-Spitze P</b> oder die blaue Figur und beobachte das rote Bild.</div>';
+    fb('fb2','info','➡️ Tipp: Das Bild bleibt gleich gedreht — es wird nur weggeschoben.');
+    tk.innerHTML='<div class="task"><b>Mini-Aufgabe:</b> Mach den grünen Pfeil ganz kurz '+
+      '(zieh P fast auf den Pfeil-Anfang). Was passiert mit dem roten Bild?</div>'+
+      '<div class="btn-row"><button class="btn primary" id="check2" style="padding:9px 14px;font-size:14px">Lösung zeigen</button></div>';
+    setTimeout(function(){ var b=document.getElementById('check2');
+      if(b) b.onclick=function(){ fb('fb2','ok','🌟 Je kürzer der Pfeil, desto näher liegt das rote Bild '+
+        'am blauen Original. Bei Pfeil-Länge 0 liegen beide genau übereinander.'); }; },0);
+  }
+}
+function buildPunktspiegelung(){
+  ggbSilent(function(){
+    api.evalCommand('A=(1,1)'); api.evalCommand('B=(3,1)'); api.evalCommand('C=(2,3)');
+    ['A','B','C'].forEach(function(p){ api.setColor(p,47,147,221); api.setPointSize(p,6);
+      api.setLabelVisible(p,true); api.setCaption(p,p); });
+    api.evalCommand('Z=(5,4)');
+    api.setColor('Z',139,92,246); api.setPointSize('Z',7);
+    api.setLabelVisible('Z',true); api.setCaption('Z','Z');
+    api.evalCommand('orig=Polygon(A,B,C)');
+    api.setColor('orig',47,147,221); api.setLineThickness('orig',4);
+    try{api.setFilling('orig',0.18);}catch(e){} try{api.setLabelVisible('orig',false);}catch(e){}
+    api.evalCommand('bild=Reflect(orig,Z)');
+    api.setColor('bild',255,107,107); api.setLineThickness('bild',4);
+    try{api.setFilling('bild',0.18);}catch(e){} try{api.setLabelVisible('bild',false);}catch(e){}
+  });
+  hideSegmentLabels();
+}
+function buildVerschiebung(){
+  ggbSilent(function(){
+    api.evalCommand('A=(1,1)'); api.evalCommand('B=(3,1)'); api.evalCommand('C=(2,3)');
+    ['A','B','C'].forEach(function(p){ api.setColor(p,47,147,221); api.setPointSize(p,6);
+      api.setLabelVisible(p,true); api.setCaption(p,p); });
+    // Pfeil (Vektor) von O nach P
+    api.evalCommand('O=(6,0)');
+    api.setColor('O',84,191,99); api.setPointSize('O',5);
+    api.setLabelVisible('O',false);
+    api.evalCommand('P=(9,3)');
+    api.setColor('P',84,191,99); api.setPointSize('P',7);
+    api.setLabelVisible('P',true); api.setCaption('P','P');
+    api.evalCommand('v=Vector(O,P)');
+    api.setColor('v',84,191,99); api.setLineThickness('v',5);
+    try{api.setLabelVisible('v',false);}catch(e){}
+    api.evalCommand('orig=Polygon(A,B,C)');
+    api.setColor('orig',47,147,221); api.setLineThickness('orig',4);
+    try{api.setFilling('orig',0.18);}catch(e){} try{api.setLabelVisible('orig',false);}catch(e){}
+    api.evalCommand('bild=Translate(orig,v)');
+    api.setColor('bild',255,107,107); api.setLineThickness('bild',4);
+    try{api.setFilling('bild',0.18);}catch(e){} try{api.setLabelVisible('bild',false);}catch(e){}
+  });
+  hideSegmentLabels();
+}
+
+/* Live-Reaktion beim Ziehen */
+function onObjectMove(n){
+  if(curSt===1 && n==='A') updateAbstand();
+}
+
+/* ============================================================
+   Station 4 — Symmetrie-Quiz
+   ============================================================ */
+// kind: 'achse' = nur achsensymmetrisch, 'punkt' = nur punktsymmetrisch,
+//       'beides' = beides, 'keins' = keins
+// Figuren als eigene SVGs gezeichnet -> Symmetrie steht durch Konstruktion fest,
+// hängt NICHT von der gerenderten Schriftart ab (fachlicher Fix).
+// Jede Figur trägt optional Hilfslinien: ax = Spiegelachsen (Punktepaare),
+// ctr = Punktsymmetrie-Zentrum [x,y]. Werden im Feedback eingeblendet.
+var VB=120; // ViewBox 0..120, Zentrum (60,60)
+function fAchse(x1,y1,x2,y2){ return {x1:x1,y1:y1,x2:x2,y2:y2}; }
+
+var QUIZ=[
+  {id:'glsdreieck', name:'Gleichschenkliges Dreieck', kind:'achse',
+   shape:'<polygon points="60,18 96,100 24,100"/>',
+   ax:[fAchse(60,8,60,112)],
+   why:'Es hat genau eine Spiegelachse — die senkrechte Linie durch die Spitze.'},
+  {id:'glsdreieck2', name:'Gleichseitiges Dreieck', kind:'achse',
+   shape:'<polygon points="60,20 96,98 24,98"/>',
+   ax:[fAchse(60,8,60,112), fAchse(18,38,102,90), fAchse(102,38,18,90)],
+   why:'Es hat sogar DREI Spiegelachsen — durch jede Ecke eine.'},
+  {id:'herz', name:'Herz', kind:'achse',
+   shape:'<path d="M60 102 C 18 70, 22 30, 48 30 C 56 30, 60 38, 60 44 C 60 38, 64 30, 72 30 C 98 30, 102 70, 60 102 Z"/>',
+   ax:[fAchse(60,18,60,110)],
+   why:'Eine senkrechte Spiegelachse teilt das Herz in zwei gleiche Hälften.'},
+  {id:'quadrat', name:'Quadrat', kind:'beides',
+   shape:'<rect x="28" y="28" width="64" height="64" rx="3"/>',
+   ax:[fAchse(60,18,60,102), fAchse(18,60,102,60), fAchse(24,24,96,96), fAchse(96,24,24,96)], ctr:[60,60],
+   why:'Es hat vier Spiegelachsen UND passt nach einer halben Drehung um die Mitte.'},
+  {id:'rechteck', name:'Rechteck', kind:'beides',
+   shape:'<rect x="20" y="40" width="80" height="40" rx="3"/>',
+   ax:[fAchse(60,30,60,90), fAchse(12,60,108,60)], ctr:[60,60],
+   why:'Senkrechte und waagerechte Spiegelachse UND eine halbe Drehung um die Mitte.'},
+  {id:'paragm', name:'Parallelogramm', kind:'punkt',
+   shape:'<polygon points="34,42 104,42 86,82 16,82"/>', ctr:[60,62],
+   why:'Keine Spiegelachse — aber eine halbe Drehung um die Mitte bildet es auf sich ab.'},
+  {id:'sdoppel', name:'S-Doppelhaken', kind:'punkt',
+   shape:'<path d="M40 30 L 90 30 L 90 46 L 56 46 L 56 56 L 80 56 L 80 90 L 30 90 L 30 74 L 64 74 L 64 64 L 40 64 Z"/>', ctr:[60,60],
+   why:'Wie ein „S": keine Spiegelachse, aber eine halbe Drehung um die Mitte passt genau.'},
+  {id:'pfeil', name:'Pfeil', kind:'keins',
+   shape:'<polygon points="20,50 70,50 70,32 104,60 70,88 70,70 20,70"/>',
+   why:'Ein Pfeil hat keine passende Spiegelachse und keine halbe Drehung — er zeigt klar in eine Richtung.'},
+  {id:'fahne', name:'Fähnchen', kind:'keins',
+   shape:'<path d="M40 22 L 40 100 M40 24 L 92 24 L 80 40 L 92 56 L 40 56" fill="none" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>',
+   why:'Ein Fähnchen am Mast ist weder gespiegelt noch um die Mitte drehbar gleich.'},
+  {id:'unviereck', name:'Schiefes Viereck', kind:'keins',
+   shape:'<polygon points="30,34 98,46 86,96 22,78"/>',
+   why:'Ein unregelmäßiges Viereck hat weder eine Spiegelachse noch passt eine halbe Drehung.'}
+];
+var LABELS={achse:'Achsensymmetrisch',punkt:'Punktsymmetrisch',beides:'Beides',keins:'Keins von beidem'};
+
+/* SVG für eine Figur bauen. showHelp=true blendet Achse(n)/Zentrum als Hilfslinien ein. */
+function figSVG(q,showHelp){
+  var stroke = (q.shape.indexOf('fill="none"')>=0); // Fähnchen ist eine Linie
+  var fillCol = stroke ? 'none' : '#8b5cf6';
+  var body = q.shape
+    .replace(/<(polygon|rect|path|polyline)/, '<$1 fill="'+fillCol+'" stroke="#6d36e0" stroke-width="3"');
+  var help='';
+  if(showHelp){
+    if(q.ax) q.ax.forEach(function(a){
+      help += '<line x1="'+a.x1+'" y1="'+a.y1+'" x2="'+a.x2+'" y2="'+a.y2+
+        '" stroke="#1db5a4" stroke-width="2.5" stroke-dasharray="6 5"/>';
+    });
+    if(q.ctr){
+      help += '<circle cx="'+q.ctr[0]+'" cy="'+q.ctr[1]+'" r="4.5" fill="#ff6b6b"/>'+
+        '<text x="'+(q.ctr[0]+8)+'" y="'+(q.ctr[1]-6)+'" font-family="Fredoka,sans-serif" '+
+        'font-size="13" font-weight="700" fill="#ff6b6b">Z</text>';
+    }
+  }
+  return '<svg viewBox="0 0 '+VB+' '+VB+'" xmlns="http://www.w3.org/2000/svg">'+
+    body+help+'</svg>';
+}
+var qOrder=[], qIdx=0, qScore=0;
+
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1));
+  var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+
+function showQuestion(){
+  if(qIdx>=8){ endQuiz(); return; }
+  var q=qOrder[qIdx];
+  document.getElementById('qn').textContent=(qIdx+1);
+  document.getElementById('figSvg').innerHTML=figSVG(q,false);
+  document.getElementById('figName').textContent=q.name;
+  document.getElementById('qfrage').textContent='Welche Symmetrie hat diese Figur?';
+  var keys=['achse','punkt','beides','keins'];
+  document.getElementById('qans').innerHTML = keys.map(function(k){
+    return '<button class="ans" data-k="'+k+'">'+LABELS[k]+'</button>';
+  }).join('');
+  var fb3=document.getElementById('fb3'); fb3.className='feedback';
+  document.getElementById('qnext').innerHTML='';
+  document.querySelectorAll('#qans .ans').forEach(function(b){
+    b.onclick=function(){ answerQuiz(this.getAttribute('data-k')); };
+  });
+}
+function answerQuiz(k){
+  var q=qOrder[qIdx];
+  var btns=document.querySelectorAll('#qans .ans');
+  btns.forEach(function(b){
+    b.disabled=true;
+    var bk=b.getAttribute('data-k');
+    if(bk===q.kind) b.classList.add('right');
+    else if(bk===k) b.classList.add('wrong');
+  });
+  // Hilfslinien (Spiegelachse grün gestrichelt / Zentrum Z rot) im Bild zeigen
+  try{ document.getElementById('figSvg').innerHTML=figSVG(q,true); }catch(e){}
+  var hinweis = hintShown(q);
+  if(k===q.kind){
+    qScore++; document.getElementById('qsc').textContent=qScore;
+    fb('fb3','ok','🌟 Richtig! '+q.why+' '+hinweis);
+  } else {
+    fb('fb3','no','Nicht ganz. Richtig wäre: <b>'+LABELS[q.kind]+'</b>. '+q.why+' '+hinweis);
+  }
+  qIdx++;
+  document.getElementById('qnext').innerHTML=
+    '<button class="btn primary" id="qnx">'+(qIdx>=8?'Auswertung':'Nächste Figur →')+'</button>';
+  document.getElementById('qnx').onclick=showQuestion;
+}
+/* benennt, was im Bild eingeblendet wird (grüne Achse / roter Punkt Z) */
+function hintShown(q){
+  if(q.kind==='achse') return '<br>👉 Die <b style="color:#1db5a4">grün gestrichelte Linie</b> ist die Spiegelachse.';
+  if(q.kind==='punkt') return '<br>👉 Der <b style="color:#ff6b6b">rote Punkt Z</b> ist das Zentrum für die halbe Drehung.';
+  if(q.kind==='beides') return '<br>👉 <b style="color:#1db5a4">Grüne Linien</b> = Spiegelachsen, <b style="color:#ff6b6b">roter Punkt Z</b> = Drehzentrum.';
+  return '<br>👉 Es gibt hier weder eine passende Spiegelachse noch ein Drehzentrum.';
+}
+function endQuiz(){
+  document.getElementById('figSvg').innerHTML='<div style="font-size:64px">🦋</div>';
+  document.getElementById('figName').textContent='Geschafft!';
+  document.getElementById('qfrage').textContent='';
+  document.getElementById('qans').innerHTML='';
+  var msg = qScore>=8?'🏆 Perfekt — alle 8 richtig! Du bist ein Symmetrie-Profi!':
+            qScore>=5?'💪 Stark — '+qScore+' von 8 richtig!':
+                      '🙂 '+qScore+' von 8 richtig. Probier es gleich nochmal!';
+  fb('fb3','ok',msg);
+  document.getElementById('qnext').innerHTML='<button class="btn primary" id="qagain">Noch eine Runde</button>';
+  document.getElementById('qagain').onclick=function(){ STATIONS[3].enter(); };
+}
+
+/* ============================================================
+   Helpers & Steuerung
+   ============================================================ */
+function fb(id,kind,msg){ var e=document.getElementById(id); if(!e) return;
+  e.className='feedback show '+kind; e.innerHTML=msg; }
+
+/* Profi-Klappboxen aktivieren (Differenzierung für Starke) */
+function wireProfi(){
+  document.querySelectorAll('.profi-head').forEach(function(h){
+    h.onclick=function(){ this.parentElement.classList.toggle('open'); };
+  });
+}
+
+function applyStation(n){
+  curSt=n;
+  document.querySelectorAll('.step').forEach(function(s){
+    s.classList.toggle('on', s.getAttribute('data-st')==String(n)); });
+  var S=STATIONS[n];
+  document.getElementById('panelHost').innerHTML=
+    '<div class="panel"><h3>'+S.title+'</h3>'+S.build()+'</div>';
+  // Werkzeugkasten-Hinweis nur in Station 1 (frei zeichnen) zeigen — sonst irreführend
+  var th=document.getElementById('toolHint'); if(th) th.style.display = (n===0?'flex':'none');
+  // GeoGebra-Spalte beim Quiz verstecken
+  var gc=document.getElementById('ggbCol'), gr=document.querySelector('.grid');
+  if(gc){ gc.style.display = n===3?'none':''; }
+  if(gr){ gr.style.gridTemplateColumns = n===3?'1fr':''; }
+  // Werkzeugkasten pro Station passend setzen
+  if(ready && S.toolbar){ try{ api.setCustomToolBar(S.toolbar); }catch(e){} }
+  // Gitter/Achsen für Stationen 0-2 sicher an (Quiz schaltet sie aus)
+  if(ready && n!==3){ try{ api.setGridVisible(true); api.setAxesVisible(true,true); }catch(e){} }
+  if(ready && S.enter) S.enter();
+}
+document.querySelectorAll('.step').forEach(function(s){
+  s.addEventListener('click',function(){ applyStation(parseInt(this.getAttribute('data-st'))); });
+});
+document.getElementById('resetView').addEventListener('click',resetView);
+
+/* ---------- Init ---------- */
+var params={ appName:'classic', showToolBar:true, customToolBar:'0 | 1 | 15 | 6',
+  showAlgebraInput:false, showMenuBar:false, showResetIcon:false,
+  enableShiftDragZoom:true, showZoomButtons:true, language:'de',
+  capturingThreshold:8, errorDialogsActive:false, appletOnLoad:onLoad };
+var app=new GGBApplet(params,true);
+window.addEventListener('load',function(){
+  if(typeof GGBApplet==='undefined'){ showFail(); return; }
+  try{ app.inject('ggb'); }catch(e){ showFail(); }
+  setTimeout(function(){ if(!ready) showFail(); },13000);
+});
+</script>
+</body>
+</html>

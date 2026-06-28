@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koordinaten-Werkstatt · Klasse 5</title>
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     GEMEINSAMES DESIGN-SYSTEM "Mathe-Werkstatt Klasse 5"
+     (hell & verspielt — Vorlage für Symmetrie-/Figuren-Labor)
+     ========================================================= */
+  :root{
+    --bg:#fef7ec; --bg2:#fff1dc;
+    --card:#ffffff; --ink:#2b2d42; --muted:#6b7280; --dim:#9aa3b2;
+    --line:#efe6d6; --line2:#e4d8c4;
+    --coral:#ff6b6b; --teal:#1db5a4; --sky:#2f93dd; --sun:#ffbf3c;
+    --grass:#54bf63; --grape:#8b5cf6;
+    /* Tool-Akzent: Koordinaten = Himmelblau */
+    --accent:#2f93dd; --accent-d:#1c6fb0; --accent-soft:#e4f1fb;
+    --ok:#54bf63; --ok-soft:#e6f6e9; --no:#ff6b6b; --no-soft:#ffe9e9;
+    --head:'Fredoka',system-ui,sans-serif;
+    --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;
+    -webkit-font-smoothing:antialiased}
+  body{background:
+      radial-gradient(900px 500px at 88% -6%, #fff6e0, transparent 60%),
+      radial-gradient(700px 500px at 0% 102%, #eaf5ff, transparent 55%),
+      var(--bg);
+    min-height:100vh;padding:0 0 70px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+
+  /* ---- Header ---- */
+  header{padding:26px 0 18px}
+  .kicker{font-family:var(--head);font-weight:600;font-size:13px;letter-spacing:.04em;
+    color:var(--accent-d);background:var(--accent-soft);display:inline-flex;align-items:center;gap:8px;
+    padding:6px 14px;border-radius:999px}
+  h1{font-family:var(--head);font-weight:700;font-size:38px;line-height:1.05;margin-top:14px;letter-spacing:-.01em}
+  h1 .em{color:var(--accent)}
+  .lead{font-size:17px;color:var(--muted);margin-top:8px;max-width:680px}
+  .mascot{font-size:42px;line-height:1}
+
+  /* ---- Stepper ---- */
+  .steps{display:flex;gap:10px;margin:22px 0 18px;flex-wrap:wrap}
+  .step{flex:1;min-width:200px;cursor:pointer;background:var(--card);border:2px solid var(--line);
+    border-radius:18px;padding:13px 15px;display:flex;gap:12px;align-items:center;transition:.15s;
+    box-shadow:0 2px 0 var(--line)}
+  .step:hover{transform:translateY(-2px);border-color:var(--line2)}
+  .step.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 3px 0 var(--accent-d)}
+  .step .badge{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--bg2);
+    display:flex;align-items:center;justify-content:center;font-size:21px}
+  .step.on .badge{background:#fff}
+  .step .stxt .n{font-family:var(--head);font-weight:600;font-size:12px;color:var(--dim)}
+  .step.on .stxt .n{color:var(--accent-d)}
+  .step .stxt .t{font-family:var(--head);font-weight:600;font-size:15.5px;margin-top:1px}
+
+  /* ---- Grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch}
+  #panelHost{display:flex;flex-direction:column}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+  .toolbar-hint{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:500;
+    font-size:14px;color:var(--accent-d);background:var(--accent-soft);border:2px dashed var(--accent);
+    border-radius:14px;padding:9px 14px;margin-bottom:10px}
+  .toolbar-hint .pop{font-size:20px}
+
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;overflow:hidden;
+    box-shadow:0 3px 0 var(--line)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;
+    border-bottom:2px solid var(--line);background:#fffdf8}
+  .card-top .tt{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);
+    display:flex;align-items:center;gap:8px}
+
+  .stage{position:relative;background:#fff}
+  #ggb{width:100%;min-height:500px}
+  .ovl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    gap:12px;text-align:center;padding:36px;background:#fff}
+  .ovl.show{display:flex}
+  .ovl .big{font-size:42px}
+  .ovl.load{color:var(--dim);font-family:var(--head)}
+  .spin{width:32px;height:32px;border:4px solid var(--line2);border-top-color:var(--accent);
+    border-radius:50%;animation:rot .9s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* ---- Panel (rechts) ---- */
+  .panel{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;
+    box-shadow:0 3px 0 var(--line);flex:1;overflow-y:auto}
+  .panel + .panel{margin-top:14px}
+  .panel h3{font-family:var(--head);font-weight:600;font-size:17px;margin-bottom:4px;
+    display:flex;align-items:center;gap:8px}
+  .panel .task{font-size:15px;color:var(--ink);margin:8px 0}
+  .panel .hint{font-size:13.5px;color:var(--muted)}
+
+  /* Koordinaten-Chips */
+  .coords{display:flex;gap:10px;margin:14px 0}
+  .chip{flex:1;border-radius:16px;padding:12px;text-align:center;border:2px solid}
+  .chip.x{background:#eaf5ff;border-color:#bfe0fb}
+  .chip.y{background:#fff3df;border-color:#ffe0a8}
+  .chip .lab{font-family:var(--head);font-weight:600;font-size:13px;color:var(--muted)}
+  .chip .num{font-family:var(--head);font-weight:700;font-size:34px;line-height:1.1}
+  .chip.x .num{color:var(--sky)} .chip.y .num{color:var(--sun)}
+
+  /* Buttons */
+  .btn{font-family:var(--head);font-weight:600;font-size:15px;cursor:pointer;border:none;
+    border-radius:14px;padding:11px 18px;transition:.12s;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-d)}
+  .btn.primary:hover{transform:translateY(-1px)}
+  .btn.primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-d)}
+  .btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line2)}
+  .btn.ghost:hover{border-color:var(--accent)}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+
+  /* Aufgaben-Fortschritt */
+  .targets{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+  .tg{font-family:var(--head);font-weight:600;font-size:14px;border-radius:12px;padding:7px 11px;
+    border:2px solid var(--line2);background:#fff;color:var(--muted)}
+  .tg.cur{border-color:var(--accent);color:var(--accent-d);background:var(--accent-soft)}
+  .tg.done{border-color:var(--ok);color:#2f7d3a;background:var(--ok-soft)}
+  .tg.done::before{content:"✓ "}
+
+  /* Feedback */
+  .feedback{border-radius:14px;padding:12px 14px;font-size:14.5px;font-weight:600;margin-top:12px;
+    display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--ok-soft);color:#2f7d3a;border:2px solid var(--ok)}
+  .feedback.no{background:var(--no-soft);color:#c0392b;border:2px solid var(--no)}
+  .feedback.info{background:var(--accent-soft);color:var(--accent-d);border:2px solid #bfe0fb}
+
+  /* Lese-Eingaben (Station 3) */
+  .readrow{display:flex;align-items:center;gap:8px;margin:9px 0;flex-wrap:wrap}
+  .readrow .pt{font-family:var(--head);font-weight:700;font-size:18px;width:26px}
+  .readrow input{width:58px;font-family:var(--head);font-weight:700;font-size:17px;text-align:center;
+    border:2px solid var(--line2);border-radius:10px;padding:7px 4px;color:var(--ink)}
+  .readrow input:focus{outline:none;border-color:var(--accent)}
+  .readrow .paren{font-family:var(--head);font-weight:700;font-size:18px;color:var(--muted)}
+
+  /* Schatzsuche */
+  .score{font-family:var(--head);font-weight:600;font-size:14px;color:var(--muted);
+    display:flex;justify-content:space-between;margin-bottom:8px}
+  .score b{color:var(--accent-d);font-size:20px}
+  .pirate{background:#fff8e8;border:2px solid #ffe0a8;border-radius:16px;padding:13px 15px;
+    font-size:15.5px;margin:10px 0}
+  .pirate .say{font-family:var(--head);font-weight:600;font-size:16px;margin-top:4px}
+  .treasure-coord{font-family:var(--head);font-weight:700;color:var(--accent);font-size:18px}
+
+  footer{margin-top:34px;text-align:center;color:var(--dim);font-size:13px;font-family:var(--head)}
+  .hidden{display:none!important}
+
+  /* Profi-Schalter */
+  .proswitch{display:inline-flex;align-items:center;gap:9px;margin-top:14px;cursor:pointer;
+    background:#fff;border:2px solid var(--line2);border-radius:999px;padding:7px 15px 7px 12px;
+    font-family:var(--head);font-weight:600;font-size:14px;box-shadow:0 2px 0 var(--line);user-select:none}
+  .proswitch input{width:18px;height:18px;accent-color:var(--grape);cursor:pointer}
+  .proswitch .pswsub{color:var(--muted);font-weight:500;font-size:12.5px}
+  .proswitch.on{border-color:var(--grape);background:#f3eefe;box-shadow:0 2px 0 #b79df0}
+
+  /* Werkzeug-Hinweis: großer Pfeil-Block */
+  .tool-arrow{display:flex;align-items:center;gap:11px;background:#fff7e8;border:2px solid var(--sun);
+    border-radius:14px;padding:10px 14px;margin:10px 0;font-family:var(--head);font-weight:600;font-size:14.5px}
+  .tool-arrow .ic{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+    width:42px;height:42px;border-radius:11px;background:#fff;border:2px solid var(--sun);font-size:20px;
+    animation:nudge 1.1s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .tool-arrow .ar{font-size:22px;color:var(--sun)}
+
+  /* Hilfe-Knopf "Zeig mir wie" */
+  .btn.help{background:#fff;color:var(--grape);border:2px solid #d8c7f7}
+  .btn.help:hover{border-color:var(--grape)}
+  .helpbox{background:#f3eefe;border:2px solid #d8c7f7;border-radius:14px;padding:12px 14px;
+    font-size:14px;margin-top:10px;display:none;line-height:1.55}
+  .helpbox.show{display:block}
+  .helpbox b{color:var(--grape)}
+
+  /* Mini-Erklär-Wort (Tooltip-artig) */
+  .word{border-bottom:2px dotted var(--accent);cursor:help}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span class="mascot">🧭</span>
+      <div>
+        <span class="kicker">📐 Mathe-Werkstatt · Klasse 5</span>
+        <h1>Die <span class="em">Koordinaten</span>-Werkstatt</h1>
+      </div>
+    </div>
+    <p class="lead">Jeder Punkt hat eine <b>Adresse</b> aus zwei Zahlen: <b>(x&nbsp;|&nbsp;y)</b>.
+      Erst nach <b style="color:var(--sky)">rechts ➜</b> (x), dann nach <b style="color:var(--sun)">oben ⬆</b> (y). Los geht's! 🏴‍☠️</p>
+    <label class="proswitch" id="proSwitch" title="Schaltet negative Zahlen und alle vier Richtungen frei">
+      <input type="checkbox" id="proChk"> <span class="pswtxt">🚀 Profi-Modus <span class="pswsub">(auch Minus-Zahlen)</span></span>
+    </label>
+  </header>
+
+  <!-- STEPPER -->
+  <div class="steps" id="steps">
+    <div class="step on" data-st="0"><span class="badge">🔎</span><div class="stxt"><div class="n">Station 1</div><div class="t">Das Gitternetz</div></div></div>
+    <div class="step" data-st="1"><span class="badge">📍</span><div class="stxt"><div class="n">Station 2</div><div class="t">Punkte setzen</div></div></div>
+    <div class="step" data-st="2"><span class="badge">🏷️</span><div class="stxt"><div class="n">Station 3</div><div class="t">Ablesen & Beschriften</div></div></div>
+    <div class="step" data-st="3"><span class="badge">🏴‍☠️</span><div class="stxt"><div class="n">Station 4</div><div class="t">Schatzsuche</div></div></div>
+  </div>
+
+  <div class="grid">
+    <!-- LINKS: GeoGebra -->
+    <div>
+      <div class="toolbar-hint"><span class="pop">🧰</span> Die grauen Knöpfe <b>oben links im weißen Bild</b> sind dein Werkzeugkasten.</div>
+      <div class="card">
+        <div class="card-top">
+          <span class="tt">🖥️ GeoGebra</span>
+          <button class="btn ghost" id="resetView" style="padding:7px 12px;font-size:13px">↺ Ansicht</button>
+        </div>
+        <div class="stage">
+          <div id="ggb"></div>
+          <div class="ovl load show" id="ovlLoad"><div class="spin"></div>GeoGebra wird geladen …</div>
+          <div class="ovl" id="ovlFail"><div class="big">😕</div><b>GeoGebra lädt nicht.</b>
+            <div style="color:var(--muted)">Dafür braucht das Tablet/der Computer Internet.<br>Bitte Seite neu laden.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Aufgaben/Steuerung -->
+    <div id="panelHost"></div>
+  </div>
+
+  <footer>Koordinaten-Werkstatt · zum Forschen, Tüfteln und Schätze finden</footer>
+</div>
+
+<script>
+/* ============================================================
+   Koordinaten-Werkstatt — GeoGebra-gesteuert (Klasse 5)
+   ============================================================ */
+var api=null, ready=false, curSt=0;
+var ignoreAdds=true;          // ignoriert Punkte, die das Programm selbst anlegt
+var mode=null;                // aktueller Prüf-Modus: 'place' | 'treasure' | 'label' | null
+var pro=false;                // Profi-Modus: negative Zahlen / alle vier Quadranten
+
+/* GeoGebra-Punkte sicher anlegen, ohne den Add-Listener auszulösen */
+function ggbSilent(fn){ ignoreAdds=true; try{fn();}catch(e){} setTimeout(function(){ignoreAdds=false;},80); }
+function clearUserPoints(){
+  if(!api) return;
+  try{ api.getAllObjectNames('point').forEach(function(n){
+    if(n!=='P' && n!=='Z') { ignoreAdds=true; api.deleteObject(n); }
+  }); }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},60);
+}
+
+function num(x){ return Math.round(x*100)/100; }
+function near(a,b){ return Math.abs(a-b)<0.4; }   // großzügige Touch-Toleranz
+
+/* Einen vom Kind gesetzten Punkt sofort aufs ganzzahlige Gitter einrasten
+   und die eingerasteten Koordinaten [x,y] zurückgeben. */
+function snapToGrid(name){
+  var x=Math.round(api.getXcoord(name)), y=Math.round(api.getYcoord(name));
+  ignoreAdds=true;
+  try{ api.setCoords(name,x,y); }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},60);
+  return [x,y];
+}
+
+/* Zufalls-Koordinate je nach Modus: Standard 1. Quadrant (0..max), Profi -max..max */
+function randCoord(max){
+  if(pro){ return Math.floor(Math.random()*(2*max+1))-max; }   // -max .. +max
+  return Math.floor(Math.random()*(max+1));                     // 0 .. max
+}
+
+function resetView(){
+  if(!api) return;
+  try{ pro ? api.setCoordSystem(-8.5,8.5,-7.5,7.5) : api.setCoordSystem(-1.5,11.5,-1.5,9.5); }catch(e){}
+}
+
+/* ---------- Applet ---------- */
+function onLoad(g){
+  api=g;
+  ggbSilent(function(){
+    api.evalCommand('P=(3,2)');
+    api.setColor('P',47,147,221); api.setPointSize('P',6); api.setLabelVisible('P',true);
+    api.setCaption('P','P'); try{api.setFixed('P',false,false);}catch(e){}
+  });
+  try{ api.setPerspective('G'); }catch(e){}
+  try{ api.setGridVisible(true); api.setAxesVisible(true,true); }catch(e){}
+  try{ api.setPointCapturing(1,3); }catch(e){}   // View 1: Punkte rasten aufs Gitter ein
+  resetView();
+  api.registerAddListener(function(name){
+    if(ignoreAdds) return;
+    try{ if(api.getObjectType(name)!=='point') return; }catch(e){ return; }
+    handleUserPoint(name);
+  });
+  api.registerUpdateListener(function(n){ if(n==='P') refreshExplore(); });
+  ready=true;
+  document.getElementById('ovlLoad').classList.remove('show');
+  applyStation(0);
+}
+function showFail(){ document.getElementById('ovlLoad').classList.remove('show');
+  document.getElementById('ovlFail').classList.add('show'); }
+
+/* ---------- Stationen ---------- */
+var STATIONS=[
+ {/* 0 — Forschen */
+  title:'🔎 Das Gitternetz erkunden',
+  build:function(){
+    return '<div class="task"><b>Zieh den blauen Punkt P</b> herum. Schau, wie sich die zwei Zahlen ändern:</div>'+
+      '<div class="coords"><div class="chip x"><div class="lab">x · nach rechts ➜</div><div class="num" id="cx">3</div></div>'+
+      '<div class="chip y"><div class="lab">y · nach oben ⬆</div><div class="num" id="cy">2</div></div></div>'+
+      '<div class="feedback info show" id="fb0">📌 So schreibt man einen Punkt: <b>(<span id="cxw">3</span> | <span id="cyw">2</span>)</b> — '+
+      'erst x, dann y.</div>'+
+      '<div class="task hint" style="margin-top:10px">Die zwei Linien sind die <b style="color:var(--sky)">x-Achse</b> (rechts) '+
+      'und die <b style="color:var(--sun)">y-Achse</b> (oben). Wo sie sich kreuzen, ist der '+
+      '<b class="word" title="Der Startpunkt (0 | 0), wo beide Achsen sich treffen.">Ursprung</b> <b>(0 | 0)</b>.</div>'+
+      '<div class="btn-row"><button class="btn ghost" id="snap">📌 P auf ein Kästchen setzen</button></div>';
+  },
+  enter:function(){
+    mode=null;
+    ggbSilent(function(){ api.setVisible('P',true); });
+    try{ api.setMode(0); }catch(e){} // Verschieben-Werkzeug, damit P gezogen werden kann
+    document.getElementById('snap').onclick=function(){
+      ggbSilent(function(){ var x=Math.round(api.getXcoord('P')), y=Math.round(api.getYcoord('P'));
+        api.setCoords('P',x,y); }); setTimeout(refreshExplore,90);
+    };
+    refreshExplore();
+  }},
+
+ {/* 1 — Punkte setzen */
+  title:'📍 Setze Punkte an die richtige Stelle',
+  build:function(){
+    return '<div class="tool-arrow"><span class="ic">•A</span><span class="ar">⬅</span>'+
+      '<span>Tippe oben den Knopf <b>„•A" (Punkt)</b> an, dann auf die richtige Stelle.</span></div>'+
+      '<div class="task">Setze diese Punkte:</div>'+
+      '<div class="targets" id="tgs"></div>'+
+      '<div class="feedback show info" id="fb1">Tipp: erst <b>x</b> nach rechts, dann <b>y</b> nach oben zählen.</div>'+
+      '<div class="btn-row"><button class="btn help" id="help1">💡 Zeig mir wie</button>'+
+      '<button class="btn ghost" id="clr1">Punkte löschen</button>'+
+      '<button class="btn ghost" id="new1">Neue Punkte</button></div>'+
+      '<div class="helpbox" id="hb1"><b>So setzt du (2 | 3):</b><br>'+
+      '1. Tippe oben den Knopf <b>•A</b> an.<br>'+
+      '2. Gehe <b>2</b> Kästchen nach rechts.<br>'+
+      '3. Gehe von dort <b>3</b> Kästchen nach oben.<br>'+
+      '4. Tippe dort ins Bild. ✅</div>';
+  },
+  enter:function(){
+    genPlaceList(); placeIdx=0; mode='place';
+    clearUserPoints();
+    ggbSilent(function(){ api.setVisible('P',false); });
+    try{ api.setMode(1); }catch(e){} // Punkt-Werkzeug aktiv
+    renderTargets();
+    document.getElementById('clr1').onclick=function(){ clearUserPoints(); placeIdx=0; renderTargets(); };
+    document.getElementById('new1').onclick=function(){ STATIONS[1].enter(); };
+    document.getElementById('help1').onclick=function(){
+      document.getElementById('hb1').classList.toggle('show'); };
+  }},
+
+ {/* 2 — Ablesen & Beschriften */
+  title:'🏷️ Punkte ablesen & richtig beschriften',
+  build:function(){
+    return '<div class="task"><b>Teil 1 – Ablesen:</b> Lies die Punkte <b>A</b>, <b>B</b>, <b>C</b> ab und trag sie ein:</div>'+
+      '<div id="reads"></div>'+
+      '<div class="btn-row"><button class="btn primary" id="chk2">Prüfen</button>'+
+      '<button class="btn help" id="help2">💡 Zeig mir wie</button>'+
+      '<button class="btn ghost" id="new2">Neue Punkte</button></div>'+
+      '<div class="helpbox" id="hb2"><b>So liest du einen Punkt ab:</b><br>'+
+      '1. Geh vom <b class="word" title="Startpunkt (0|0)">Ursprung</b> nach rechts bis unter den Punkt → das ist <b>x</b>.<br>'+
+      '2. Dann hoch bis zum Punkt → das ist <b>y</b>.<br>'+
+      '3. Schreib (x | y). ✅</div>'+
+      '<div class="feedback" id="fb2"></div>'+
+      '<div class="task" style="margin-top:16px;border-top:2px solid var(--line);padding-top:14px">'+
+      '<b>Teil 2 – Beschriften:</b> Jetzt machst du es selbst! Setze mit dem <b>•A</b>-Werkzeug '+
+      'einen Punkt und gib ihm einen Namen mit Koordinaten.</div>'+
+      '<div class="tool-arrow"><span class="ic">•A</span><span class="ar">⬅</span>'+
+      '<span>Erst <b>•A</b> antippen, dann den Punkt ins Bild setzen.</span></div>'+
+      '<div class="readrow" style="margin-top:4px">'+
+      '<input id="dname" maxlength="1" placeholder="D" style="width:46px;text-transform:uppercase">'+
+      '<span class="paren">(</span>'+
+      '<input id="dx" type="number" inputmode="numeric" placeholder="x">'+
+      '<span class="paren">|</span>'+
+      '<input id="dy" type="number" inputmode="numeric" placeholder="y">'+
+      '<span class="paren">)</span></div>'+
+      '<div class="btn-row"><button class="btn primary" id="lbl">🏷️ Beschriften</button></div>'+
+      '<div class="feedback" id="fbL"></div>';
+  },
+  enter:function(){
+    clearUserPoints();
+    ggbSilent(function(){ api.setVisible('P',false); });
+    spawnLabelPoints();
+    dPlaced=null;
+    mode='label';                       // Teil 2: Kind darf einen eigenen Punkt setzen
+    try{ api.setMode(1); }catch(e){}    // Punkt-Werkzeug aktiv
+    document.getElementById('help2').onclick=function(){
+      document.getElementById('hb2').classList.toggle('show'); };
+    document.getElementById('lbl').onclick=doLabel;
+  }},
+
+ {/* 3 — Schatzsuche */
+  title:'🏴‍☠️ Die große Schatzsuche',
+  build:function(){
+    return '<div class="score"><span>Runde <b id="rnd">1</b>/5</span><span>Schätze 💰 <b id="sc">0</b></span></div>'+
+      '<div class="pirate" id="pirate"></div>'+
+      '<div class="feedback" id="fb3"></div>'+
+      '<div id="treasureRead" class="hidden">'+
+        '<div class="readrow"><span class="paren">(</span>'+
+        '<input id="trx" type="number" inputmode="numeric" placeholder="x">'+
+        '<span class="paren">|</span>'+
+        '<input id="try" type="number" inputmode="numeric" placeholder="y">'+
+        '<span class="paren">)</span>'+
+        '<button class="btn primary" id="trchk" style="margin-left:6px">Abschicken</button></div>'+
+      '</div>'+
+      '<div class="btn-row" id="nextRow" style="margin-top:12px"></div>';
+  },
+  enter:function(){
+    clearUserPoints(); ggbSilent(function(){ api.setVisible('P',false); });
+    tScore=0; tRound=0; document.getElementById('sc').textContent='0';
+    nextTreasure();
+  }}
+];
+
+/* ---------- Station 1: Forschen ---------- */
+function refreshExplore(){
+  if(curSt!==0||!ready) return;
+  var x=Math.round(api.getXcoord('P')*10)/10, y=Math.round(api.getYcoord('P')*10)/10;
+  var xs=(Math.abs(x-Math.round(x))<0.05)?String(Math.round(x)):x.toString().replace('.',',');
+  var ys=(Math.abs(y-Math.round(y))<0.05)?String(Math.round(y)):y.toString().replace('.',',');
+  var e;
+  if(e=document.getElementById('cx')) e.textContent=xs;
+  if(e=document.getElementById('cy')) e.textContent=ys;
+  if(e=document.getElementById('cxw')) e.textContent=xs;
+  if(e=document.getElementById('cyw')) e.textContent=ys;
+}
+
+/* ---------- Station 2: Punkte setzen ---------- */
+var placeList=[], placeIdx=0;
+/* erzeugt 5 zufällige, eindeutige Zielpunkte im aktuellen Quadranten-Modus */
+function genPlaceList(){
+  var used={}, list=[], max=pro?6:7;
+  while(list.length<5){
+    var x=randCoord(max), y=randCoord(max);
+    var k=x+'_'+y; if(used[k]||(x===0&&y===0)) continue; used[k]=1; list.push([x,y]);
+  }
+  placeList=list;
+}
+function renderTargets(){
+  var h=placeList.map(function(p,i){
+    var cls=i<placeIdx?'tg done':(i===placeIdx?'tg cur':'tg');
+    return '<span class="'+cls+'">('+p[0]+' | '+p[1]+')</span>';
+  }).join('');
+  document.getElementById('tgs').innerHTML=h;
+}
+function handleUserPoint(name){
+  if(mode==='place'){
+    var s=snapToGrid(name), x=s[0], y=s[1];   // erst aufs Gitter einrasten, dann prüfen
+    var t=placeList[placeIdx];
+    if(t && near(x,t[0]) && near(y,t[1])){
+      ignoreAdds=true;
+      try{ api.setCoords(name,t[0],t[1]); api.setColor(name,84,191,99); api.setPointSize(name,6); }catch(e){}
+      setTimeout(function(){ignoreAdds=false;},60);
+      fb('fb1','ok','🎯 Treffer bei ('+t[0]+' | '+t[1]+')! Weiter so.');
+      placeIdx++;
+      if(placeIdx>=placeList.length){ fb('fb1','ok','🌟 Super! Alle Punkte sitzen genau richtig!'); }
+      renderTargets();
+    } else {
+      ignoreAdds=true; try{ api.deleteObject(name); }catch(e){}
+      setTimeout(function(){ignoreAdds=false;},60);
+      if(t) fb('fb1','no','Nicht ganz! Gesucht ist ('+t[0]+' | '+t[1]+'). '+dirHint(x,y,t[0],t[1]));
+    }
+  } else if(mode==='treasure'){
+    checkTreasurePlace(name);
+  } else if(mode==='label'){
+    checkLabelPlace(name);
+  }
+}
+/* freundliche Richtungs-Hilfe: in welche Richtung muss das Kind? */
+function dirHint(x,y,tx,ty){
+  var d=[];
+  if(x<tx) d.push('weiter nach rechts'); else if(x>tx) d.push('weiter nach links');
+  if(y<ty) d.push('weiter nach oben'); else if(y>ty) d.push('weiter nach unten');
+  return d.length?('Geh '+d.join(' und ')+'.'):'Nochmal!';
+}
+
+/* ---------- Station 3: Ablesen ---------- */
+var labelPts=[], dPlaced=null;
+function spawnLabelPoints(){
+  var used={}, pts=[], max=pro?6:7;
+  while(pts.length<3){
+    var x=randCoord(max), y=randCoord(max);
+    var k=x+'_'+y; if(used[k]||(x===0&&y===0)) continue; used[k]=1; pts.push([x,y]);
+  }
+  labelPts=pts;
+  var names=['A','B','C'], cols=[[47,147,221],[255,107,107],[139,92,246]];
+  ggbSilent(function(){
+    names.forEach(function(nm,i){ try{api.deleteObject(nm);}catch(e){} });
+    names.forEach(function(nm,i){
+      api.evalCommand(nm+'=('+pts[i][0]+','+pts[i][1]+')');
+      api.setColor(nm,cols[i][0],cols[i][1],cols[i][2]); api.setPointSize(nm,6);
+      api.setLabelVisible(nm,true); api.setCaption(nm,nm);
+    });
+  });
+  var rh=names.map(function(nm){
+    return '<div class="readrow"><span class="pt" style="color:'+
+      (nm==='A'?'var(--sky)':nm==='B'?'var(--coral)':'var(--grape)')+'">'+nm+'</span>'+
+      '<span class="paren">(</span><input data-pt="'+nm+'" data-ax="x" type="number" inputmode="numeric">'+
+      '<span class="paren">|</span><input data-pt="'+nm+'" data-ax="y" type="number" inputmode="numeric">'+
+      '<span class="paren">)</span></div>';
+  }).join('');
+  document.getElementById('reads').innerHTML=rh;
+  var fb2=document.getElementById('fb2'); fb2.className='feedback';
+  document.getElementById('chk2').onclick=checkLabels;
+  document.getElementById('new2').onclick=spawnLabelPoints;
+}
+function checkLabels(){
+  var names=['A','B','C'], allOk=true, got=0;
+  names.forEach(function(nm,i){
+    var xi=document.querySelector('input[data-pt="'+nm+'"][data-ax="x"]');
+    var yi=document.querySelector('input[data-pt="'+nm+'"][data-ax="y"]');
+    var ok = parseInt(xi.value,10)===labelPts[i][0] && parseInt(yi.value,10)===labelPts[i][1];
+    xi.style.borderColor = ok?'var(--ok)':'var(--no)';
+    yi.style.borderColor = ok?'var(--ok)':'var(--no)';
+    if(ok) got++; else allOk=false;
+  });
+  if(allOk) fb('fb2','ok','🌟 Alle drei richtig abgelesen! Klasse!');
+  else fb('fb2','no','Du hast '+got+' von 3 richtig. Schau nochmal: erst nach rechts (x), dann nach oben (y).');
+}
+
+/* Teil 2 – Beschriften: Kind setzt einen eigenen Punkt … */
+function checkLabelPlace(name){
+  var s=snapToGrid(name), x=s[0], y=s[1];
+  // nur EINEN selbst gesetzten Punkt behalten
+  if(dPlaced && dPlaced.name && dPlaced.name!==name){
+    ignoreAdds=true; try{ api.deleteObject(dPlaced.name); }catch(e){}
+    setTimeout(function(){ignoreAdds=false;},60);
+  }
+  dPlaced={name:name, x:x, y:y};
+  ignoreAdds=true;
+  try{ api.setColor(name,255,191,60); api.setPointSize(name,6); api.setLabelVisible(name,true); api.setCaption(name,'?'); }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},60);
+  // Eingabefelder vorbereiten
+  var dx=document.getElementById('dx'), dy=document.getElementById('dy');
+  if(dx) dx.value=''; if(dy) dy.value='';
+  fb('fbL','info','📍 Dein Punkt sitzt bei ('+x+' | '+y+'). Gib ihm jetzt einen Namen und trag seine Koordinaten ein, dann klick „Beschriften".');
+}
+/* … und beschriftet ihn richtig: Großbuchstabe + Koordinaten in Klammern */
+function doLabel(){
+  if(!dPlaced){ fb('fbL','no','Setz zuerst mit dem •A-Werkzeug einen Punkt ins Bild.'); return; }
+  var nm=(document.getElementById('dname').value||'').trim().toUpperCase();
+  var dx=parseInt(document.getElementById('dx').value,10);
+  var dy=parseInt(document.getElementById('dy').value,10);
+  if(!/^[A-Z]$/.test(nm)){ fb('fbL','no','Gib einen Großbuchstaben als Namen ein (z.B. D).'); return; }
+  if(isNaN(dx)||isNaN(dy)){ fb('fbL','no','Trag die Koordinaten deines Punktes ein: ( x | y ).'); return; }
+  if(dx!==dPlaced.x || dy!==dPlaced.y){
+    fb('fbL','no','Hmm – dein Punkt liegt bei ('+dPlaced.x+' | '+dPlaced.y+'). Lies nochmal genau ab (erst rechts, dann hoch).');
+    return;
+  }
+  ignoreAdds=true;
+  try{ api.setCaption(dPlaced.name, nm+' ('+dx+' | '+dy+')'); api.setLabelStyle(dPlaced.name,3);
+       api.setColor(dPlaced.name,84,191,99); }catch(e){}
+  setTimeout(function(){ignoreAdds=false;},60);
+  fb('fbL','ok','🏷️ Stark beschriftet: '+nm+' ('+dx+' | '+dy+') — Großbuchstabe als Name, Koordinaten in Klammern!');
+}
+
+/* ---------- Station 4: Schatzsuche ---------- */
+var tScore=0, tRound=0, treasure=null, treasureMode='place';
+function nextTreasure(){
+  tRound++;
+  if(tRound>5){ endTreasure(); return; }
+  document.getElementById('rnd').textContent=tRound;
+  clearUserPoints();
+  try{ api.deleteObject('Z'); }catch(e){}
+  var tx=1+Math.floor(Math.random()*9), ty=1+Math.floor(Math.random()*8);
+  treasure=[tx,ty];
+  treasureMode=(tRound%2===0)?'read':'place';   // abwechselnd setzen / ablesen
+  var fb3=document.getElementById('fb3'); fb3.className='feedback';
+  document.getElementById('nextRow').innerHTML='';
+  var rd=document.getElementById('treasureRead');
+  if(treasureMode==='place'){
+    mode='treasure'; rd.classList.add('hidden');
+    try{ api.setMode(1); }catch(e){}
+    document.getElementById('pirate').innerHTML='🦜 <b>Käpt\'n Klausi ruft:</b>'+
+      '<div class="say">„Der Schatz liegt bei <span class="treasure-coord">('+tx+' | '+ty+')</span>. '+
+      'Setz dort einen Punkt!"</div>';
+  } else {
+    mode=null;
+    try{ api.setMode(0); }catch(e){} // Ablese-Runde: nichts setzen
+    ggbSilent(function(){ api.evalCommand('Z=('+tx+','+ty+')');
+      api.setColor('Z',255,191,60); api.setPointSize('Z',9); api.setLabelVisible('Z',false); });
+    rd.classList.remove('hidden');
+    document.getElementById('trx').value=''; document.getElementById('try').value='';
+    document.getElementById('pirate').innerHTML='🦜 <b>Käpt\'n Klausi ruft:</b>'+
+      '<div class="say">„Da blinkt der goldene Schatzpunkt! Welche Koordinaten hat er? Lies ab!"</div>';
+    document.getElementById('trchk').onclick=function(){
+      var gx=parseInt(document.getElementById('trx').value,10);
+      var gy=parseInt(document.getElementById('try').value,10);
+      if(gx===tx&&gy===ty){ winTreasure(); } else {
+        fb('fb3','no','Noch nicht. Tipp: zähl erst nach rechts (x), dann nach oben (y).');
+      }
+    };
+  }
+}
+function checkTreasurePlace(name){
+  var x=api.getXcoord(name), y=api.getYcoord(name);
+  if(near(x,treasure[0])&&near(y,treasure[1])){
+    ignoreAdds=true; try{ api.setCoords(name,treasure[0],treasure[1]);
+      api.setColor(name,255,191,60); api.setPointSize(name,9);}catch(e){}
+    setTimeout(function(){ignoreAdds=false;},60);
+    winTreasure();
+  } else {
+    ignoreAdds=true; try{api.deleteObject(name);}catch(e){} setTimeout(function(){ignoreAdds=false;},60);
+    var dir=[];
+    if(x<treasure[0]-0.3) dir.push('weiter nach rechts'); else if(x>treasure[0]+0.3) dir.push('weiter nach links');
+    if(y<treasure[1]-0.3) dir.push('weiter nach oben'); else if(y>treasure[1]+0.3) dir.push('weiter nach unten');
+    fb('fb3','no','Daneben! Versuch es '+(dir.length?dir.join(' und '):'nochmal genauer')+'.');
+  }
+}
+function winTreasure(){
+  tScore++; document.getElementById('sc').textContent=tScore;
+  fb('fb3','ok','🎉 Schatz gefunden bei ('+treasure[0]+' | '+treasure[1]+')! 💰');
+  mode=null;
+  document.getElementById('nextRow').innerHTML=
+    '<button class="btn primary" id="nx">'+(tRound>=5?'Auswertung':'Nächste Runde →')+'</button>';
+  document.getElementById('nx').onclick=nextTreasure;
+}
+function endTreasure(){
+  document.getElementById('pirate').innerHTML='🏴‍☠️ <b>Käpt\'n Klausi:</b>'+
+    '<div class="say">„Arrr, geschafft!"</div>';
+  var msg = tScore>=5?'🏆 Perfekt — alle 5 Schätze gefunden!':
+            tScore>=3?'💪 Stark — '+tScore+' von 5 Schätzen!':
+                      '🙂 '+tScore+' von 5 gefunden. Nochmal versuchen?';
+  fb('fb3','ok',msg);
+  document.getElementById('treasureRead').classList.add('hidden');
+  document.getElementById('nextRow').innerHTML='<button class="btn primary" id="again">Noch eine Schatzsuche</button>';
+  document.getElementById('again').onclick=function(){ STATIONS[3].enter(); };
+}
+
+/* ---------- Helpers ---------- */
+function fb(id,kind,msg){ var e=document.getElementById(id); if(!e) return;
+  e.className='feedback show '+kind; e.innerHTML=msg; }
+
+function applyStation(n){
+  curSt=n;
+  document.querySelectorAll('.step').forEach(function(s){
+    s.classList.toggle('on', s.getAttribute('data-st')==String(n)); });
+  var S=STATIONS[n];
+  document.getElementById('panelHost').innerHTML=
+    '<div class="panel"><h3>'+S.title+'</h3>'+S.build()+'</div>';
+  if(ready && S.enter) S.enter();
+}
+document.querySelectorAll('.step').forEach(function(s){
+  s.addEventListener('click',function(){ applyStation(parseInt(this.getAttribute('data-st'))); });
+});
+document.getElementById('resetView').addEventListener('click',resetView);
+
+/* Profi-Modus: schaltet negative Zahlen / alle vier Quadranten frei */
+document.getElementById('proChk').addEventListener('change',function(){
+  pro=this.checked;
+  document.getElementById('proSwitch').classList.toggle('on',pro);
+  if(ready){ resetView(); applyStation(curSt); }   // aktuelle Station mit neuem Modus neu aufbauen
+});
+
+/* ---------- Init ---------- */
+var params={ appName:'classic', showToolBar:true, customToolBar:'0 | 1 | 6',
+  showAlgebraInput:false, showMenuBar:false, showResetIcon:false,
+  enableShiftDragZoom:true, showZoomButtons:true, language:'de',
+  capturingThreshold:8, errorDialogsActive:false, appletOnLoad:onLoad };
+var app=new GGBApplet(params,true);
+window.addEventListener('load',function(){
+  if(typeof GGBApplet==='undefined'){ showFail(); return; }
+  try{ app.inject('ggb'); }catch(e){ showFail(); }
+  setTimeout(function(){ if(!ready) showFail(); },13000);
+});
+</script>
+</body>
+</html>
