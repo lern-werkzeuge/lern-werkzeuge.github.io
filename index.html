@@ -8,6 +8,8 @@
   :root{
     --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
     --line:#283248; --accent:#5aa0ff; --good:#4fd6a0;
+    /* eigener, ruhiger Kanal für Lehrkraft-Material */
+    --teacher:#cda46a; --teacher-bg:rgba(205,164,106,.06); --teacher-line:rgba(205,164,106,.28);
     --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
     --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
@@ -15,28 +17,65 @@
   html,body{margin:0}
   body{background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
     color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
-  .wrap{max-width:780px;margin:0 auto;padding:34px 20px 64px}
+  .wrap{max-width:840px;margin:0 auto;padding:34px 20px 64px}
   .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
   h1{font-size:30px;margin:0 0 8px;letter-spacing:.2px;font-weight:680}
   h1 .hl{color:var(--good)}
-  .sub{color:var(--muted);font-size:15px;margin-bottom:26px}
-  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 20px;max-width:62ch}
+
+  /* ── Legende + Toggle: macht die zwei Ebenen sofort sichtbar ───────── */
+  .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 22px;
+    margin-bottom:30px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .legend{display:flex;flex-wrap:wrap;gap:9px 20px;font-size:12.5px;color:var(--muted)}
+  .legend .item{display:flex;align-items:center;gap:8px;line-height:1.3}
+  .legend .tag{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+    padding:3px 8px;border-radius:6px;border:1px solid}
+  .legend .tag.stud{color:var(--good);border-color:rgba(79,214,160,.35);background:rgba(79,214,160,.06)}
+  .legend .tag.teach{color:var(--teacher);border-color:var(--teacher-line);background:var(--teacher-bg)}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .toggle input{position:absolute;opacity:0;pointer-events:none}
+  .switch{position:relative;width:38px;height:21px;border-radius:21px;background:#2a3650;border:1px solid var(--line);transition:.16s;flex:0 0 auto}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#8595b2;transition:.16s}
+  .toggle input:checked + .switch{background:rgba(205,164,106,.32);border-color:var(--teacher-line)}
+  .toggle input:checked + .switch::after{left:19px;background:var(--teacher)}
+  .toggle input:focus-visible + .switch{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ── Raster + Kacheln ──────────────────────────────────────────────── */
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:stretch}
   @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
   @media(max-width:560px){.grid{grid-template-columns:1fr}}
-  a.card{display:block;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:18px 18px 16px;transition:.14s;color:inherit}
-  a.card:hover{border-color:var(--accent);background:#192340;transform:translateY(-2px)}
+
+  .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;transition:.14s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+
+  /* Schüler-Ebene: prominent, große klickbare Fläche */
+  a.tool{display:flex;flex-direction:column;flex:1 1 auto;text-decoration:none;color:inherit;
+    padding:18px 18px 16px;transition:.14s}
+  a.tool:hover{background:#192340}
   .card .sym{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--good);margin-bottom:8px}
   .card h2{font-size:17px;margin:0 0 5px;font-weight:650;color:#fff}
   .card p{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
-  .card .go{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:11px;display:inline-block}
-  .card .lehrer{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:11px;margin-left:16px;display:inline-block;cursor:pointer;border-bottom:1px dashed var(--line)}
-  .card .lehrer:hover{color:var(--accent);border-color:var(--accent)}
-  .section{margin-top:32px}
-  .section:first-child{margin-top:0}
+  .card .go{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:auto;padding-top:11px;display:inline-block}
+
+  /* Lehrkraft-Ebene: dezenter, klar gelabelter Streifen am Fuß */
+  .teacher{border-top:1px solid var(--line);background:var(--teacher-bg);
+    padding:10px 18px 12px;display:flex;flex-direction:column;gap:3px}
+  .teacher .lbl{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;
+    letter-spacing:1.6px;text-transform:uppercase;color:var(--teacher);opacity:.95}
+  .teacher .lbl svg{width:13px;height:13px;display:block;flex:0 0 auto}
+  a.sheet{font-family:var(--mono);font-size:12.5px;color:var(--muted);text-decoration:none;
+    align-self:flex-start;border-bottom:1px solid transparent;padding-bottom:1px;transition:.14s}
+  a.sheet:hover{color:var(--teacher);border-color:var(--teacher-line)}
+
+  body.hide-teacher .teacher{display:none}
+  body.hide-teacher .legend .item.t-only{display:none}
+
+  .section{margin-top:30px}
+  .section:first-of-type{margin-top:0}
   .section-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
     color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;
+  footer{margin-top:34px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;
     display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
   footer .mono{font-family:var(--mono)}
 </style>
@@ -45,159 +84,263 @@
 <div class="wrap">
   <div class="kick">Mathematik · IGS Delmenhorst · interaktiv üben</div>
   <h1>Mathe-Werkzeuge <span class="hl">=</span></h1>
-  <p class="sub">Klick ein Werkzeug an — es öffnet sich direkt im Browser. Ohne Anmeldung, ohne Installation.</p>
+  <p class="sub">Klick ein Werkzeug an — es öffnet sich direkt im Browser. Ohne Anmeldung, ohne Installation. Zu vielen Werkzeugen gibt es am Kachelfuß ein didaktisches Begleitblatt für Lehrkräfte.</p>
 
+  <div class="bar">
+    <div class="legend">
+      <span class="item"><span class="tag stud">Öffnen →</span> Werkzeug für Schüler:innen</span>
+      <span class="item t-only"><span class="tag teach">Begleitblatt</span> didaktischer Hinweis für Lehrkräfte</span>
+    </div>
+    <label class="toggle" title="Für die Projektion im Unterricht: Lehrkraft-Hinweise ausblenden">
+      <input type="checkbox" id="tmat" checked>
+      <span class="switch" aria-hidden="true"></span>
+      <span>Lehrkraft-Material</span>
+    </label>
+  </div>
+
+  <!-- ══ Gleichungen & Terme ════════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Gleichungen &amp; Terme</div>
     <div class="grid">
-      <a class="card" href="waage.html">
-        <div class="sym">=</div>
-        <h2>Die Waage</h2>
-        <p>Was bedeutet das Gleichheitszeichen? Bring die Waage ins Gleichgewicht.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('fehlvorstellungen-gleichheitszeichen.html','_blank')">Begleitblatt&nbsp;↗</span>
-      </a>
-      <a class="card" href="gleichungs-waage.html">
-        <div class="sym">=</div>
-        <h2>Die Gleichungs-Waage</h2>
-        <p>Gleichungen lösen: auf beiden Seiten dasselbe tun, bis x allein steht.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('gleichungs-waage-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="term-werkstatt.html">
-        <div class="sym">x</div>
-        <h2>Term-Werkstatt</h2>
-        <p>Variablen und Terme verstehen: einsetzen, vergleichen, umformen.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('term-werkstatt-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="funktions-werkstatt.html">
-        <div class="sym">f(x)</div>
-        <h2>Funktions-Werkstatt</h2>
-        <p>Steigung und y-Achsenabschnitt verstehen — Tabelle, Graph und Term auf einen Blick.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('funktions-werkstatt-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="waage.html">
+          <div class="sym">=</div>
+          <h2>Die Waage</h2>
+          <p>Was bedeutet das Gleichheitszeichen? Bring die Waage ins Gleichgewicht.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="gleichungs-waage.html">
+          <div class="sym">=</div>
+          <h2>Die Gleichungs-Waage</h2>
+          <p>Gleichungen lösen: auf beiden Seiten dasselbe tun, bis x allein steht.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="gleichungs-waage-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="term-werkstatt.html">
+          <div class="sym">x</div>
+          <h2>Term-Werkstatt</h2>
+          <p>Variablen und Terme verstehen: einsetzen, vergleichen, umformen.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="term-werkstatt-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="funktions-werkstatt.html">
+          <div class="sym">f(x)</div>
+          <h2>Funktions-Werkstatt</h2>
+          <p>Steigung und y-Achsenabschnitt verstehen — Tabelle, Graph und Term auf einen Blick.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="funktions-werkstatt-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══ Brüche ═════════════════════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Brüche</div>
     <div class="grid">
-      <a class="card" href="bruch-labor.html">
-        <div class="sym">½·¼</div>
-        <h2>Bruch-Labor</h2>
-        <p>Malnehmen macht kleiner, Teilen macht größer — Flächenmodell, Bruchstreifen, Sachaufgaben.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('bruch-labor-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="bruch-plus-minus.html">
-        <div class="sym">½+¼</div>
-        <h2>Bruch Plus/Minus</h2>
-        <p>Brüche addieren und subtrahieren — gemeinsamer Nenner, Bruchstreifen, Sachaufgaben.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('bruch-plus-minus-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="bruchstreifen-werkstatt.html">
-        <div class="sym">⅔</div>
-        <h2>Bruchstreifen-Werkstatt</h2>
-        <p>Erweitern und Kürzen verstehen — Bruchstreifen, Äquivalenz, visuelles Modell.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('bruchstreifen-werkstatt-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="bruch-labor.html">
+          <div class="sym">½·¼</div>
+          <h2>Bruch-Labor</h2>
+          <p>Malnehmen macht kleiner, Teilen macht größer — Flächenmodell, Bruchstreifen, Sachaufgaben.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="bruch-labor-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="bruch-plus-minus.html">
+          <div class="sym">½+¼</div>
+          <h2>Bruch Plus/Minus</h2>
+          <p>Brüche addieren und subtrahieren — gemeinsamer Nenner, Bruchstreifen, Sachaufgaben.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="bruch-plus-minus-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="bruchstreifen-werkstatt.html">
+          <div class="sym">⅔</div>
+          <h2>Bruchstreifen-Werkstatt</h2>
+          <p>Erweitern und Kürzen verstehen — Bruchstreifen, Äquivalenz, visuelles Modell.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="bruchstreifen-werkstatt-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══ Zahlen & Koordinaten ═══════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Zahlen &amp; Koordinaten</div>
     <div class="grid">
-      <a class="card" href="zahlengerade.html">
-        <div class="sym">−n</div>
-        <h2>Zahlengerade</h2>
-        <p>Negative Zahlen verstehen — Zahlengerade, Addition, Subtraktion, Betrag.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('zahlengerade-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="zahlenstrahl-labor.html">
-        <div class="sym">ℚ</div>
-        <h2>Zahlenstrahl-Labor</h2>
-        <p>Rationale Zahlen entdecken — Brüche, Dezimalzahlen und Ordnung auf dem Zahlenstrahl.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('zahlenstrahl-labor-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="koordinaten-labor.html">
-        <div class="sym">(x,y)</div>
-        <h2>Koordinaten-Werkstatt</h2>
-        <p>Koordinatensystem verstehen — Punkte ablesen, eintragen, Spiegelungen.</p>
-        <span class="go">Öffnen →</span>
-      </a>
-      <a class="card" href="dezimal-labor.html">
-        <div class="sym">0,4</div>
-        <h2>Dezimal-Labor</h2>
-        <p>Dezimalzahlen verstehen — vergleichen, Bruch umwandeln, addieren auf der Zahlengeraden.</p>
-        <span class="go">Öffnen →</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="zahlengerade.html">
+          <div class="sym">−n</div>
+          <h2>Zahlengerade</h2>
+          <p>Negative Zahlen verstehen — Zahlengerade, Addition, Subtraktion, Betrag.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="zahlengerade-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="zahlenstrahl-labor.html">
+          <div class="sym">ℚ</div>
+          <h2>Zahlenstrahl-Labor</h2>
+          <p>Rationale Zahlen entdecken — Brüche, Dezimalzahlen und Ordnung auf dem Zahlenstrahl.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="zahlenstrahl-labor-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="koordinaten-labor.html">
+          <div class="sym">(x,y)</div>
+          <h2>Koordinaten-Werkstatt</h2>
+          <p>Koordinatensystem verstehen — Punkte ablesen, eintragen, Spiegelungen.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="dezimal-labor.html">
+          <div class="sym">0,4</div>
+          <h2>Dezimal-Labor</h2>
+          <p>Dezimalzahlen verstehen — vergleichen, Bruch umwandeln, addieren auf der Zahlengeraden.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══ Geometrie ══════════════════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Geometrie</div>
     <div class="grid">
-      <a class="card" href="symmetrie-labor.html">
-        <div class="sym">↔</div>
-        <h2>Symmetrie-Werkstatt</h2>
-        <p>Achsen- und Punktsymmetrie erkennen und konstruieren — interaktiv.</p>
-        <span class="go">Öffnen →</span>
-      </a>
-      <a class="card" href="figuren-labor.html">
-        <div class="sym">△</div>
-        <h2>Figuren-Werkstatt</h2>
-        <p>Geometrische Figuren erkunden — Eigenschaften, Winkel, Klassifikation.</p>
-        <span class="go">Öffnen →</span>
-      </a>
-      <a class="card" href="pythagoras-labor.html">
-        <div class="sym">a²</div>
-        <h2>Pythagoras-Labor</h2>
-        <p>Vom Sehen zum Beweisen — Flächenmodell, Satz des Pythagoras, Anwendungen.</p>
-        <span class="go">Öffnen →</span>
-      </a>
-      <a class="card" href="flaecheninhalt-labor.html">
-        <div class="sym">▦</div>
-        <h2>Flächeninhalt-Labor</h2>
-        <p>Fläche und Umfang trennen, Höhe finden, Einheiten umrechnen — im Kästchen-Raster.</p>
-        <span class="go">Öffnen →</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="symmetrie-labor.html">
+          <div class="sym">↔</div>
+          <h2>Symmetrie-Werkstatt</h2>
+          <p>Achsen- und Punktsymmetrie erkennen und konstruieren — interaktiv.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="figuren-labor.html">
+          <div class="sym">△</div>
+          <h2>Figuren-Werkstatt</h2>
+          <p>Geometrische Figuren erkunden — Eigenschaften, Winkel, Klassifikation.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="pythagoras-labor.html">
+          <div class="sym">a²</div>
+          <h2>Pythagoras-Labor</h2>
+          <p>Vom Sehen zum Beweisen — Flächenmodell, Satz des Pythagoras, Anwendungen.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="flaecheninhalt-labor.html">
+          <div class="sym">▦</div>
+          <h2>Flächeninhalt-Labor</h2>
+          <p>Fläche und Umfang trennen, Höhe finden, Einheiten umrechnen — im Kästchen-Raster.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══ Stochastik & Analysis ══════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Stochastik &amp; Analysis</div>
     <div class="grid">
-      <a class="card" href="zufalls-labor.html">
-        <div class="sym">P(A)</div>
-        <h2>Zufalls-Labor</h2>
-        <p>Wahrscheinlichkeit, Baumdiagramm und Simulation — Zufall verstehen.</p>
-        <span class="go">Öffnen →</span>
-        <span class="lehrer" onclick="event.stopPropagation();event.preventDefault();window.open('zufalls-labor-begleitblatt.pdf','_blank')">Begleitblatt (PDF)&nbsp;↗</span>
-      </a>
-      <a class="card" href="hauptsatz-labor.html">
-        <div class="sym">∫</div>
-        <h2>Hauptsatz-Labor</h2>
-        <p>Vom Flächenproblem zur Stammfunktion — Analysis visuell erkunden.</p>
-        <span class="go">Öffnen →</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="zufalls-labor.html">
+          <div class="sym">P(A)</div>
+          <h2>Zufalls-Labor</h2>
+          <p>Wahrscheinlichkeit, Baumdiagramm und Simulation — Zufall verstehen.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+        <div class="teacher">
+          <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-4 10 4-10 4z"/><path d="M6 10.5V14c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-3.5"/><path d="M22 8v4.5"/></svg>Für Lehrkräfte</span>
+          <a class="sheet" href="zufalls-labor-begleitblatt.pdf" target="_blank" rel="noopener">Begleitblatt (PDF) ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <a class="tool" href="hauptsatz-labor.html">
+          <div class="sym">∫</div>
+          <h2>Hauptsatz-Labor</h2>
+          <p>Vom Flächenproblem zur Stammfunktion — Analysis visuell erkunden.</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══ Fehlvorstellungen ══════════════════════════════════════════ -->
   <div class="section">
     <div class="section-label">Fehlvorstellungen</div>
     <div class="grid">
-      <a class="card" href="fehlvorstellungen-gleichheitszeichen.html">
-        <div class="sym">=</div>
-        <h2>Gleichheitszeichen</h2>
-        <p>Fehlvorstellungen zum Gleichheitszeichen aufdecken — was bedeutet „="?</p>
-        <span class="go">Öffnen →</span>
-      </a>
+
+      <div class="card">
+        <a class="tool" href="fehlvorstellungen-gleichheitszeichen.html">
+          <div class="sym">=</div>
+          <h2>Gleichheitszeichen</h2>
+          <p>Fehlvorstellungen zum Gleichheitszeichen aufdecken — was bedeutet „="?</p>
+          <span class="go">Öffnen →</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
@@ -206,5 +349,16 @@
     <span class="mono">Mathematik · IGS Delmenhorst</span>
   </footer>
 </div>
+
+<script>
+  // Toggle: blendet die Lehrkraft-Streifen aus — z. B. für die Projektion im Unterricht.
+  (function(){
+    var t=document.getElementById('tmat');
+    if(!t)return;
+    t.addEventListener('change',function(){
+      document.body.classList.toggle('hide-teacher',!t.checked);
+    });
+  })();
+</script>
 </body>
 </html>
