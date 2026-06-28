@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flächeninhalt-Labor — Fläche, Umfang und Einheiten</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;
+    background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;
+    transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+  .modehint{font-size:13px;color:var(--muted)}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .ctl{display:none}
+  .ctl.on{display:block}
+  .plotwrap{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:8px 0 4px}
+  svg.fig{width:100%;max-width:300px;height:auto;display:block}
+  svg.figpair{width:100%;max-width:200px;height:auto;display:block}
+  .leg{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:2px 0 6px;font-size:11.5px;color:var(--muted)}
+  .legsw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:middle;margin-right:4px;position:relative;top:-1px}
+  .judge{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .judge button{font:inherit;font-size:16px;font-weight:680;border-radius:13px;
+    padding:14px 10px;cursor:pointer;flex:1 1 0;min-width:96px;
+    transition:.14s;border:1.5px solid var(--line);background:var(--panel2);
+    color:#e8edf6;font-family:var(--mono)}
+  .judge button small{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-weight:400;font-family:var(--sans)}
+  .judge button:hover:not(:disabled){border-color:var(--accent);background:#182440}
+  .judge button:disabled{opacity:.5;cursor:default}
+  .judge button.correct{border-color:var(--good);background:var(--goodDim);color:#bff0d8}
+  .judge button.wrong{border-color:var(--bad);background:var(--badDim);color:#f0c0c0}
+  .feed{margin-top:13px;padding:11px 13px;border-radius:10px;font-size:13.5px;display:none;line-height:1.55}
+  .feed.ok{display:block;background:var(--goodDim);border:1px solid #3f6f5c;color:#bff0d8}
+  .feed.bad{display:block;background:var(--badDim);border:1px solid #6a3040;color:#f0c0c0}
+  .feed b{font-weight:600}
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 13px;margin:4px 0 4px}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  span.bonus{color:var(--think);font-size:12.5px;display:block;margin-top:8px}
+  footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  footer span{font-size:12px;color:var(--muted)}
+  footer .mono{font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kick">Mathematik · Klasse 5–6 · Flächen & Größen</div>
+  <h1>Flächeninhalt-Labor <span class="hl">▦</span></h1>
+  <span class="sub">Fläche ist nicht Umfang. Und 1 m² ist nicht 100 cm². Zähl die Kästchen.</span>
+</header>
+
+<div class="thesis">
+  <b>Umfang</b> ist die Länge des Randes (in cm) — <b>Fläche</b> ist der Platz im Inneren (in cm²). Zwei verschiedene Größen.
+  Und weil Fläche <b>zwei</b> Richtungen hat, wird beim Umrechnen <b>zweimal</b> mal 100 gerechnet: 1 m² = 100 · 100 = 10 000 cm².
+</div>
+
+<div class="tabs">
+  <button class="tab on" data-mode="count" onclick="setMode('count')">Fläche oder Umfang? <span class="st" id="stCount"></span></button>
+  <button class="tab" data-mode="same" onclick="setMode('same')">Gleiche Fläche — gleicher Umfang? <span class="st" id="stSame"></span></button>
+  <button class="tab" data-mode="hoehe" onclick="setMode('hoehe')">Welche ist die Höhe? <span class="st" id="stHoehe"></span></button>
+  <button class="tab" data-mode="unit" onclick="setMode('unit')">1 m² = ? cm² <span class="st" id="stUnit"></span></button>
+</div>
+
+<div class="stage">
+
+  <!-- Modus 1: Fläche oder Umfang zählen -->
+  <div class="ctl on" id="ctlCount">
+    <div class="statbar"><div class="modehint"><b>Fläche oder Umfang?</b> Lies genau, was gefragt ist — und zähl im Raster.</div></div>
+    <div class="plotwrap"><svg class="fig" id="countSvg" viewBox="0 0 200 116" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="leg">
+      <span><span class="legsw" style="background:#2a5cb8"></span>Fläche = Kästchen innen</span>
+      <span><span class="legsw" style="background:#f4b740"></span>Umfang = Kanten am Rand</span>
+    </div>
+    <div class="task" id="countTask"></div>
+    <div class="judge" id="countJudge"></div>
+    <div class="feed" id="countFeed"></div>
+  </div>
+
+  <!-- Modus 2: Gleiche Fläche, gleicher Umfang? -->
+  <div class="ctl" id="ctlSame">
+    <div class="statbar"><div class="modehint"><b>Gleiche Fläche — gleicher Umfang?</b> Beide Figuren haben gleich viele Kästchen. Aber auch gleich langen Rand?</div></div>
+    <div class="plotwrap">
+      <svg class="figpair" id="sameSvgA" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg class="figpair" id="sameSvgB" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="task" id="sameTask"></div>
+    <div class="judge" id="sameJudge">
+      <button onclick="sameChoose(true)">gleicher Umfang</button>
+      <button onclick="sameChoose(false)">verschiedener Umfang</button>
+    </div>
+    <div class="feed" id="sameFeed"></div>
+  </div>
+
+  <!-- Modus 3: Welche ist die Höhe? -->
+  <div class="ctl" id="ctlHoehe">
+    <div class="statbar"><div class="modehint"><b>Welche Strecke ist die Höhe?</b> Für A = Grundseite · Höhe zählt nicht die schräge Kante, sondern der senkrechte Abstand.</div></div>
+    <div class="plotwrap">
+      <svg class="fig" id="hoeheSvg" viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg class="fig" id="hoeheSvg2" viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg" style="display:none"></svg>
+    </div>
+    <div class="task" id="hoeheTask"></div>
+    <div class="judge" id="hoeheJudge"></div>
+    <div class="feed" id="hoeheFeed"></div>
+  </div>
+
+  <!-- Modus 4: Einheiten -->
+  <div class="ctl" id="ctlUnit">
+    <div class="statbar"><div class="modehint"><b>Flächeneinheiten:</b> Eine Fläche umrechnen heißt <em>zweimal</em> umrechnen — einmal für die Länge, einmal für die Breite.</div></div>
+    <div class="plotwrap"><svg class="fig" id="unitSvg" viewBox="0 0 260 240" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="unitTask"></div>
+    <div class="judge" id="unitJudge"></div>
+    <div class="feed" id="unitFeed"></div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+  <span class="mono">Mathematik · IGS Delmenhorst</span>
+</footer>
+</div>
+
+<script>
+"use strict";
+function $(id){return document.getElementById(id);}
+
+function ding(ok){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    if(ok){o.frequency.value=660;g.gain.setValueAtTime(.2,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);o.start();o.stop(ctx.currentTime+.4);}
+    else{o.frequency.value=200;g.gain.setValueAtTime(.16,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.28);o.start();o.stop(ctx.currentTime+.28);}
+  }catch(e){}
+}
+
+const C_FILL="#2a5cb8", C_FILLDIM="#1a2c4a", C_EDGE="#f4b740", C_GRID="#2b3650";
+
+// ─── Raster-Helfer ────────────────────────────────────────────────────────────
+// cells: Array von [cx,cy] (Spalte,Zeile, 0-basiert, y nach unten)
+function cellKey(cx,cy){return cx+","+cy;}
+function area(cells){return cells.length;}
+function perimeter(cells){
+  const set=new Set(cells.map(c=>cellKey(c[0],c[1])));
+  let p=0;
+  for(const [cx,cy] of cells){
+    if(!set.has(cellKey(cx-1,cy)))p++;
+    if(!set.has(cellKey(cx+1,cy)))p++;
+    if(!set.has(cellKey(cx,cy-1)))p++;
+    if(!set.has(cellKey(cx,cy+1)))p++;
+  }
+  return p;
+}
+// zeichnet Figur; opt: {cs, ox, oy, fill, showEdge}
+function drawFig(svgId, cells, opt){
+  opt=opt||{};
+  const cs=opt.cs||26, ox=opt.ox||20, oy=opt.oy||14;
+  const fill=opt.fill||C_FILLDIM;
+  let h="";
+  // gefüllte Kästchen
+  for(const [cx,cy] of cells){
+    h+="<rect x='"+(ox+cx*cs)+"' y='"+(oy+cy*cs)+"' width='"+cs+"' height='"+cs+"' fill='"+fill+"' stroke='#0c1322' stroke-width='1'/>";
+  }
+  // Rasterlinien innen (dünn)
+  for(const [cx,cy] of cells){
+    h+="<rect x='"+(ox+cx*cs)+"' y='"+(oy+cy*cs)+"' width='"+cs+"' height='"+cs+"' fill='none' stroke='"+C_GRID+"' stroke-width='1'/>";
+  }
+  // Rand hervorheben (Umfang)
+  if(opt.showEdge){
+    const set=new Set(cells.map(c=>cellKey(c[0],c[1])));
+    for(const [cx,cy] of cells){
+      const x=ox+cx*cs, y=oy+cy*cs;
+      if(!set.has(cellKey(cx,cy-1)))h+="<line x1='"+x+"' y1='"+y+"' x2='"+(x+cs)+"' y2='"+y+"' stroke='"+C_EDGE+"' stroke-width='3.5'/>";
+      if(!set.has(cellKey(cx,cy+1)))h+="<line x1='"+x+"' y1='"+(y+cs)+"' x2='"+(x+cs)+"' y2='"+(y+cs)+"' stroke='"+C_EDGE+"' stroke-width='3.5'/>";
+      if(!set.has(cellKey(cx-1,cy)))h+="<line x1='"+x+"' y1='"+y+"' x2='"+x+"' y2='"+(y+cs)+"' stroke='"+C_EDGE+"' stroke-width='3.5'/>";
+      if(!set.has(cellKey(cx+1,cy)))h+="<line x1='"+(x+cs)+"' y1='"+y+"' x2='"+(x+cs)+"' y2='"+(y+cs)+"' stroke='"+C_EDGE+"' stroke-width='3.5'/>";
+    }
+  }
+  $(svgId).innerHTML=h;
+}
+function rect(w,h){const c=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++)c.push([x,y]);return c;}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 1: Fläche oder Umfang zählen
+// ════════════════════════════════════════════════════════════════════════════
+const COUNT_ITEMS=[
+  {cells:rect(4,3), ask:"flaeche", cs:30},
+  {cells:rect(4,3), ask:"umfang", cs:30},
+  {cells:[[0,0],[1,0],[2,0],[0,1],[0,2]], ask:"flaeche", cs:30}, // L (5 Kästchen)
+  {cells:rect(5,2), ask:"umfang", cs:30}
+];
+let countIdx=0,countDone=0,countLock=false;
+
+function makeChoices(correct,trap){
+  // erzeugt 3 plausible Optionen inkl. correct & trap
+  const set=new Set([correct,trap]);
+  let extra=correct+2; while(set.has(extra)||extra<=0){extra++;}
+  set.add(extra);
+  return Array.from(set).sort((a,b)=>a-b);
+}
+
+function countLoad(){
+  countLock=false;
+  const it=COUNT_ITEMS[countIdx];
+  const A=area(it.cells), U=perimeter(it.cells);
+  drawFig("countSvg",it.cells,{cs:it.cs,fill:C_FILLDIM});
+  const isFl=it.ask==="flaeche";
+  const correct=isFl?A:U, trap=isFl?U:A;
+  it._correct=correct; it._trap=trap; it._A=A; it._U=U;
+  $("countTask").innerHTML="<span class='tlab'>Aufgabe "+(countIdx+1)+"/"+COUNT_ITEMS.length+"</span> "+
+    (isFl?"Wie groß ist die <b>Fläche</b> (Kästchen innen)?":"Wie lang ist der <b>Umfang</b> (Kanten am Rand)?");
+  const opts=makeChoices(correct,trap);
+  let bh="";
+  opts.forEach(v=>{bh+="<button data-v='"+v+"' onclick='countChoose("+v+")'>"+v+"</button>";});
+  $("countJudge").innerHTML=bh;
+  $("countFeed").className="feed";$("countFeed").innerHTML="";
+}
+
+function countChoose(v){
+  if(countLock) return;
+  const it=COUNT_ITEMS[countIdx], ok=v===it._correct;
+  const btns=$("countJudge").querySelectorAll("button");
+  ding(ok);
+  if(ok){
+    countLock=true;
+    btns.forEach(b=>{b.disabled=true; if(+b.dataset.v===v)b.classList.add("correct");});
+    if(it.ask==="flaeche") drawFig("countSvg",it.cells,{cs:it.cs,fill:C_FILL});
+    else drawFig("countSvg",it.cells,{cs:it.cs,fill:C_FILLDIM,showEdge:true});
+    countDone=Math.max(countDone,countIdx+1);$("stCount").textContent="✓"+countDone;
+    $("countFeed").className="feed ok";
+    $("countFeed").innerHTML = it.ask==="flaeche"
+      ? "<b>Richtig — "+it._A+" Kästchen.</b> Die Fläche ist der Platz <em>innen</em>, gemessen in Kästchen (cm²)."
+      : "<b>Richtig — Umfang "+it._U+".</b> Der Umfang ist die Länge des <em>Randes</em>, gemessen in Kanten (cm).";
+    setTimeout(()=>{ if(countIdx<COUNT_ITEMS.length-1){countIdx++;countLoad();} else $("countFeed").innerHTML+="<br><b>Alle vier geschafft.</b>"; },1900);
+  }else{
+    const b=Array.from(btns).find(x=>+x.dataset.v===v); if(b){b.disabled=true;b.classList.add("wrong");}
+    $("countFeed").className="feed bad";
+    if(v===it._trap && it.ask==="flaeche"){
+      drawFig("countSvg",it.cells,{cs:it.cs,fill:C_FILLDIM,showEdge:true});
+      $("countFeed").innerHTML="<b>Das ist der Umfang, nicht die Fläche.</b> Du hast den <em>Rand</em> gezählt (gelb). Die Fläche sind die Kästchen <em>innen</em> — zähl die blauen Felder.";
+    }else if(v===it._trap && it.ask==="umfang"){
+      drawFig("countSvg",it.cells,{cs:it.cs,fill:C_FILL});
+      $("countFeed").innerHTML="<b>Das ist die Fläche, nicht der Umfang.</b> Du hast die Kästchen innen gezählt. Der Umfang ist die Länge des Randes — zähl die Kanten außen herum.";
+    }else{
+      $("countFeed").innerHTML="<b>Noch nicht.</b> Zähl noch einmal genau im Raster.";
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 2: Gleiche Fläche, gleicher Umfang?
+// ════════════════════════════════════════════════════════════════════════════
+const SAME_ITEMS=[
+  {a:rect(2,6), b:rect(3,4)},   // A 12/12, U 16 vs 14 -> verschieden
+  {a:rect(2,3), b:rect(2,3)},   // gleich (kongruent)  6/6, 10/10
+  {a:rect(1,8), b:rect(2,4)},   // 8/8, U 18 vs 12 -> verschieden
+  {a:rect(4,4), b:rect(2,8)}    // 16/16, U 16 vs 20 -> verschieden
+];
+let sameIdx=0,sameDone=0,sameLock=false;
+
+function sameLoad(){
+  sameLock=false;
+  const it=SAME_ITEMS[sameIdx];
+  drawFig("sameSvgA",it.a,{cs:22,fill:C_FILLDIM});
+  drawFig("sameSvgB",it.b,{cs:22,fill:C_FILLDIM});
+  const A=area(it.a);
+  $("sameTask").innerHTML="<span class='tlab'>Aufgabe "+(sameIdx+1)+"/"+SAME_ITEMS.length+"</span> Beide Figuren haben <b>"+A+" Kästchen</b> Fläche. Haben sie auch den <b>gleichen Umfang</b>?";
+  const btns=$("sameJudge").querySelectorAll("button");
+  btns.forEach(b=>{b.disabled=false;b.classList.remove("correct","wrong");});
+  $("sameFeed").className="feed";$("sameFeed").innerHTML="";
+}
+
+function sameChoose(pickSame){
+  if(sameLock) return; sameLock=true;
+  const it=SAME_ITEMS[sameIdx];
+  const Ua=perimeter(it.a), Ub=perimeter(it.b);
+  const reallySame = Ua===Ub;
+  const ok = pickSame===reallySame;
+  drawFig("sameSvgA",it.a,{cs:22,fill:C_FILLDIM,showEdge:true});
+  drawFig("sameSvgB",it.b,{cs:22,fill:C_FILLDIM,showEdge:true});
+  const btns=$("sameJudge").querySelectorAll("button");
+  btns.forEach(b=>b.disabled=true);
+  const correctBtn=reallySame?0:1, pickBtn=pickSame?0:1;
+  btns[correctBtn].classList.add("correct");
+  if(!ok)btns[pickBtn].classList.add("wrong");
+  ding(ok);
+  if(ok){
+    sameDone=Math.max(sameDone,sameIdx+1);$("stSame").textContent="✓"+sameDone;
+    $("sameFeed").className="feed ok";
+    $("sameFeed").innerHTML = reallySame
+      ? "<b>Richtig — gleicher Umfang ("+Ua+").</b> Die beiden Figuren sind genau gleich groß und gleiche Form (passen übereinander) — darum auch gleicher Rand. Gleiche Fläche <em>kann</em> gleichen Umfang haben, <em>muss</em> aber nicht — die Form entscheidet."
+      : "<b>Richtig — verschiedener Umfang.</b> Links "+Ua+", rechts "+Ub+". Gleiche Fläche heißt <em>nicht</em> gleicher Umfang — zähl die gelben Randkanten.";
+    setTimeout(()=>{ if(sameIdx<SAME_ITEMS.length-1){sameIdx++;sameLoad();} else $("sameFeed").innerHTML+="<br><b>Alle vier geschafft.</b> <span class='bonus'>Bonus: Welche Rechteckform aus 12 Kästchen hat den kleinsten Umfang?</span>"; },2300);
+  }else{
+    $("sameFeed").className="feed bad";
+    $("sameFeed").innerHTML = reallySame
+      ? "<b>Hier ist der Umfang doch gleich.</b> Die beiden Figuren passen genau übereinander (gleiche Form) — zähl nach: beide "+Ua+"."
+      : "<b>Doch verschieden.</b> Links "+Ua+", rechts "+Ub+". Man kann die gleiche Fläche zu einem langen dünnen oder einem kompakten Rechteck legen — der Rand ändert sich dabei.";
+    setTimeout(()=>{sameLock=false; btns.forEach(b=>{b.disabled=false;b.classList.remove("correct","wrong");}); sameLoad();},2500);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 3: Welche Strecke ist die Höhe?
+// ════════════════════════════════════════════════════════════════════════════
+// para: Grundseite g, Höhe h, Versatz d (oben nach rechts). schräge Seite = sqrt(d²+h²)
+const HOEHE_ITEMS=[
+  {type:"para", g:4, h:3, d:4, slant:5},
+  {type:"para", g:3, h:4, d:3, slant:5},
+  {type:"tri",  g:4, h:3, d:1, slant:null}
+];
+let hoeheIdx=0,hoeheDone=0,hoeheLock=false;
+
+function drawParaFig(svgId, it, mode){
+  // mode: 'q' = Frage (Parallelogramm + 3 Strecken), 'rect' = geradegeschoben
+  const cs=30, ox=24, oy=18;
+  const gW=it.g*cs, H=it.h*cs, dW=it.d*cs;
+  let h="";
+  // Hintergrund-Raster (leicht)
+  const cols=it.g+it.d+1, rows=it.h+1;
+  for(let x=0;x<=cols;x++) h+="<line x1='"+(ox+x*cs)+"' y1='"+oy+"' x2='"+(ox+x*cs)+"' y2='"+(oy+rows*cs)+"' stroke='#1c2740' stroke-width='1'/>";
+  for(let y=0;y<=rows;y++) h+="<line x1='"+ox+"' y1='"+(oy+y*cs)+"' x2='"+(ox+cols*cs)+"' y2='"+(oy+y*cs)+"' stroke='#1c2740' stroke-width='1'/>";
+  // Eckpunkte
+  const blx=ox, bly=oy+H;            // bottom-left
+  const brx=ox+gW, bry=oy+H;         // bottom-right
+  if(mode==="rect"){
+    // Rechteck g×h mit Kästchen
+    for(let y=0;y<it.h;y++)for(let x=0;x<it.g;x++)
+      h+="<rect x='"+(ox+x*cs)+"' y='"+(oy+y*cs)+"' width='"+cs+"' height='"+cs+"' fill='"+C_FILL+"' stroke='#0c1322' stroke-width='1'/>";
+    h+="<text x='"+(ox+gW/2)+"' y='"+(oy+H+20)+"' fill='#bff0d8' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>"+it.g+" · "+it.h+" = "+(it.g*it.h)+" Kästchen</text>";
+    $(svgId).innerHTML=h;
+    return;
+  }
+  // Parallelogramm: tl, tr
+  const tlx=ox+dW, tly=oy, trx=ox+gW+dW, tryy=oy;
+  h+="<polygon points='"+tlx+","+tly+" "+trx+","+tryy+" "+brx+","+bry+" "+blx+","+bly+"' fill='"+C_FILLDIM+"' stroke='#3d4d70' stroke-width='1.5'/>";
+  // a = Grundseite (unten, blau)
+  h+="<line x1='"+blx+"' y1='"+bly+"' x2='"+brx+"' y2='"+bry+"' stroke='#5aa0ff' stroke-width='4'/>";
+  h+="<text x='"+((blx+brx)/2)+"' y='"+(bly+20)+"' fill='#5aa0ff' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>a = "+it.g+"</text>";
+  // b = schräge Seite (links, rot/amber)
+  h+="<line x1='"+blx+"' y1='"+bly+"' x2='"+tlx+"' y2='"+tly+"' stroke='#ff8f8f' stroke-width='4'/>";
+  h+="<text x='"+((blx+tlx)/2-16)+"' y='"+((bly+tly)/2)+"' fill='#ff8f8f' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>b"+(it.slant?" = "+it.slant:"")+"</text>";
+  // c = Höhe (senkrecht, gestrichelt grün) vom oberen-linken Punkt senkrecht herunter
+  h+="<line x1='"+tlx+"' y1='"+tly+"' x2='"+tlx+"' y2='"+bly+"' stroke='#4fd6a0' stroke-width='3' stroke-dasharray='6 4'/>";
+  // Winkelhaken (rechter Winkel) am Fußpunkt der Höhe
+  h+="<polyline points='"+(tlx-9)+","+bly+" "+(tlx-9)+","+(bly-9)+" "+tlx+","+(bly-9)+"' fill='none' stroke='#4fd6a0' stroke-width='1.6'/>";
+  h+="<text x='"+(tlx+16)+"' y='"+((tly+bly)/2)+"' fill='#4fd6a0' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>c = "+it.h+"</text>";
+  $(svgId).innerHTML=h;
+}
+
+function drawTriFig(svgId, it, mode){
+  const cs=30, ox=24, oy=18;
+  const gW=it.g*cs, H=it.h*cs, dW=it.d*cs;
+  let h="";
+  const cols=it.g+it.d+1, rows=it.h+1;
+  for(let x=0;x<=cols;x++) h+="<line x1='"+(ox+x*cs)+"' y1='"+oy+"' x2='"+(ox+x*cs)+"' y2='"+(oy+rows*cs)+"' stroke='#1c2740' stroke-width='1'/>";
+  for(let y=0;y<=rows;y++) h+="<line x1='"+ox+"' y1='"+(oy+y*cs)+"' x2='"+(ox+cols*cs)+"' y2='"+(oy+y*cs)+"' stroke='#1c2740' stroke-width='1'/>";
+  const blx=ox, bly=oy+H, brx=ox+gW, bry=oy+H, apexx=ox+dW, apexy=oy;
+  if(mode==="rect"){
+    // Ergänzungs-Parallelogramm (Dreieck gespiegelt) -> g×h
+    h+="<polygon points='"+blx+","+bly+" "+brx+","+bry+" "+(brx+dW)+","+oy+" "+apexx+","+apexy+"' fill='"+C_FILLDIM+"' stroke='#3d4d70' stroke-width='1.2'/>";
+    h+="<polygon points='"+blx+","+bly+" "+brx+","+bry+" "+apexx+","+apexy+"' fill='"+C_FILL+"' stroke='#0c1322' stroke-width='1.5'/>";
+    h+="<text x='"+(ox+gW/2)+"' y='"+(oy+H+20)+"' fill='#bff0d8' font-size='12.5' font-weight='700' text-anchor='middle' font-family='monospace'>("+it.g+" · "+it.h+") ÷ 2 = "+(it.g*it.h/2)+"</text>";
+    $(svgId).innerHTML=h;
+    return;
+  }
+  h+="<polygon points='"+blx+","+bly+" "+brx+","+bry+" "+apexx+","+apexy+"' fill='"+C_FILLDIM+"' stroke='#3d4d70' stroke-width='1.5'/>";
+  // a Grundseite
+  h+="<line x1='"+blx+"' y1='"+bly+"' x2='"+brx+"' y2='"+bry+"' stroke='#5aa0ff' stroke-width='4'/>";
+  h+="<text x='"+((blx+brx)/2)+"' y='"+(bly+20)+"' fill='#5aa0ff' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>a = "+it.g+"</text>";
+  // b schräge Seite (rechte Kante apex->br)
+  h+="<line x1='"+apexx+"' y1='"+apexy+"' x2='"+brx+"' y2='"+bry+"' stroke='#ff8f8f' stroke-width='4'/>";
+  h+="<text x='"+((apexx+brx)/2+16)+"' y='"+((apexy+bry)/2)+"' fill='#ff8f8f' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>b</text>";
+  // c Höhe senkrecht vom apex
+  h+="<line x1='"+apexx+"' y1='"+apexy+"' x2='"+apexx+"' y2='"+bly+"' stroke='#4fd6a0' stroke-width='3' stroke-dasharray='6 4'/>";
+  // Winkelhaken (rechter Winkel) am Fußpunkt der Höhe
+  h+="<polyline points='"+(apexx-9)+","+bly+" "+(apexx-9)+","+(bly-9)+" "+apexx+","+(bly-9)+"' fill='none' stroke='#4fd6a0' stroke-width='1.6'/>";
+  h+="<text x='"+(apexx+16)+"' y='"+((apexy+bly)/2)+"' fill='#4fd6a0' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>c = "+it.h+"</text>";
+  $(svgId).innerHTML=h;
+}
+
+function hoeheLoad(){
+  hoeheLock=false;
+  const it=HOEHE_ITEMS[hoeheIdx];
+  $("hoeheSvg2").style.display="none";
+  if(it.type==="para") drawParaFig("hoeheSvg",it,"q"); else drawTriFig("hoeheSvg",it,"q");
+  const shape=it.type==="para"?"Parallelogramm":"Dreieck";
+  $("hoeheTask").innerHTML="<span class='tlab'>Aufgabe "+(hoeheIdx+1)+"/"+HOEHE_ITEMS.length+"</span> Welche Strecke ist die <b>Höhe</b> für den Flächeninhalt dieses "+shape+"s?";
+  $("hoeheJudge").innerHTML=
+    "<button data-k='a' onclick=\"hoeheChoose('a')\">a<small>Grundseite</small></button>"+
+    "<button data-k='b' onclick=\"hoeheChoose('b')\">b<small>schräge Seite</small></button>"+
+    "<button data-k='c' onclick=\"hoeheChoose('c')\">c<small>senkrecht</small></button>";
+  $("hoeheFeed").className="feed";$("hoeheFeed").innerHTML="";
+}
+
+function hoeheChoose(k){
+  if(hoeheLock) return;
+  const it=HOEHE_ITEMS[hoeheIdx], ok=k==="c";
+  const btns=$("hoeheJudge").querySelectorAll("button");
+  ding(ok);
+  if(ok){
+    hoeheLock=true;
+    btns.forEach(b=>{b.disabled=true; if(b.dataset.k==="c")b.classList.add("correct");});
+    $("hoeheSvg2").style.display="block";
+    if(it.type==="para") drawParaFig("hoeheSvg2",it,"rect"); else drawTriFig("hoeheSvg2",it,"rect");
+    hoeheDone=Math.max(hoeheDone,hoeheIdx+1);$("stHoehe").textContent="✓"+hoeheDone;
+    $("hoeheFeed").className="feed ok";
+    const A = it.type==="para" ? it.g*it.h : it.g*it.h/2;
+    $("hoeheFeed").innerHTML = it.type==="para"
+      ? "<b>Richtig — die senkrechte Strecke c = "+it.h+".</b> Schiebt man das Parallelogramm gerade, wird es ein "+it.g+"·"+it.h+"-Rechteck = "+A+" Kästchen. Die Höhe ist der senkrechte Abstand, nicht die schräge Kante."
+      : "<b>Richtig — c = "+it.h+".</b> Zwei gleiche Dreiecke ergeben ein "+it.g+"·"+it.h+"-Parallelogramm, das Dreieck ist die Hälfte: ("+it.g+"·"+it.h+") ÷ 2 = "+A+".";
+    setTimeout(()=>{ if(hoeheIdx<HOEHE_ITEMS.length-1){hoeheIdx++;hoeheLoad();} else $("hoeheFeed").innerHTML+="<br><b>Alle geschafft.</b>"; },2800);
+  }else{
+    const b=Array.from(btns).find(x=>x.dataset.k===k); if(b){b.disabled=true;b.classList.add("wrong");}
+    $("hoeheFeed").className="feed bad";
+    if(k==="b"){
+      const wrongA = it.slant?(it.g+"·"+it.slant+" = "+(it.g*it.slant)):"einen zu großen Wert";
+      $("hoeheFeed").innerHTML="<b>Die schräge Seite ist nicht die Höhe.</b> Mit ihr käme "+wrongA+" heraus — aber so viele Kästchen passen gar nicht hinein. Die Höhe steht <em>senkrecht</em> auf der Grundseite (gestrichelt grün).";
+    }else{
+      $("hoeheFeed").innerHTML="<b>Das ist die Grundseite, nicht die Höhe.</b> Die Höhe ist der senkrechte Abstand von der Grundseite zur gegenüberliegenden Ecke.";
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 4: Flächeneinheiten
+// ════════════════════════════════════════════════════════════════════════════
+const UNIT_ITEMS=[
+  {big:"1 m²", small:"cm²", side:"100 cm", cellEdge:"10 cm", cellArea:100, trap:100, ans:10000, opts:[100,1000,10000]},
+  {big:"1 dm²", small:"cm²", side:"10 cm", cellEdge:"1 cm", cellArea:1, trap:10, ans:100, opts:[10,100,1000]},
+  {big:"1 m²", small:"dm²", side:"10 dm", cellEdge:"1 dm", cellArea:1, trap:10, ans:100, opts:[10,100,1000]},
+  {big:"1 cm²", small:"mm²", side:"10 mm", cellEdge:"1 mm", cellArea:1, trap:10, ans:100, opts:[10,100,1000]}
+];
+let unitIdx=0,unitLock=false,unitDone=0;
+
+function drawUnitSq(reveal){
+  const it=UNIT_ITEMS[unitIdx];
+  const ox=40,oy=24,S=180,n=10,cs=S/n;
+  let h="";
+  // Außenquadrat
+  h+="<rect x='"+ox+"' y='"+oy+"' width='"+S+"' height='"+S+"' fill='"+(reveal?C_FILL:C_FILLDIM)+"' stroke='#5aa0ff' stroke-width='2'/>";
+  // 10x10 Raster
+  for(let i=0;i<=n;i++){
+    h+="<line x1='"+(ox+i*cs)+"' y1='"+oy+"' x2='"+(ox+i*cs)+"' y2='"+(oy+S)+"' stroke='"+C_GRID+"' stroke-width='1'/>";
+    h+="<line x1='"+ox+"' y1='"+(oy+i*cs)+"' x2='"+(ox+S)+"' y2='"+(oy+i*cs)+"' stroke='"+C_GRID+"' stroke-width='1'/>";
+  }
+  // EIN Kästchen unten links markieren + beschriften (ehrlich: jedes Kästchen = cellEdge · cellEdge)
+  if(!reveal){
+    h+="<rect x='"+ox+"' y='"+(oy+S-cs)+"' width='"+cs+"' height='"+cs+"' fill='"+C_EDGE+"' opacity='.75'/>";
+    h+="<text x='"+(ox+S/2)+"' y='"+(oy+S+18)+"' fill='#f4b740' font-size='11.5' text-anchor='middle' font-family='monospace'>markiertes Kästchen = "+it.cellEdge+" · "+it.cellEdge+" = "+it.cellArea+" "+it.small+"</text>";
+  }
+  // Seitenbeschriftung
+  h+="<text x='"+(ox+S/2)+"' y='"+(oy-8)+"' fill='#93a0b8' font-size='12' text-anchor='middle' font-family='monospace'>"+it.side+"</text>";
+  h+="<text x='"+(ox-12)+"' y='"+(oy+S/2)+"' fill='#93a0b8' font-size='12' text-anchor='middle' font-family='monospace' transform='rotate(-90,"+(ox-12)+","+(oy+S/2)+")'>"+it.side+"</text>";
+  $("unitSvg").innerHTML=h;
+}
+
+function unitLoad(){
+  unitLock=false;
+  const it=UNIT_ITEMS[unitIdx];
+  drawUnitSq(false);
+  $("unitTask").innerHTML="<span class='tlab'>Aufgabe "+(unitIdx+1)+"/"+UNIT_ITEMS.length+"</span> Wie viele <b>"+it.small+"</b> sind <b>"+it.big+"</b>? <span style='color:#93a0b8'>(Das Quadrat hat 10 · 10 = 100 Kästchen.)</span>";
+  let bh="";
+  it.opts.forEach(v=>{bh+="<button data-v='"+v+"' onclick='unitChoose("+v+")'>"+v.toLocaleString('de-DE')+"</button>";});
+  $("unitJudge").innerHTML=bh;
+  $("unitFeed").className="feed";$("unitFeed").innerHTML="";
+}
+
+function unitChoose(v){
+  if(unitLock) return;
+  const it=UNIT_ITEMS[unitIdx], ok=v===it.ans;
+  const btns=$("unitJudge").querySelectorAll("button");
+  ding(ok);
+  if(ok){
+    unitLock=true;
+    btns.forEach(b=>{b.disabled=true; if(+b.dataset.v===v)b.classList.add("correct");});
+    drawUnitSq(true);
+    unitDone=Math.max(unitDone,unitIdx+1);$("stUnit").textContent="✓"+unitDone;
+    $("unitFeed").className="feed ok";
+    $("unitFeed").innerHTML="<b>Richtig — "+it.ans.toLocaleString('de-DE')+" "+it.small+".</b> 100 Kästchen, jedes "+it.cellEdge+" · "+it.cellEdge+" = "+it.cellArea+" "+it.small+". Zusammen: 100 · "+it.cellArea+" = "+it.ans.toLocaleString('de-DE')+" "+it.small+".";
+    setTimeout(()=>{ if(unitIdx<UNIT_ITEMS.length-1){unitIdx++;unitLoad();} else $("unitFeed").innerHTML+="<br><b>Alle vier geschafft.</b>"; },2800);
+  }else{
+    const b=Array.from(btns).find(x=>+x.dataset.v===v); if(b){b.disabled=true;b.classList.add("wrong");}
+    $("unitFeed").className="feed bad";
+    if(v===it.trap){
+      $("unitFeed").innerHTML="<b>Das ist nur die Länge einer Seite ("+it.side+"), nicht die Fläche.</b> Eine Länge rechnet man einfach um, eine Fläche <em>zweimal</em>: 100 Kästchen, und jedes ist "+it.cellArea+" "+it.small+" → 100 · "+it.cellArea+".";
+    }else{
+      $("unitFeed").innerHTML="<b>Noch nicht.</b> Zähl die Kästchen: 10 · 10 = 100, und jedes ist "+it.cellEdge+" · "+it.cellEdge+" = "+it.cellArea+" "+it.small+" groß.";
+    }
+  }
+}
+
+// ─── Modus-Umschaltung ────────────────────────────────────────────────────────
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl"+m.charAt(0).toUpperCase()+m.slice(1)).classList.add("on");
+}
+
+// Init
+countLoad(); sameLoad(); hoeheLoad(); unitLoad();
+</script>
+</body>
+</html>

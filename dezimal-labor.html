@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dezimal-Labor — Dezimalzahlen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;
+    background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;
+    transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+  .modehint{font-size:13px;color:var(--muted)}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .ctl{display:none}
+  .ctl.on{display:block}
+  .plotwrap{display:flex;justify-content:center;margin:10px 0 4px}
+  svg.plot{width:100%;max-width:420px;height:auto;display:block}
+  .prompt{display:flex;align-items:center;justify-content:center;gap:12px;
+    font-family:var(--mono);font-size:30px;font-weight:600;margin:8px 0 4px;flex-wrap:wrap;color:#eaf1ff}
+  .prompt .q{color:var(--accent)}
+  .eq-frac{display:inline-flex;flex-direction:column;align-items:center;font-size:22px;line-height:1.12;vertical-align:middle}
+  .eq-frac span:first-child{border-bottom:2.5px solid currentColor;padding-bottom:1px;min-width:18px;text-align:center}
+  .eq-frac span:last-child{padding-top:2px;min-width:18px;text-align:center}
+  .op{color:var(--muted);font-weight:400}
+  .scene{font-size:14px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 14px;margin-bottom:8px}
+  .judge{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .judge button{font:inherit;font-size:17px;font-weight:680;border-radius:13px;
+    padding:14px 10px;cursor:pointer;flex:1 1 0;min-width:96px;
+    transition:.14s;border:1.5px solid var(--line);background:var(--panel2);
+    color:#e8edf6;font-family:var(--mono)}
+  .judge button:hover:not(:disabled){border-color:var(--accent);background:#182440}
+  .judge button:disabled{opacity:.5;cursor:default}
+  .judge button.correct{border-color:var(--good);background:var(--goodDim);color:#bff0d8}
+  .judge button.wrong{border-color:var(--bad);background:var(--badDim);color:#f0c0c0}
+  .judge button small{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-weight:400;font-family:var(--sans)}
+  .feed{margin-top:13px;padding:11px 13px;border-radius:10px;font-size:13.5px;display:none;line-height:1.55}
+  .feed.ok{display:block;background:var(--goodDim);border:1px solid #3f6f5c;color:#bff0d8}
+  .feed.bad{display:block;background:var(--badDim);border:1px solid #6a3040;color:#f0c0c0}
+  .feed b{font-weight:600}
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 13px;margin:4px 0 4px}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .colsum{font-family:var(--mono);font-size:22px;text-align:right;display:inline-block;
+    background:#0c1322;border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:4px 0;line-height:1.35;color:#eaf1ff}
+  .colsum .u{border-bottom:2px solid var(--muted);display:block;padding-bottom:2px}
+  span.bonus{color:var(--think);font-size:12.5px;display:block;margin-top:8px}
+  footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  footer span{font-size:12px;color:var(--muted)}
+  footer .mono{font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kick">Mathematik · Klasse 6 · Dezimalzahlen</div>
+  <h1>Dezimal-Labor <span class="hl">·</span></h1>
+  <span class="sub">Mehr Stellen heißt nicht mehr Wert. Schau auf die Zahlengerade.</span>
+</header>
+
+<div class="thesis">
+  Eine Dezimalzahl liest man <b>nicht</b> wie eine ganze Zahl. <b>0,25</b> hat mehr Ziffern als <b>0,4</b> — und ist trotzdem
+  <b>kleiner</b>. Es kommt auf die <b>Stelle</b> an (erste Stelle nach dem Komma = Zehntel, zweite = Hundertstel), nicht auf die Anzahl der Ziffern. Die Zahlengerade zeigt, wo jede Zahl wirklich liegt.
+</div>
+
+<div class="tabs">
+  <button class="tab on" data-mode="cmp" onclick="setMode('cmp')">Welche ist größer? <span class="st" id="stCmp"></span></button>
+  <button class="tab" data-mode="frac" onclick="setMode('frac')">Bruch → Dezimal <span class="st" id="stFrac"></span></button>
+  <button class="tab" data-mode="zero" onclick="setMode('zero')">Gleich oder verschieden? <span class="st" id="stZero"></span></button>
+  <button class="tab" data-mode="add" onclick="setMode('add')">Zusammenrechnen <span class="st" id="stAdd"></span></button>
+</div>
+
+<div class="stage">
+
+  <!-- Modus 1: Vergleich -->
+  <div class="ctl on" id="ctlCmp">
+    <div class="statbar"><div class="modehint"><b>Welche ist größer?</b> Entscheide zuerst — dann fallen beide Zahlen auf die Zahlengerade.</div></div>
+    <div class="prompt" id="cmpPrompt"></div>
+    <div class="plotwrap"><svg class="plot" id="cmpSvg" viewBox="0 0 360 112" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="cmpTask"></div>
+    <div class="judge" id="cmpJudge"></div>
+    <div class="feed" id="cmpFeed"></div>
+  </div>
+
+  <!-- Modus 2: Bruch -> Dezimal -->
+  <div class="ctl" id="ctlFrac">
+    <div class="statbar"><div class="modehint"><b>Bruch → Dezimal:</b> Der Bruch steht schon auf der Zahlengeraden. Welche Dezimalzahl liegt am selben Punkt?</div></div>
+    <div class="prompt" id="fracPrompt"></div>
+    <div class="plotwrap"><svg class="plot" id="fracSvg" viewBox="0 0 360 112" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="fracTask"></div>
+    <div class="judge" id="fracJudge"></div>
+    <div class="feed" id="fracFeed"></div>
+  </div>
+
+  <!-- Modus 3: Null dahinter -->
+  <div class="ctl" id="ctlZero">
+    <div class="statbar"><div class="modehint"><b>Gleich oder verschieden?</b> Verändert eine Null den Wert? Die Zahlengerade entscheidet.</div></div>
+    <div class="prompt" id="zeroPrompt"></div>
+    <div class="plotwrap"><svg class="plot" id="zeroSvg" viewBox="0 0 360 112" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="zeroTask"></div>
+    <div class="judge" id="zeroJudge">
+      <button onclick="zeroChoose(true)">gleich groß</button>
+      <button onclick="zeroChoose(false)">verschieden</button>
+    </div>
+    <div class="feed" id="zeroFeed"></div>
+  </div>
+
+  <!-- Modus 4: Addieren -->
+  <div class="ctl" id="ctlAdd">
+    <div class="statbar"><div class="modehint"><b>Zusammenrechnen:</b> Gleiche Stellen unter gleiche Stellen — Zehntel zu Zehntel, Hundertstel zu Hundertstel.</div></div>
+    <div class="prompt" id="addPrompt"></div>
+    <div class="plotwrap"><svg class="plot" id="addSvg" viewBox="0 0 360 112" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="addTask"></div>
+    <div class="judge" id="addJudge"></div>
+    <div class="feed" id="addFeed"></div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+  <span class="mono">Mathematik · IGS Delmenhorst</span>
+</footer>
+</div>
+
+<script>
+"use strict";
+function $(id){return document.getElementById(id);}
+
+function ding(ok){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    if(ok){o.frequency.value=660;g.gain.setValueAtTime(.2,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);o.start();o.stop(ctx.currentTime+.4);}
+    else{o.frequency.value=200;g.gain.setValueAtTime(.16,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.28);o.start();o.stop(ctx.currentTime+.28);}
+  }catch(e){}
+}
+
+// Komma-Schreibweise (deutsche Dezimalzahl)
+function dz(x){
+  let s=(Math.round(x*1000)/1000).toString();
+  return s.replace(".",",");
+}
+
+// ─── Zahlengerade ─────────────────────────────────────────────────────────────
+// marks = [{v:0..1, label, color}]  (v = Position auf [0,1])
+function drawLine(svgId,marks,showTenths){
+  const LX=26,LW=308,AY=58;
+  let h="";
+  // Achse
+  h+="<line x1='"+LX+"' y1='"+AY+"' x2='"+(LX+LW)+"' y2='"+AY+"' stroke='#3a4866' stroke-width='2'/>";
+  // Pfeilspitze
+  h+="<path d='M"+(LX+LW)+" "+AY+" l-7 -4 l0 8 z' fill='#3a4866'/>";
+  // Teilstriche — jeder Zehntel beschriftet
+  const ticks=10;
+  for(let i=0;i<=ticks;i++){
+    const x=LX+LW*(i/ticks);
+    const big=(i===0||i===ticks||i===5);
+    h+="<line x1='"+x+"' y1='"+(AY-(big?7:4))+"' x2='"+x+"' y2='"+(AY+(big?7:4))+"' stroke='#3a4866' stroke-width='"+(big?1.6:1)+"'/>";
+    const lbl = i===0?"0" : (i===ticks?"1" : dz(i/10));
+    h+="<text x='"+x+"' y='"+(AY+21)+"' fill='"+(big?"#8b98b6":"#5d6a86")+"' font-size='"+(big?10.5:8.5)+"' text-anchor='middle' font-family='monospace'>"+lbl+"</text>";
+  }
+  // Richtungshinweis
+  h+="<text x='"+(LX+8)+"' y='"+(AY+38)+"' fill='#5d6a86' font-size='9.5' text-anchor='start' font-family='monospace'>← kleiner</text>";
+  h+="<text x='"+(LX+LW-8)+"' y='"+(AY+38)+"' fill='#5d6a86' font-size='9.5' text-anchor='end' font-family='monospace'>größer →</text>";
+  // Marken
+  let above=true;
+  for(const m of marks){
+    if(m.v===null||m.v===undefined) continue;
+    const x=LX+LW*Math.max(0,Math.min(1,m.v));
+    const ly=above?AY-30:AY+34;
+    const ty=above?AY-34:AY+48;
+    h+="<line x1='"+x+"' y1='"+AY+"' x2='"+x+"' y2='"+ly+"' stroke='"+m.color+"' stroke-width='2'/>";
+    h+="<circle cx='"+x+"' cy='"+AY+"' r='4.5' fill='"+m.color+"'/>";
+    h+="<text x='"+x+"' y='"+ty+"' fill='"+m.color+"' font-size='13' font-weight='700' text-anchor='middle' font-family='monospace'>"+m.label+"</text>";
+    above=!above;
+  }
+  $(svgId).innerHTML=h;
+}
+
+const C_BLUE="#5aa0ff", C_GREEN="#4fd6a0", C_RED="#ff8f8f", C_AMBER="#f4b740";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 1: Welche ist größer?
+// ════════════════════════════════════════════════════════════════════════════
+const CMP_ITEMS=[
+  {a:0.4, b:0.25, trap:"D1"},
+  {a:0.7, b:0.68, trap:"D1"},
+  {a:0.45,b:0.8,  trap:"rev"},
+  {a:0.3, b:0.199,trap:"D1"}
+];
+const CMP_FEED={
+  D1:"<b>Mehr Ziffern heißt nicht mehr Wert.</b> Schau auf die Zahlengerade: die längere Zahl liegt weiter links — also kleiner. Es zählt die <b>Stelle</b> (Zehntel zuerst), nicht wie viele Ziffern dahinter stehen.",
+  rev:"<b>Hier hat die kürzere Zahl mehr Wert.</b> 0,8 sind 8 Zehntel, 0,45 sind erst 4 Zehntel und ein bisschen. Die Zahlengerade zeigt es."
+};
+let cmpIdx=0,cmpDone=0,cmpLock=false;
+
+function cmpLoad(){
+  cmpLock=false;
+  const it=CMP_ITEMS[cmpIdx];
+  $("cmpPrompt").innerHTML="<span style='color:"+C_BLUE+"'>"+dz(it.a)+"</span> <span class='op'>oder</span> <span style='color:"+C_GREEN+"'>"+dz(it.b)+"</span> <span class='op'>—</span> <span class='q'>?</span>";
+  drawLine("cmpSvg",[],true);
+  $("cmpTask").innerHTML="<span class='tlab'>Aufgabe "+(cmpIdx+1)+"/"+CMP_ITEMS.length+"</span> Welche Zahl ist <b>größer</b>?";
+  // Buttons: a / b in fester Reihenfolge
+  $("cmpJudge").innerHTML=
+    "<button data-pick='a' onclick=\"cmpChoose('a')\">"+dz(it.a)+"</button>"+
+    "<button data-pick='b' onclick=\"cmpChoose('b')\">"+dz(it.b)+"</button>";
+  $("cmpFeed").className="feed";$("cmpFeed").innerHTML="";
+}
+
+function cmpChoose(pick){
+  if(cmpLock) return; cmpLock=true;
+  const it=CMP_ITEMS[cmpIdx];
+  const correct = it.a>it.b ? "a" : "b";
+  const ok = pick===correct;
+  // Marken setzen
+  drawLine("cmpSvg",[{v:it.a,label:dz(it.a),color:C_BLUE},{v:it.b,label:dz(it.b),color:C_GREEN}],true);
+  const btns=$("cmpJudge").querySelectorAll("button");
+  btns.forEach(b=>{b.disabled=true; if(b.dataset.pick===correct)b.classList.add("correct"); else if(b.dataset.pick===pick)b.classList.add("wrong");});
+  ding(ok);
+  if(ok){
+    cmpDone=Math.max(cmpDone,cmpIdx+1);$("stCmp").textContent="✓"+cmpDone;
+    $("cmpFeed").className="feed ok";
+    $("cmpFeed").innerHTML="<b>Richtig — "+dz(Math.max(it.a,it.b))+" ist größer.</b> Sie liegt auf der Zahlengeraden weiter rechts.";
+    setTimeout(()=>{ if(cmpIdx<CMP_ITEMS.length-1){cmpIdx++;cmpLoad();} else $("cmpFeed").innerHTML+="<br><b>Alle vier geschafft.</b> <span class='bonus'>Bonus: Ordne im Kopf 0,3 — 0,29 — 0,199 — 0,4 der Größe nach.</span>"; },1500);
+  }else{
+    $("cmpFeed").className="feed bad";
+    $("cmpFeed").innerHTML=CMP_FEED[it.trap];
+    setTimeout(()=>{cmpLock=false; btns.forEach(b=>{b.disabled=false;b.classList.remove("wrong");});},1300);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 2: Bruch -> Dezimal
+// ════════════════════════════════════════════════════════════════════════════
+const FRAC_ITEMS=[
+  {z:1,n:2, val:0.5,  choices:[{l:"0,2",v:0.2,e:"D2"},{l:"0,5",v:0.5,e:null},{l:"0,12",v:0.12,e:"read"}]},
+  {z:1,n:4, val:0.25, choices:[{l:"0,14",v:0.14,e:"D6"},{l:"0,25",v:0.25,e:null},{l:"0,4",v:0.4,e:"rev"}]},
+  {z:1,n:5, val:0.2,  choices:[{l:"0,15",v:0.15,e:"D6"},{l:"0,5",v:0.5,e:"D2"},{l:"0,2",v:0.2,e:null}]},
+  {z:3,n:4, val:0.75, choices:[{l:"0,34",v:0.34,e:"D6"},{l:"0,43",v:0.43,e:"swap"},{l:"0,75",v:0.75,e:null}]}
+];
+const FRAC_FEED={
+  D6:'<b>So liest man einen Bruch nicht ab.</b> 3/4 bedeutet 3 <em>geteilt durch</em> 4 — nicht „0 Komma Zähler Nenner". 0,34 läge fast am Anfang der Zahlengeraden, aber 3/4 liegt fast bei 1.',
+  D2:"<b>Der Nenner ist nicht die Dezimalstelle.</b> 1/5 ist nicht 0,5. Rechne 1 geteilt durch 5 — das ergibt 0,2. (Merksatz: 1/2 = 0,5, nicht 0,2!)",
+  read:"<b>Schau auf die Zahlengerade.</b> 1/2 liegt genau in der Mitte — bei 0,5. 0,12 läge ganz links.",
+  rev:"<b>Fast — aber zu weit rechts.</b> 1/4 ist ein Viertel, das liegt bei 0,25. 0,4 wären schon fast die Hälfte.",
+  swap:"<b>Ziffern vertauscht.</b> 3/4 = 0,75, nicht 0,43. Drei Viertel liegen weit rechts, fast bei 1."
+};
+let fracIdx=0,fracDone=0,fracLock=false;
+
+function fracHtml(z,n){return "<span class='eq-frac'><span>"+z+"</span><span>"+n+"</span></span>";}
+
+function fracLoad(){
+  fracLock=false;
+  const it=FRAC_ITEMS[fracIdx];
+  $("fracPrompt").innerHTML=fracHtml(it.z,it.n)+" <span class='op'>=</span> <span class='q'>?</span>";
+  drawLine("fracSvg",[{v:it.val,label:dz(it.z/it.n)+" = "+it.z+"/"+it.n,color:C_AMBER}],true);
+  $("fracTask").innerHTML="<span class='tlab'>Aufgabe "+(fracIdx+1)+"/"+FRAC_ITEMS.length+"</span> Welche Dezimalzahl liegt am <b>gelben Punkt</b>?";
+  let bh="";
+  it.choices.forEach((c,i)=>{bh+="<button data-i='"+i+"' onclick='fracChoose("+i+")'>"+c.l+"</button>";});
+  $("fracJudge").innerHTML=bh;
+  $("fracFeed").className="feed";$("fracFeed").innerHTML="";
+}
+
+function fracChoose(i){
+  if(fracLock) return;
+  const it=FRAC_ITEMS[fracIdx], c=it.choices[i], ok=c.e===null;
+  const btns=$("fracJudge").querySelectorAll("button");
+  // gewählte Dezimalzahl zusätzlich blau einzeichnen
+  drawLine("fracSvg",[{v:it.val,label:it.z+"/"+it.n,color:C_AMBER},{v:c.v,label:"dein Tipp: "+c.l,color:ok?C_GREEN:C_RED}],true);
+  ding(ok);
+  if(ok){
+    fracLock=true;
+    btns.forEach(b=>{b.disabled=true; if(+b.dataset.i===i)b.classList.add("correct");});
+    fracDone=Math.max(fracDone,fracIdx+1);$("stFrac").textContent="✓"+fracDone;
+    $("fracFeed").className="feed ok";
+    $("fracFeed").innerHTML="<b>Richtig — "+it.z+"/"+it.n+" = "+dz(it.val)+".</b> Beide Punkte liegen genau aufeinander.";
+    setTimeout(()=>{ if(fracIdx<FRAC_ITEMS.length-1){fracIdx++;fracLoad();} else $("fracFeed").innerHTML+="<br><b>Alle vier geschafft.</b>"; },1600);
+  }else{
+    btns[i].disabled=true; btns[i].classList.add("wrong");
+    $("fracFeed").className="feed bad";
+    $("fracFeed").innerHTML=FRAC_FEED[c.e];
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 3: Gleich oder verschieden?
+// ════════════════════════════════════════════════════════════════════════════
+const ZERO_ITEMS=[
+  {a:"0,5", av:0.5, b:"0,50", bv:0.5, same:true,  hiIdx:3, hiKind:"trail"},
+  {a:"0,3", av:0.3, b:"0,30", bv:0.3, same:true,  hiIdx:3, hiKind:"trail"},
+  {a:"0,6", av:0.6, b:"0,60", bv:0.6, same:true,  hiIdx:3, hiKind:"trail"},
+  {a:"0,4", av:0.4, b:"0,04", bv:0.04, same:false, hiIdx:2, hiKind:"lead"}
+];
+let zeroIdx=0,zeroDone=0,zeroLock=false;
+
+function zeroBHtml(it){
+  const chars=it.b.split("");
+  const style = it.hiKind==="lead" ? "color:#f4b740;font-weight:800" : "color:#6b7896";
+  chars[it.hiIdx]="<span style='"+style+"'>"+chars[it.hiIdx]+"</span>";
+  return chars.join("");
+}
+
+function zeroLoad(){
+  zeroLock=false;
+  const it=ZERO_ITEMS[zeroIdx];
+  $("zeroPrompt").innerHTML="<span style='color:"+C_BLUE+"'>"+it.a+"</span> <span class='op'>und</span> <span style='color:"+C_GREEN+"'>"+zeroBHtml(it)+"</span>";
+  drawLine("zeroSvg",[],true);
+  $("zeroTask").innerHTML="<span class='tlab'>Aufgabe "+(zeroIdx+1)+"/"+ZERO_ITEMS.length+"</span> Sind die beiden Zahlen <b>gleich groß</b> oder <b>verschieden</b>? <span style='color:#93a0b8'>Achte auf die markierte Null.</span>";
+  const btns=$("zeroJudge").querySelectorAll("button");
+  btns.forEach(b=>{b.disabled=false;b.classList.remove("correct","wrong");});
+  $("zeroFeed").className="feed";$("zeroFeed").innerHTML="";
+}
+
+function zeroChoose(pickSame){
+  if(zeroLock) return; zeroLock=true;
+  const it=ZERO_ITEMS[zeroIdx], ok=pickSame===it.same;
+  const marks=[{v:it.av,label:it.a,color:C_BLUE}];
+  // bei gleich liegen sie aufeinander -> zweite Marke leicht erkennbar darunter
+  marks.push({v:it.bv,label:it.b,color:C_GREEN});
+  drawLine("zeroSvg",marks,true);
+  const btns=$("zeroJudge").querySelectorAll("button");
+  btns.forEach((b,i)=>{b.disabled=true;});
+  // Button 0 = gleich, Button 1 = verschieden
+  const correctBtn = it.same?0:1, pickBtn = pickSame?0:1;
+  btns[correctBtn].classList.add("correct");
+  if(!ok) btns[pickBtn].classList.add("wrong");
+  ding(ok);
+  if(ok){
+    zeroDone=Math.max(zeroDone,zeroIdx+1);$("stZero").textContent="✓"+zeroDone;
+    $("zeroFeed").className="feed ok";
+    $("zeroFeed").innerHTML = it.same
+      ? "<b>Richtig — gleich groß.</b> "+it.a+" und "+it.b+" liegen am selben Punkt. Eine Null <em>am Ende</em> (hinter der letzten Ziffer) ändert den Wert nicht: "+it.b+" = "+it.b.replace(",0",",").slice(0,3)+" sind dieselben Zehntel."
+      : "<b>Richtig — verschieden.</b> Die Null steht hier <em>zwischen</em> Komma und Ziffer: 0,04 sind nur 4 Hundertstel, 0,4 sind 4 Zehntel — zehnmal so viel.";
+    setTimeout(()=>{ if(zeroIdx<ZERO_ITEMS.length-1){zeroIdx++;zeroLoad();} else $("zeroFeed").innerHTML+="<br><b>Alle vier geschafft.</b>"; },1900);
+  }else{
+    $("zeroFeed").className="feed bad";
+    $("zeroFeed").innerHTML = it.same
+      ? "<b>Sie sind gleich.</b> Eine Null <em>hinter</em> der letzten Ziffer hängt nichts dazu — "+it.a+" und "+it.b+" liegen am selben Punkt. (Anders als bei ganzen Zahlen, wo 50 ≠ 5.)"
+      : "<b>Sie sind verschieden.</b> Achtung: Die Null steht hier <em>vorne</em>, direkt hinter dem Komma. 0,04 ist viel kleiner als 0,4 — schau auf die Zahlengerade.";
+    setTimeout(()=>{zeroLock=false; btns.forEach(b=>{b.disabled=false;b.classList.remove("wrong","correct");}); drawLine("zeroSvg",[],true);},2100);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Modus 4: Zusammenrechnen
+// ════════════════════════════════════════════════════════════════════════════
+const ADD_ITEMS=[
+  {a:0.5, b:0.25, sum:0.75, choices:[{l:"0,30",v:0.30,e:"D3"},{l:"0,75",v:0.75,e:null},{l:"0,7",v:0.7,e:"near"}]},
+  {a:0.3, b:0.4,  sum:0.7,  choices:[{l:"0,7",v:0.7,e:null},{l:"0,07",v:0.07,e:"D3b"},{l:"0,12",v:0.12,e:"mul"}]},
+  {a:0.6, b:0.15, sum:0.75, choices:[{l:"0,21",v:0.21,e:"D3"},{l:"0,75",v:0.75,e:null},{l:"0,7",v:0.7,e:"near"}]},
+  {a:0.8, b:0.2,  sum:1.0,  choices:[{l:"0,10",v:0.10,e:"D3"},{l:"1",v:1.0,e:null},{l:"0,16",v:0.16,e:"mul"}]}
+];
+const ADD_FEED={
+  D3:"<b>Hier wurde wie bei ganzen Zahlen gerechnet.</b> Stell die Kommas untereinander: Zehntel unter Zehntel. Das Ergebnis muss <em>größer</em> sein als jede einzelne Zahl — auf der Zahlengeraden gehst du nach rechts, nicht nach links.",
+  D3b:"<b>Zu klein.</b> Du addierst zwei Zahlen, die zusammen über ein halb ergeben. 0,07 läge fast am Anfang. Richte die Kommas aus: 0,3 + 0,4.",
+  mul:"<b>Das sieht nach Malnehmen aus, nicht nach Addieren.</b> Zähl die Zehntel zusammen: wie viele Zehntel sind es insgesamt?",
+  near:"<b>Knapp daneben.</b> Vergiss die Hundertstel nicht. Schreib 0,50 + 0,25 untereinander und addiere Stelle für Stelle."
+};
+let addIdx=0,addDone=0,addLock=false;
+
+function addLoad(){
+  addLock=false;
+  const it=ADD_ITEMS[addIdx];
+  $("addPrompt").innerHTML="<span style='color:"+C_BLUE+"'>"+dz(it.a)+"</span> <span class='op'>+</span> <span style='color:"+C_GREEN+"'>"+dz(it.b)+"</span> <span class='op'>=</span> <span class='q'>?</span>";
+  drawLine("addSvg",[{v:it.a,label:dz(it.a),color:C_BLUE},{v:it.b,label:"+ "+dz(it.b),color:C_GREEN}],true);
+  $("addTask").innerHTML="<span class='tlab'>Aufgabe "+(addIdx+1)+"/"+ADD_ITEMS.length+"</span> Was ergibt die Summe?";
+  let bh="";
+  it.choices.forEach((c,i)=>{bh+="<button data-i='"+i+"' onclick='addChoose("+i+")'>"+c.l+"</button>";});
+  $("addJudge").innerHTML=bh;
+  $("addFeed").className="feed";$("addFeed").innerHTML="";
+}
+
+function pad2(x){ // Dezimalzahl mit 2 Nachkommastellen als deutscher String
+  return x.toFixed(2).replace(".",",");
+}
+
+function addChoose(i){
+  if(addLock) return;
+  const it=ADD_ITEMS[addIdx], c=it.choices[i], ok=c.e===null;
+  const btns=$("addJudge").querySelectorAll("button");
+  ding(ok);
+  if(ok){
+    addLock=true;
+    btns.forEach(b=>{b.disabled=true; if(+b.dataset.i===i)b.classList.add("correct");});
+    // Ergebnis auf Zahlengerade + Stellenwert-Säule
+    drawLine("addSvg",[{v:it.sum,label:"= "+dz(it.sum),color:C_GREEN}],true);
+    addDone=Math.max(addDone,addIdx+1);$("stAdd").textContent="✓"+addDone;
+    $("addFeed").className="feed ok";
+    $("addFeed").innerHTML="<b>Richtig — "+dz(it.sum)+".</b> Mit ausgerichteten Kommas:<br><span class='colsum'><span class='u'>&nbsp;&nbsp;"+pad2(it.a)+"<br>+ "+pad2(it.b)+"</span>&nbsp;&nbsp;"+pad2(it.sum)+"</span>";
+    setTimeout(()=>{ if(addIdx<ADD_ITEMS.length-1){addIdx++;addLoad();} else $("addFeed").innerHTML+="<br><b>Alle vier geschafft.</b>"; },2400);
+  }else{
+    btns[i].disabled=true; btns[i].classList.add("wrong");
+    $("addFeed").className="feed bad";
+    $("addFeed").innerHTML=ADD_FEED[c.e];
+  }
+}
+
+// ─── Modus-Umschaltung ────────────────────────────────────────────────────────
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl"+m.charAt(0).toUpperCase()+m.slice(1)).classList.add("on");
+}
+
+// Init
+cmpLoad(); fracLoad(); zeroLoad(); addLoad();
+</script>
+</body>
+</html>
