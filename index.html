@@ -20,8 +20,9 @@
   h1{font-size:30px;margin:0 0 8px;letter-spacing:.2px;font-weight:680}
   h1 .hl{color:var(--good)}
   .sub{color:var(--muted);font-size:15px;margin-bottom:26px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
   a.card{display:block;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;
     padding:18px 18px 16px;transition:.14s;color:inherit}
   a.card:hover{border-color:var(--accent);background:#192340;transform:translateY(-2px)}
