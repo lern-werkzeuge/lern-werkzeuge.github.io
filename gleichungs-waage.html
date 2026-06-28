@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Die Gleichungs-Waage — Gleichungen lösen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .tools{display:flex;gap:8px;align-items:center}
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+
+  /* Waage */
+  .scalewrap{position:relative}
+  svg.scale{display:block;width:100%;height:auto;max-height:300px;margin:0 auto}
+  .balflag{position:absolute;left:50%;top:6px;transform:translateX(-50%);
+    font-family:var(--mono);font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--good);background:var(--goodDim);border:1px solid #2f5f50;border-radius:20px;padding:3px 11px;transition:.3s}
+  .balflag.off{color:var(--bad);background:var(--badDim);border-color:#6a3a44}
+
+  /* Protokoll der Schritte */
+  .proto{font-family:var(--mono);margin:14px 0 4px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .eqline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 14px;font-size:18px;color:#dfe8f6;border-bottom:1px solid var(--line)}
+  .eqline:last-child{border-bottom:0}
+  .eqline .opann{font-size:13px;color:var(--think)}
+  .eqline.cur{background:#192a47}
+  .eqline.solved{background:var(--goodDim);color:#bff0d8}
+  .eqline.solved .lhs{color:var(--good);font-weight:600}
+
+  /* Operationen */
+  .ops{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .op{font:inherit;font-family:var(--mono);font-size:15px;color:#eaf1ff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 15px;cursor:pointer;transition:.14s}
+  .op:hover{background:#284273}
+  .op .sub{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.4px;color:#bcd4ff;margin-top:2px}
+  .danger-op{background:#241a22;border-color:#6a3a44;color:#e9b6b6}
+  .danger-op:hover{background:#2e1f28;border-color:#8a4a58}
+  .danger-op .sub{color:#c98a8a}
+  .btn{font:inherit;font-size:14px;font-weight:600;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 15px;cursor:pointer;transition:.14s}
+  .btn:hover{border-color:#3d4d70;color:#fff}
+  .btn.accent{background:#21345c;border-color:var(--accent);color:#fff}
+  .btn.accent:hover{background:#284273}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+
+  .danger{font:inherit;font-size:12.5px;color:#e9b6b6;background:#241a22;border:1px dashed #6a3a44;border-radius:9px;padding:8px 12px;cursor:pointer}
+  .danger:hover{background:#2e1f28}
+
+  .feedback{min-height:22px;font-size:14px;margin-top:12px;color:var(--muted);transition:.2s}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+  .feedback b{color:#fff}
+
+  /* Probe */
+  .probe{margin-top:14px;border:1px solid var(--line);border-radius:11px;padding:14px 16px;background:var(--panel2);display:none}
+  .probe.on{display:block}
+  .probe h3{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:0 0 10px;font-weight:600}
+  .probe .pe{font-family:var(--mono);font-size:16px;color:#eaf1ff}
+  .probe .pe .g{color:var(--good)}
+  .probe .row{margin-top:12px}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+  .pulse{animation:pulse .5s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 7–9 · Gleichungen lösen</div>
+    <h1>Die Gleichungs-Waage <span class="hl">=</span></h1>
+    <div class="sub">Lösen heißt nicht „x rüberbringen" — sondern auf beiden Seiten dasselbe tun.</div>
+  </header>
+
+  <div class="thesis">
+    Eine Gleichung ist eine <b>Waage im Gleichgewicht</b>. Was du tust, musst du auf <b>beiden Seiten</b>
+    tun — sonst kippt sie. So räumst du Schritt für Schritt weg, bis <b>x allein</b> steht. „Fertig" heißt:
+    <b>x = eine Zahl</b>.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="einf">Einführung <span class="st"></span></button>
+    <button class="tab" data-mode="minus">Mit Minus <span class="st"></span></button>
+    <button class="tab" data-mode="beid">x auf beiden Seiten <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <div class="scalewrap">
+      <div class="balflag" id="balFlag">im Gleichgewicht</div>
+      <svg class="scale" id="svg" viewBox="0 0 520 300" role="img" aria-label="Gleichungs-Waage">
+        <defs>
+          <linearGradient id="gBeam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbe5f8"/><stop offset="1" stop-color="#9fb0d2"/></linearGradient>
+        </defs>
+        <path d="M210,272 L310,272 L296,258 L224,258 Z" fill="#202a40"/>
+        <rect x="253" y="150" width="14" height="108" rx="3" fill="#27324b"/>
+        <path d="M260,132 L246,154 L274,154 Z" fill="#39476a"/>
+        <line id="sl1" stroke="#5e6c8e" stroke-width="1.6"/><line id="sl2" stroke="#5e6c8e" stroke-width="1.6"/>
+        <line id="sr1" stroke="#5e6c8e" stroke-width="1.6"/><line id="sr2" stroke="#5e6c8e" stroke-width="1.6"/>
+        <line id="beam" stroke="url(#gBeam)" stroke-width="11" stroke-linecap="round"/>
+        <line id="beamHi" stroke="#eef3ff" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+        <circle id="hub" cx="260" cy="132" r="9" fill="#cdd8f0" stroke="#39476a" stroke-width="2"/>
+        <g id="panL">
+          <rect x="-66" y="-23" width="132" height="46" rx="11" fill="#1c2536" stroke="#374768" stroke-width="1.4"/>
+          <text id="txtL" x="0" y="7" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="20" font-weight="600" fill="#eaf1ff">2x + 3</text>
+        </g>
+        <g id="panR">
+          <rect x="-66" y="-23" width="132" height="46" rx="11" fill="#1c2536" stroke="#374768" stroke-width="1.4"/>
+          <text id="txtR" x="0" y="7" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="20" font-weight="600" fill="#eaf1ff">11</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="proto" id="proto"></div>
+
+    <div class="ops" id="ops"></div>
+
+    <div class="row">
+      <button class="btn" id="resetEq">Von vorn</button>
+      <button class="btn accent" id="nextEq" style="display:none">Nächste Gleichung →</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="probe" id="probe">
+      <h3>Probe — stimmt die Lösung?</h3>
+      <div class="pe" id="probeEq"></div>
+      <div class="row">
+        <button class="btn accent" id="probeRun">x einsetzen</button>
+        <button class="btn" id="probeWrong">eine falsche Zahl testen</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   DIE GLEICHUNGS-WAAGE — lineares Gleichungslösen über Äquivalenzumformung
+   Symbolische Integer-Engine (kein Parser nötig), komplett offline.
+   Gleichung als Zustand {lx,lc,rx,rc}:  lx·x + lc  =  rx·x + rc
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+/* ---------- Waage-Geometrie (Balken bleibt eben außer bei der Probe) ---------- */
+const cx=260, cy=132, L=172, S=58, maxA=13*Math.PI/180;
+const beam=$("beam"),beamHi=$("beamHi"),hub=$("hub");
+const sl1=$("sl1"),sl2=$("sl2"),sr1=$("sr1"),sr2=$("sr2"),panL=$("panL"),panR=$("panR");
+let curAngle=0, tgtAngle=0;
+function applyAngle(t){
+  const c=Math.cos(t),s=Math.sin(t);
+  const lx=cx-L*c, ly=cy+L*s, rx=cx+L*c, ry=cy-L*s;
+  beam.setAttribute("x1",lx);beam.setAttribute("y1",ly);beam.setAttribute("x2",rx);beam.setAttribute("y2",ry);
+  beamHi.setAttribute("x1",lx);beamHi.setAttribute("y1",ly-3);beamHi.setAttribute("x2",rx);beamHi.setAttribute("y2",ry-3);
+  const lpy=ly+S, rpy=ry+S;
+  panL.setAttribute("transform",`translate(${lx},${lpy})`);
+  panR.setAttribute("transform",`translate(${rx},${rpy})`);
+  sl1.setAttribute("x1",lx);sl1.setAttribute("y1",ly);sl1.setAttribute("x2",lx-54);sl1.setAttribute("y2",lpy-23);
+  sl2.setAttribute("x1",lx);sl2.setAttribute("y1",ly);sl2.setAttribute("x2",lx+54);sl2.setAttribute("y2",lpy-23);
+  sr1.setAttribute("x1",rx);sr1.setAttribute("y1",ry);sr1.setAttribute("x2",rx-54);sr1.setAttribute("y2",rpy-23);
+  sr2.setAttribute("x1",rx);sr2.setAttribute("y1",ry);sr2.setAttribute("x2",rx+54);sr2.setAttribute("y2",rpy-23);
+}
+function loop(){ curAngle+=(tgtAngle-curAngle)*0.16; if(Math.abs(tgtAngle-curAngle)<0.0002)curAngle=tgtAngle; applyAngle(curAngle); requestAnimationFrame(loop); }
+
+/* ---------- Ton ---------- */
+let actx=null, soundOn=false;
+function ding(ok){ if(!soundOn)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.connect(g);g.connect(actx.destination);
+  const n=actx.currentTime;g.gain.value=0.0001;g.gain.exponentialRampToValueAtTime(0.12,n+0.02);g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+  o.frequency.setValueAtTime(ok?660:300,n);if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13);o.start(n);o.stop(n+0.32);}catch(e){} }
+
+/* ---------- Gleichungs-Darstellung ---------- */
+function sideStr(xc,c){
+  let s="";
+  if(xc!==0){ s += (xc===1?"x":(xc===-1?"−x":(xc<0?"−"+(-xc)+"x":xc+"x"))); }
+  if(c!==0){
+    if(s===""){ s = (c<0?"−"+(-c):String(c)); }
+    else { s += (c<0?" − "+(-c):" + "+c); }
+  }
+  if(s==="") s="0";
+  return s;
+}
+function eqStr(e){ return sideStr(e.lx,e.lc)+" = "+sideStr(e.rx,e.rc); }
+
+/* ---------- Daten ---------- */
+const ITEMS={
+  einf:[ {lx:2,lc:3,rx:0,rc:11}, {lx:3,lc:5,rx:0,rc:20}, {lx:4,lc:2,rx:0,rc:14}, {lx:5,lc:0,rx:0,rc:20}, {lx:2,lc:7,rx:0,rc:19} ],
+  minus:[ {lx:2,lc:-5,rx:0,rc:1}, {lx:3,lc:8,rx:0,rc:2}, {lx:2,lc:-3,rx:0,rc:-9}, {lx:4,lc:10,rx:0,rc:2}, {lx:3,lc:-7,rx:0,rc:-1} ],
+  beid:[ {lx:5,lc:3,rx:2,rc:18}, {lx:4,lc:-2,rx:1,rc:7}, {lx:6,lc:1,rx:4,rc:9}, {lx:7,lc:-4,rx:3,rc:12}, {lx:3,lc:9,rx:8,rc:-1} ]
+};
+const HINTS={
+  einf:"<b>Einführung:</b> Räum die Zahl weg, dann teile durch die Zahl vor dem x. Immer auf beiden Seiten.",
+  minus:"<b>Mit Minus:</b> Eine −5 machst du mit +5 weg — auf beiden Seiten. Auch die Lösung darf negativ sein.",
+  beid:"<b>x auf beiden Seiten:</b> Sammle das x zuerst auf einer Seite (z.B. −2x auf beiden Seiten)."
+};
+
+let mode="einf", idx=0, eq=null, orig=null, history=[], solved=false, solution=null;
+const prog={einf:0,minus:0,beid:0};
+let stepCount=0;
+
+function loadItem(){
+  const arr=ITEMS[mode]; if(idx>=arr.length) idx=0;
+  const it=arr[idx];
+  eq={lx:it.lx,lc:it.lc,rx:it.rx,rc:it.rc};
+  orig={...eq};
+  history=[{str:eqStr(eq),op:null}];
+  solved=false; solution=null; stepCount=0;
+  $("probe").classList.remove("on");
+  $("nextEq").style.display="none";
+  setFeedback("Welcher Schritt bringt dich x näher?","");
+  render();
+}
+function setFeedback(t,k){ const f=$("feedback"); f.innerHTML=t||""; f.className="feedback"+(k?" "+k:""); }
+
+/* ---------- Züge erzeugen (immer beide Seiten, keine Brüche, keine Sackgassen) ---------- */
+function genMoves(e){
+  const m=[];
+  if(e.lx!==0 && e.rx!==0){ // x sammeln: kleineres x-Glied entfernen
+    const k = (Math.abs(e.rx)<=Math.abs(e.lx)) ? e.rx : e.lx;
+    m.push({type:"x", k:-k});
+  }
+  if(e.lx!==0 && e.lc!==0) m.push({type:"c", k:-e.lc});
+  if(e.rx!==0 && e.rc!==0) m.push({type:"c", k:-e.rc});
+  // teilen, wenn  a·x = c
+  if(e.lx!==0 && e.lc===0 && e.rx===0 && e.lx!==1 && e.rc%e.lx===0) m.push({type:"div", k:e.lx});
+  if(e.rx!==0 && e.rc===0 && e.lx===0 && e.rx!==1 && e.lc%e.rx===0) m.push({type:"div", k:e.rx});
+  // Sonderfall −x = c  →  ÷(−1)
+  if(e.lx===-1 && e.lc===0 && e.rx===0) m.push({type:"div", k:-1});
+  if(e.rx===-1 && e.rc===0 && e.lx===0) m.push({type:"div", k:-1});
+  return m;
+}
+function moveLabel(mv){
+  if(mv.type==="x"){ const k=mv.k; return {t:(k<0?"− "+(-k)+"x":"+ "+k+"x"), s:"beide Seiten"}; }
+  if(mv.type==="c"){ const k=mv.k; return {t:(k<0?"− "+(-k):"+ "+k), s:"beide Seiten"}; }
+  if(mv.type==="div"){ return {t:"÷ "+mv.k, s:"beide Seiten"}; }
+}
+function moveAnn(mv){
+  if(mv.type==="x"){ return (mv.k<0?"| − "+(-mv.k)+"x":"| + "+mv.k+"x"); }
+  if(mv.type==="c"){ return (mv.k<0?"| − "+(-mv.k):"| + "+mv.k); }
+  if(mv.type==="div"){ return "| ÷ "+mv.k; }
+}
+function applyMove(mv){
+  if(solved) return;
+  // letzte Protokollzeile bekommt die Operation als Annotation
+  history[history.length-1].op = moveAnn(mv);
+  stepCount++;
+  if(mv.type==="x"){ eq.lx+=mv.k; eq.rx+=mv.k; }
+  else if(mv.type==="c"){ eq.lc+=mv.k; eq.rc+=mv.k; }
+  else if(mv.type==="div"){ const d=mv.k; eq.lx/=d; eq.lc/=d; eq.rx/=d; eq.rc/=d; }
+  history.push({str:eqStr(eq),op:null});
+  checkSolved();
+  render();
+}
+function checkSolved(){
+  if(eq.lx===1 && eq.lc===0 && eq.rx===0){ solved=true; solution=eq.rc; }
+  else if(eq.rx===1 && eq.rc===0 && eq.lx===0){ solved=true; solution=eq.lc; }
+  if(solved){
+    prog[mode]++; updateStats();
+    setFeedback("Gelöst in "+stepCount+" Schritten! <b>x = "+solution+"</b> — x steht allein. Mach die Probe.","good");
+    ding(true);
+    $("probe").classList.add("on"); $("nextEq").style.display="";
+    $("probeEq").innerHTML="Setze x = "+solution+" in die Ausgangsgleichung "+eqStr(orig)+" ein.";
+  }
+}
+
+/* ---------- Rendern ---------- */
+function render(){
+  // Protokoll
+  let h="";
+  history.forEach((ln,i)=>{
+    const last=(i===history.length-1);
+    const cls = (last&&solved)?"eqline solved":(last?"eqline cur":"eqline");
+    const lhs = ln.str.split(" = ")[0], rhs=ln.str.split(" = ")[1];
+    h+="<div class='"+cls+"'><span><span class='lhs'>"+lhs+"</span> = "+rhs+"</span><span class='opann'>"+(ln.op||"")+"</span></div>";
+  });
+  $("proto").innerHTML=h;
+  // Waage (eben), Pfannen zeigen die aktuellen Seiten
+  $("txtL").textContent=sideStr(eq.lx,eq.lc);
+  $("txtR").textContent=sideStr(eq.rx,eq.rc);
+  tgtAngle=0;
+  $("balFlag").textContent="im Gleichgewicht"; $("balFlag").classList.remove("off");
+  // Operationen
+  const ops=$("ops"); ops.innerHTML="";
+  if(!solved){
+    const moves=genMoves(eq);
+    moves.forEach(mv=>{
+      const lb=moveLabel(mv);
+      const b=document.createElement("button"); b.className="op";
+      b.innerHTML=lb.t+"<span class='sub'>"+lb.s+"</span>";
+      b.onclick=()=>applyMove(mv);
+      ops.appendChild(b);
+    });
+    // „nur links"-Falle als echter Zug (gegen G3) — erster additiver Zug mit konkretem Wert
+    const add=moves.find(mv=>mv.type!=="div");
+    if(add){
+      const lb=moveLabel(add);
+      const d=document.createElement("button"); d.className="op danger-op";
+      d.innerHTML=lb.t+"<span class='sub'>nur links — Falle</span>";
+      d.onclick=()=>showOneSided(add);
+      ops.appendChild(d);
+    }
+    // G7-Hinweis bei a·x = c oder −x = c
+    if((eq.lx>1||eq.lx<-1) && eq.lc===0 && eq.rx===0) setFeedback("Fast! "+eq.lx+"x heißt "+eq.lx+"·x — teile noch durch "+eq.lx+".","think");
+    else if(eq.lx===-1 && eq.lc===0 && eq.rx===0) setFeedback("−x ist noch nicht x. Teile durch −1, dann steht x allein.","think");
+  }
+}
+
+function updateStats(){
+  document.querySelector('[data-mode="einf"] .st').textContent = prog.einf?("✓"+prog.einf):"";
+  document.querySelector('[data-mode="minus"] .st').textContent = prog.minus?("✓"+prog.minus):"";
+  document.querySelector('[data-mode="beid"] .st').textContent = prog.beid?("✓"+prog.beid):"";
+}
+
+/* ---------- „nur links" — zeigt, dass die Waage kippt ---------- */
+let onlyLeftTimer=null;
+function showOneSided(mv){
+  if(solved) return;
+  const nlx = eq.lx + (mv.type==='x'?mv.k:0);
+  const nlc = eq.lc + (mv.type==='c'?mv.k:0);
+  $("txtL").textContent=sideStr(nlx,nlc);   // nur links verändert, rechts unverändert
+  tgtAngle = (mv.k<0) ? -maxA : maxA;
+  $("balFlag").textContent="gekippt — stimmt nicht mehr"; $("balFlag").classList.add("off");
+  setFeedback("Nur links gerechnet → die Waage <b>kippt</b>, die Gleichung ist kaputt. Es muss auf <b>beide Seiten</b>.","bad");
+  ding(false);
+  clearTimeout(onlyLeftTimer);
+  onlyLeftTimer=setTimeout(()=>{ setFeedback("Welcher Schritt bringt dich x näher?",""); render(); },2000);
+}
+
+/* ---------- Probe ---------- */
+function evalSide(xc,c,x){ return xc*x+c; }
+function probe(x,isWrong){
+  const Lo=evalSide(orig.lx,orig.lc,x), Ro=evalSide(orig.rx,orig.rc,x);
+  $("txtL").textContent=String(Lo); $("txtR").textContent=String(Ro);
+  const diff=Lo-Ro;
+  tgtAngle = maxA*Math.tanh(diff/4);
+  const bal=(Lo===Ro);
+  $("balFlag").textContent = bal? "wahr — beide Seiten gleich" : "falsch — Waage kippt";
+  $("balFlag").classList.toggle("off",!bal);
+  if(isWrong){
+    $("probeEq").innerHTML="x = "+x+" eingesetzt: "+Lo+" "+(bal?"=":"≠")+" "+Ro+". "+(bal?"":"<span style='color:var(--bad)'>Das ist nicht die Lösung — die Waage kippt.</span>");
+    setFeedback("Eine falsche Zahl kippt die Waage. Nur x = "+solution+" macht beide Seiten gleich.","think"); ding(false);
+  } else {
+    $("probeEq").innerHTML="x = "+solution+" eingesetzt: <span class='g'>"+Lo+" = "+Ro+"</span> ✓ — die Lösung stimmt.";
+    setFeedback("Probe bestanden: x = "+solution+" macht die Ausgangsgleichung wahr.","good"); ding(true);
+  }
+}
+
+/* ---------- Modus / Events ---------- */
+function setMode(m){
+  mode=m; idx=0;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  $("modehint").innerHTML=HINTS[m];
+  loadItem();
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+$("resetEq").onclick=()=>loadItem();
+$("nextEq").onclick=()=>{ idx++; loadItem(); };
+$("probeRun").onclick=()=>probe(solution,false);
+$("probeWrong").onclick=()=>{ let w=solution+ (solution>=0?2:-2); probe(w,true); };
+$("tglSound").onclick=()=>{ soundOn=!soundOn; $("tglSound").classList.toggle("on",soundOn); if(soundOn)ding(true); };
+
+/* ---------- Start ---------- */
+applyAngle(0); loop();
+setMode("einf");
+</script>
+</body>
+</html>

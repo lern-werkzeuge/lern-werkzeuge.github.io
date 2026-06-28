@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Die Waage — Das Gleichheitszeichen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --bal:#4fd6a0; --balDim:#1d3b33; --off:#ff6f6f; --offDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:26px 20px 64px}
+
+  /* ---------- Kopf ---------- */
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .eqmark{color:var(--bal)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{
+    margin:16px 0 20px;padding:13px 16px;
+    background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6
+  }
+  .thesis b{color:#fff;font-weight:600}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{
+    font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;
+    display:flex;align-items:center;gap:8px
+  }
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+  .tab.on .st{color:#bcd4ff}
+
+  /* ---------- Bühne ---------- */
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;position:relative;overflow:hidden}
+  .statbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted)}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .stats{display:flex;gap:8px;flex:none}
+  .chip{font-family:var(--mono);font-size:11.5px;color:#bcd0f0;background:#1b2740;border:1px solid var(--line);border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .chip b{color:#fff;font-weight:600}
+
+  /* Gleichungs-Streifen */
+  .eqstrip{
+    display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:.5px;
+    margin:10px 0 4px;min-height:48px;user-select:none
+  }
+  .eqstrip .side{color:#eaf1ff}
+  .eq{
+    display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;
+    border-radius:11px;background:#202b42;color:#8ea2c4;transition:.3s;font-weight:700
+  }
+  .eq.is-bal{background:var(--balDim);color:var(--bal);box-shadow:0 0 0 1px #2f5f50,0 0 22px -2px #4fd6a055}
+  .eq.is-off{background:var(--offDim);color:var(--off)}
+  .blank{
+    display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:44px;padding:0 8px;
+    border:2px dashed #4a5a80;border-radius:10px;color:#fff;background:#19233a
+  }
+  .blank.set{border-style:solid;border-color:var(--accent);background:#1d2d4d}
+  .blank.good{border-color:var(--bal);background:var(--balDim);color:var(--bal)}
+  .blank.bad{border-color:var(--off);background:var(--offDim);color:var(--off)}
+
+  /* SVG-Waage */
+  .scalewrap{position:relative}
+  svg.scale{display:block;width:100%;height:auto;max-height:360px;margin:0 auto}
+  .bal-flag{
+    position:absolute;left:50%;top:8px;transform:translateX(-50%) translateY(-6px);
+    font-family:var(--mono);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--bal);background:var(--balDim);border:1px solid #2f5f50;border-radius:20px;
+    padding:4px 12px;opacity:0;transition:.3s;pointer-events:none
+  }
+  .bal-flag.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .feedback{min-height:22px;text-align:center;font-size:14px;margin-top:6px;color:var(--muted);transition:.2s}
+  .feedback.good{color:var(--bal)}
+  .feedback.bad{color:var(--off)}
+  .feedback.think{color:var(--think)}
+  .scale-cap{text-align:center;font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* ---------- Steuerpanels ---------- */
+  .controls{margin-top:14px}
+  .ctl{display:none}
+  .ctl.on{display:block}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .panel + .panel{margin-top:12px}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin:0 0 12px;font-weight:600}
+
+  /* Stepper / Buttons */
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .row + .row{margin-top:12px}
+  .stepper{display:flex;align-items:center;gap:0;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .stepper button{
+    font:inherit;font-size:22px;font-weight:600;color:#dfe8f6;background:transparent;border:0;
+    width:52px;height:52px;cursor:pointer;transition:.12s;line-height:1
+  }
+  .stepper button:hover{background:#26365a;color:#fff}
+  .stepper button:active{background:#2e4574}
+  .stepper .val{font-family:var(--mono);font-size:22px;font-weight:600;min-width:58px;text-align:center;color:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line);height:52px;display:flex;align-items:center;justify-content:center}
+  .lab{font-size:13px;color:#c2cde2;min-width:78px}
+  .lab .mono{font-family:var(--mono);color:#fff}
+
+  .bigbtn{
+    font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:12px 18px;cursor:pointer;transition:.14s;flex:none
+  }
+  .bigbtn:hover{background:#284273}
+  .bigbtn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .bigbtn.ghost:hover{border-color:#3d4d70;color:#fff}
+
+  .judge{display:flex;gap:12px;flex-wrap:wrap}
+  .judge button{
+    font:inherit;font-size:18px;font-weight:680;border-radius:13px;padding:16px 10px;cursor:pointer;
+    flex:1 1 0;min-width:130px;transition:.14s;border:1.5px solid var(--line);background:var(--panel2);color:#e8edf6
+  }
+  .judge button .ic{display:block;font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .judge button.t:hover{border-color:var(--bal);background:#16302a}
+  .judge button.f:hover{border-color:var(--off);background:#2e1c26}
+  .judge button:disabled{opacity:.45;cursor:default}
+
+  .choices{display:flex;gap:10px;flex-wrap:wrap}
+  .choice{
+    font:inherit;font-family:var(--mono);font-size:22px;font-weight:600;color:#eaf1ff;
+    background:var(--panel2);border:1.5px solid var(--line);border-radius:12px;
+    padding:14px 8px;cursor:pointer;flex:1 1 0;min-width:90px;transition:.14s
+  }
+  .choice:hover{border-color:var(--accent);background:#21345c}
+  .choice.good{border-color:var(--bal);background:var(--balDim);color:var(--bal)}
+  .choice.bad{border-color:var(--off);background:var(--offDim);color:var(--off)}
+  .choice:disabled{cursor:default}
+
+  .sidegrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.sidegrid{grid-template-columns:1fr}}
+  .sidebox{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px}
+  .sidebox .sh{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600}
+  .minirow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .minirow + .minirow{margin-top:8px}
+  .ministep{display:flex;align-items:center;gap:0;background:#141d30;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .ministep button{font:inherit;font-size:17px;font-weight:600;color:#dfe8f6;background:transparent;border:0;width:38px;height:38px;cursor:pointer}
+  .ministep button:hover{background:#26365a}
+  .ministep .v{font-family:var(--mono);font-size:16px;min-width:38px;text-align:center;color:#fff}
+
+  .savedlist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .savedlist li{font-family:var(--mono);font-size:14px;color:#bfe6d4;background:#15281f;border:1px solid #234a3a;border-radius:7px;padding:6px 11px;display:flex;align-items:center;gap:8px}
+  .savedlist li .ok{color:var(--bal)}
+  .empty{font-size:12.5px;color:var(--muted);font-style:italic}
+
+  /* Werkzeugleiste oben rechts */
+  .tools{display:flex;gap:8px;align-items:center}
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--bal);box-shadow:0 0 8px -1px var(--bal)}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+
+  .pulse{animation:pulse .5s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 5–7 · Das Gleichheitszeichen</div>
+    <h1>Die Waage <span class="eqmark">=</span></h1>
+    <div class="sub">Das Gleichheitszeichen ist wie eine Waage: beide Seiten sind gleich viel wert.</div>
+  </header>
+
+  <div class="thesis">
+    Das Zeichen <b>=</b> heißt nicht „rechne aus, hier kommt das Ergebnis". Es heißt:
+    <b>beide Seiten sind gleich viel wert</b>. Wenn die Waage gerade steht, stimmt die Gleichung.
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="erkunden">Erkunden <span class="st"></span></button>
+    <button class="tab" data-mode="wf">Wahr oder falsch? <span class="st"></span></button>
+    <button class="tab" data-mode="finde">Gleichgewicht finden <span class="st"></span></button>
+    <button class="tab" data-mode="ohne">Ohne Rechnen <span class="st"></span></button>
+  </div>
+
+  <!-- Bühne -->
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools">
+        <button class="toggle on" id="tglValues"><span class="dot"></span>Gewichte</button>
+        <button class="toggle" id="tglSound"><span class="dot"></span>Ton</button>
+      </div>
+    </div>
+
+    <div class="eqstrip" id="eqstrip"></div>
+
+    <div class="scalewrap">
+      <div class="bal-flag" id="balFlag">≡ die Waage steht</div>
+      <svg class="scale" id="svg" viewBox="0 0 520 380" role="img" aria-label="Balkenwaage">
+        <defs>
+          <linearGradient id="gBeam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#dbe5f8"/>
+            <stop offset="1" stop-color="#9fb0d2"/>
+          </linearGradient>
+          <linearGradient id="gPlate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#26324a"/>
+            <stop offset="1" stop-color="#1a2336"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Stand -->
+        <path d="M210,350 L310,350 L296,336 L224,336 Z" fill="#202a40"/>
+        <rect x="253" y="166" width="14" height="170" rx="3" fill="#27324b"/>
+        <!-- Schatten unter Pfanne -->
+        <ellipse id="shadowL" cx="88" cy="354" rx="52" ry="6" fill="#0a0e18" opacity=".5"/>
+        <ellipse id="shadowR" cx="432" cy="354" rx="52" ry="6" fill="#0a0e18" opacity=".5"/>
+        <!-- Pivot -->
+        <path d="M260,148 L246,170 L274,170 Z" fill="#39476a"/>
+
+        <!-- Schnüre -->
+        <line id="sl1" stroke="#5e6c8e" stroke-width="1.6"/>
+        <line id="sl2" stroke="#5e6c8e" stroke-width="1.6"/>
+        <line id="sr1" stroke="#5e6c8e" stroke-width="1.6"/>
+        <line id="sr2" stroke="#5e6c8e" stroke-width="1.6"/>
+
+        <!-- Balken -->
+        <line id="beam" stroke="url(#gBeam)" stroke-width="11" stroke-linecap="round"/>
+        <line id="beamHi" stroke="#eef3ff" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+        <circle id="hub" cx="260" cy="148" r="9" fill="#cdd8f0" stroke="#39476a" stroke-width="2"/>
+
+        <!-- Pfannen -->
+        <g id="panL">
+          <rect class="plate" x="-60" y="-7" width="120" height="14" rx="7" fill="url(#gPlate)" stroke="#374768" stroke-width="1.4"/>
+          <g class="chip" id="chipL">
+            <rect x="-27" y="-46" width="54" height="28" rx="9" fill="#152033" stroke="#33415f" stroke-width="1.2"/>
+            <text x="0" y="-27" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="16" font-weight="600" fill="#bcd0f0">0</text>
+          </g>
+        </g>
+        <g id="panR">
+          <rect class="plate" x="-60" y="-7" width="120" height="14" rx="7" fill="url(#gPlate)" stroke="#374768" stroke-width="1.4"/>
+          <g class="chip" id="chipR">
+            <rect x="-27" y="-46" width="54" height="28" rx="9" fill="#152033" stroke="#33415f" stroke-width="1.2"/>
+            <text x="0" y="-27" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="16" font-weight="600" fill="#bcd0f0">0</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="scale-cap">Oben die Gleichung — unten wiegt die Waage beide Seiten.</div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- Steuerpanels -->
+  <div class="controls">
+
+    <!-- ERKUNDEN -->
+    <div class="ctl on" id="ctl-erkunden">
+      <div class="panel">
+        <h2>Baue zwei Seiten — bring die Waage ins Gleichgewicht</h2>
+        <div class="sidegrid">
+          <div class="sidebox">
+            <div class="sh">Linke Seite</div>
+            <div class="minirow"><span class="lab">Zahl 1</span>
+              <div class="ministep"><button data-s="lA" data-d="-1">−</button><span class="v" id="v-lA">3</span><button data-s="lA" data-d="1">+</button></div></div>
+            <div class="minirow"><span class="lab">Zahl 2</span>
+              <div class="ministep"><button data-s="lB" data-d="-1">−</button><span class="v" id="v-lB">4</span><button data-s="lB" data-d="1">+</button></div></div>
+          </div>
+          <div class="sidebox">
+            <div class="sh">Rechte Seite</div>
+            <div class="minirow"><span class="lab">Zahl 1</span>
+              <div class="ministep"><button data-s="rA" data-d="-1">−</button><span class="v" id="v-rA">5</span><button data-s="rA" data-d="1">+</button></div></div>
+            <div class="minirow"><span class="lab">Zahl 2</span>
+              <div class="ministep"><button data-s="rB" data-d="-1">−</button><span class="v" id="v-rB">2</span><button data-s="rB" data-d="1">+</button></div></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="bigbtn" id="saveEq" disabled>✓ Gleichung merken</button>
+          <span class="empty" id="saveHint">Steht die Waage gerade, kannst du die wahre Gleichung festhalten.</span>
+        </div>
+        <ul class="savedlist" id="savedList"></ul>
+      </div>
+    </div>
+
+    <!-- WAHR / FALSCH -->
+    <div class="ctl" id="ctl-wf">
+      <div class="panel">
+        <h2>Stimmt diese Gleichung? Entscheide zuerst — dann lass die Waage los.</h2>
+        <div class="judge" id="judgeBtns">
+          <button class="t" data-ans="true"><span class="ic">Stimmt</span>WAHR</button>
+          <button class="f" data-ans="false"><span class="ic">Stimmt nicht</span>FALSCH</button>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="bigbtn ghost" id="wfNext" style="display:none">Nächste →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GLEICHGEWICHT FINDEN -->
+    <div class="ctl" id="ctl-finde">
+      <div class="panel">
+        <h2>Welche Zahl muss ins Kästchen, damit die Waage gerade steht?</h2>
+        <div class="row">
+          <span class="lab">Kästchen <span class="mono">▢</span></span>
+          <div class="stepper">
+            <button id="findeMinus">−</button>
+            <span class="val" id="findeVal">0</span>
+            <button id="findePlus">+</button>
+          </div>
+          <button class="bigbtn" id="findeCheck">Prüfen</button>
+          <button class="bigbtn ghost" id="findeNext" style="display:none">Nächste →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OHNE RECHNEN -->
+    <div class="ctl" id="ctl-ohne">
+      <div class="panel">
+        <h2>Schau genau hin — du brauchst nicht zu rechnen.</h2>
+        <div class="choices" id="ohneChoices"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="bigbtn ghost" id="ohneNext" style="display:none">Nächste →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   DIE WAAGE — interaktives Lernwerkzeug zum Gleichheitszeichen
+   Komplett offline, keine externen Requests.
+   ============================================================ */
+
+/* ---- Geometrie der Waage ---- */
+const cx=260, cy=148, L=172, S=66, maxA=14*Math.PI/180;
+const $ = id => document.getElementById(id);
+const beam=$("beam"), beamHi=$("beamHi"), hub=$("hub");
+const sl1=$("sl1"),sl2=$("sl2"),sr1=$("sr1"),sr2=$("sr2");
+const panL=$("panL"),panR=$("panR"),chipL=$("chipL"),chipR=$("chipR");
+const shadowL=$("shadowL"),shadowR=$("shadowR");
+
+const state={
+  mode:"erkunden",
+  held:false,            // Waage festgehalten (vor dem Aufdecken)
+  cur:0, target:0,       // Balkenwinkel (rad)
+  lv:0, rv:0,            // aktuelle Gewichte
+  balanced:false, wasBalanced:false, silent:false,
+  showValues:true, sound:false,
+  // Erkunden
+  s:{lA:3,lB:4,rA:6,rB:2}, saved:[],
+  // Fortschritt
+  prog:{wf:0,finde:0,ohne:0},
+  solvedFlag:false
+};
+
+/* ---- Balken zeichnen ---- */
+function applyAngle(t){
+  const c=Math.cos(t), s=Math.sin(t);
+  const lx=cx-L*c, ly=cy+L*s, rx=cx+L*c, ry=cy-L*s;
+  beam.setAttribute("x1",lx); beam.setAttribute("y1",ly);
+  beam.setAttribute("x2",rx); beam.setAttribute("y2",ry);
+  beamHi.setAttribute("x1",lx); beamHi.setAttribute("y1",ly-3);
+  beamHi.setAttribute("x2",rx); beamHi.setAttribute("y2",ry-3);
+  // Pfannen hängen senkrecht
+  const lpy=ly+S, rpy=ry+S;
+  panL.setAttribute("transform",`translate(${lx},${lpy})`);
+  panR.setAttribute("transform",`translate(${rx},${rpy})`);
+  // Schnüre (V-Form)
+  sl1.setAttribute("x1",lx); sl1.setAttribute("y1",ly); sl1.setAttribute("x2",lx-48); sl1.setAttribute("y2",lpy-7);
+  sl2.setAttribute("x1",lx); sl2.setAttribute("y1",ly); sl2.setAttribute("x2",lx+48); sl2.setAttribute("y2",lpy-7);
+  sr1.setAttribute("x1",rx); sr1.setAttribute("y1",ry); sr1.setAttribute("x2",rx-48); sr1.setAttribute("y2",rpy-7);
+  sr2.setAttribute("x1",rx); sr2.setAttribute("y1",ry); sr2.setAttribute("x2",rx+48); sr2.setAttribute("y2",rpy-7);
+  // Schatten (je tiefer, desto kleiner/blasser)
+  shadowL.setAttribute("cx",lx); shadowR.setAttribute("cx",rx);
+  const dl=(lpy-214)/42; shadowL.setAttribute("rx",Math.max(30,52-dl*14)); shadowL.setAttribute("opacity",Math.max(.18,.5-dl*.18));
+  const dr=(rpy-214)/42; shadowR.setAttribute("rx",Math.max(30,52-dr*14)); shadowR.setAttribute("opacity",Math.max(.18,.5-dr*.18));
+}
+
+/* ---- Animationsschleife ---- */
+function loop(){
+  state.cur += (state.target-state.cur)*0.16;
+  if(Math.abs(state.target-state.cur)<0.0002) state.cur=state.target;
+  applyAngle(state.cur);
+  requestAnimationFrame(loop);
+}
+
+/* ---- Gewichte setzen ---- */
+function setSides(lv,rv){
+  state.lv=lv; state.rv=rv;
+  const diff=lv-rv;
+  state.target = state.held ? 0 : maxA*Math.tanh(diff/4);
+  state.balanced = (lv===rv) && !state.held;
+  // Chips
+  chipL.style.display = state.showValues ? "" : "none";
+  chipR.style.display = state.showValues ? "" : "none";
+  chipL.querySelector("text").textContent = lv;
+  chipR.querySelector("text").textContent = rv;
+  // Hub-Farbe
+  hub.setAttribute("fill", state.balanced ? "#4fd6a0" : "#cdd8f0");
+  // Gleichheitszeichen im Streifen
+  const eq=document.querySelector("#eqstrip .eq");
+  if(eq){
+    eq.classList.toggle("is-bal", state.balanced);
+    eq.classList.toggle("is-off", !state.held && lv!==rv);
+  }
+  // Gleichgewichts-Fahne
+  $("balFlag").classList.toggle("show", state.balanced);
+  // Erfolg erkennen (Flanke) — nicht während Initialisierung/Umschalten
+  if(state.balanced && !state.wasBalanced && !state.silent){ onBalanced(); }
+  state.wasBalanced=state.balanced;
+}
+
+/* ---- weicher Ton (offline, WebAudio) ---- */
+let actx=null;
+function ding(ok){
+  if(!state.sound) return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type="sine"; o.frequency.value= ok?660:300;
+    g.gain.value=0.0001; o.connect(g); g.connect(actx.destination);
+    const n=actx.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.12,n+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,n+0.32);
+    if(ok){ o.frequency.setValueAtTime(660,n); o.frequency.exponentialRampToValueAtTime(990,n+0.14); }
+    o.start(n); o.stop(n+0.34);
+  }catch(e){}
+}
+
+function onBalanced(){
+  // wird von setSides bei Gleichgewicht aufgerufen – modusabhängige Reaktion in den Controllern
+}
+
+/* ============================================================
+   GLEICHUNGS-STREIFEN
+   tokens: {l:[..], r:[..]}  – Eintrag string ODER {blank:true}
+   ============================================================ */
+function buildSide(arr){
+  return arr.map(tok=>{
+    if(tok && tok.blank){
+      const cls = tok.cls||(tok.v===null?"":"set");
+      const v = (tok.v===null||tok.v===undefined)?"▢":tok.v;
+      return `<span class="blank ${cls}">${v}</span>`;
+    }
+    return `<span>${tok}</span>`;
+  }).join(" ");
+}
+function renderStrip(L,R){
+  $("eqstrip").innerHTML =
+    `<span class="side left">${buildSide(L)}</span>`+
+    `<span class="eq">=</span>`+
+    `<span class="side right">${buildSide(R)}</span>`;
+}
+
+function setFeedback(txt,kind){
+  const f=$("feedback");
+  f.textContent=txt||"";
+  f.className="feedback"+(kind?" "+kind:"");
+}
+function pulseStrip(){
+  const s=$("eqstrip"); s.classList.remove("pulse"); void s.offsetWidth; s.classList.add("pulse");
+}
+
+/* ============================================================
+   MODUS: ERKUNDEN
+   ============================================================ */
+function sideText(a,b){ return b>0 ? `${a} + ${b}` : `${a}`; }
+function erkundenRender(){
+  const {lA,lB,rA,rB}=state.s;
+  $("v-lA").textContent=lA; $("v-lB").textContent=lB; $("v-rA").textContent=rA; $("v-rB").textContent=rB;
+  const lv=lA+lB, rv=rA+rB;
+  const lTok = lB>0 ? [String(lA),"+",String(lB)] : [String(lA)];
+  const rTok = rB>0 ? [String(rA),"+",String(rB)] : [String(rA)];
+  renderStrip(lTok,rTok);
+  setSides(lv,rv);
+  // Speichern-Knopf
+  const ok = (lv===rv);
+  $("saveEq").disabled = !ok;
+  if(!state.saved.length){
+    $("saveHint").textContent="Wenn die Waage steht, kannst du die Gleichung sammeln.";
+    $("saveHint").style.display = ok ? "none":"";
+  }
+}
+function erkundenBalanced(){
+  setFeedback("Die Waage steht! Beide Seiten sind gleich viel wert.","good");
+  pulseStrip(); ding(true);
+}
+
+/* ============================================================
+   MODUS: WAHR / FALSCH
+   ============================================================ */
+const WF=[
+  {l:["8"], r:["8"], lv:8, rv:8},
+  {l:["7"], r:["3","+","4"], lv:7, rv:7},
+  {l:["5","+","2"], r:["4","+","3"], lv:7, rv:7},
+  {l:["6","+","3"], r:["9","+","1"], lv:9, rv:10},
+  {l:["13","−","0"], r:["14","−","1"], lv:13, rv:13},
+  {l:["10"], r:["6","+","4"], lv:10, rv:10},
+  {l:["9"], r:["5","+","4"], lv:9, rv:9},
+  {l:["8","+","4"], r:["12","+","1"], lv:12, rv:13},
+  {l:["5","+","5"], r:["4","+","6"], lv:10, rv:10},
+  {l:["12","−","2"], r:["5","+","4"], lv:10, rv:9}
+];
+let wfOrder=[], wfPos=0, wfItem=null, wfAnswered=false;
+function wfLoad(){
+  if(wfPos>=wfOrder.length){ wfOrder=shuffleArr(WF.length); wfPos=0; }
+  wfItem=WF[wfOrder[wfPos]];
+  wfAnswered=false; state.held=true;
+  renderStrip(wfItem.l,wfItem.r);
+  setSides(wfItem.lv,wfItem.rv);
+  $("judgeBtns").querySelectorAll("button").forEach(b=>b.disabled=false);
+  $("wfNext").style.display="none";
+  setFeedback("Wahr oder falsch? Triff deine Entscheidung.","");
+}
+function wfAnswer(saysTrue){
+  if(wfAnswered) return;
+  wfAnswered=true;
+  const truth=(wfItem.lv===wfItem.rv);
+  state.held=false;                 // Waage loslassen
+  setSides(wfItem.lv,wfItem.rv);     // jetzt kippt/balanciert sie
+  $("judgeBtns").querySelectorAll("button").forEach(b=>b.disabled=true);
+  $("wfNext").style.display="";
+  const right = (saysTrue===truth);
+  if(right){
+    state.prog.wf++; updateTabStats();
+    setFeedback(truth?"Richtig — die Waage steht. Beide Seiten sind gleich viel wert.":"Richtig — die Waage kippt. Die Seiten sind nicht gleich.","good");
+    pulseStrip(); ding(true);
+  }else{
+    // gezielte Rückmeldung gegen die Fehlvorstellung
+    let msg;
+    if(truth && !saysTrue){
+      msg = "Doch — das stimmt! „=\" heißt nicht „rechne aus\". Beide Seiten sind gleich viel wert. Sieh: die Waage steht.";
+    }else{
+      msg = "Schau hin: die Waage kippt. Die Seiten sind nicht gleich schwer.";
+    }
+    setFeedback(msg,"bad"); ding(false);
+  }
+}
+
+/* ============================================================
+   MODUS: GLEICHGEWICHT FINDEN  (Platzhalter-Fehler)
+   ============================================================ */
+const FINDE=[
+  {l:["8","+","4"], lv:12, post:["+","5"], base:5, ans:7,  wrong:12, full:8},
+  {l:["4","+","3"], lv:7,  post:["+","2"], base:2, ans:5,  wrong:7,  full:4},
+  {l:["6","+","1"], lv:7,  post:["+","2"], base:2, ans:5,  wrong:7,  full:6},
+  {l:["9","+","3"], lv:12, post:["+","7"], base:7, ans:5,  wrong:12, full:9},
+  {l:["2","+","8"], lv:10, post:["+","6"], base:6, ans:4,  wrong:10, full:2},
+  {l:["7","+","5"], lv:12, post:["+","4"], base:4, ans:8,  wrong:12, full:7}
+];
+let findeOrder=[], findePos=0, findeItem=null, findeBlank=0, findeSolved=false, findeHinted=false;
+function findeLoad(){
+  if(findePos>=findeOrder.length){ findeOrder=shuffleArr(FINDE.length); findePos=0; }
+  findeItem=FINDE[findeOrder[findePos]];
+  findeBlank=0; findeSolved=false; findeHinted=false; state.held=false;
+  $("findeVal").textContent="0";
+  $("findeCheck").style.display=""; $("findeNext").style.display="none";
+  findeRender();
+  setFeedback("Stell eine Zahl ein und drück „Prüfen\".","");
+}
+function findeRender(){
+  const cls = findeSolved?"good":(findeBlank>0?"set":"");
+  renderStrip([...findeItem.l], [{blank:true,v: (findeBlank===0?null:findeBlank), cls}, ...findeItem.post]);
+  $("findeVal").textContent=findeBlank;
+  setSides(findeItem.lv, findeBlank+findeItem.base);
+}
+function findeStep(d){
+  if(findeSolved) return;
+  findeBlank=Math.max(0,Math.min(20,findeBlank+d));
+  findeRender();
+  setFeedback("","");   // Urteil kommt erst beim Prüfen
+}
+function findeCheck(){
+  if(findeSolved) return;
+  if(findeBlank===0){ setFeedback("Stell zuerst eine Zahl ein.","think"); return; }
+  const rv=findeBlank+findeItem.base;
+  if(rv===findeItem.lv){
+    findeSolved=true; findeRender();
+    $("findeCheck").style.display="none"; $("findeNext").style.display="";
+    state.prog.finde++; updateTabStats();
+    setFeedback("Die Waage steht! Genau diese Zahl macht beide Seiten gleich viel wert.","good");
+    pulseStrip(); ding(true);
+  }else if(findeBlank===findeItem.wrong){
+    setFeedback(`${findeItem.wrong} kippt die Waage. Rechts steht ja noch „${findeItem.post.join(" ")}\" — zähl beide Seiten.`,"think");
+    ding(false);
+  }else{
+    setFeedback("Die Waage kippt noch. Probier eine andere Zahl.","think");
+    ding(false);
+  }
+}
+
+/* ============================================================
+   MODUS: OHNE RECHNEN  (Strukturblick / Stufe 4)
+   ============================================================ */
+const OHNE=[
+  {l:["27","+","48"], lv:75, pre:["27","+"], post:[], base:27, ans:48, choices:[48,75,21],
+   tip:"Links und rechts steht dieselbe Zahl 27. Dann müssen auch die anderen Teile gleich sein."},
+  {l:["63","+","19"], lv:82, pre:[], post:["+","19"], base:19, ans:63, choices:[63,82,44],
+   tip:"Beide Seiten haben „+ 19\". Also muss vorne dieselbe Zahl stehen wie links."},
+  {l:["150","+","26"], lv:176, pre:["150","+"], post:[], base:150, ans:26, choices:[26,176,124],
+   tip:"Links und rechts steht 150. Der Rest muss gleich sein — ganz ohne Rechnen."},
+  {l:["345","+","0"], lv:345, pre:[], post:[], base:0, ans:345, choices:[345,0,346],
+   tip:"+ 0 ändert nichts. Beide Seiten sind gleich viel wert."},
+  {l:["88","+","37"], lv:125, pre:["88","+"], post:[], base:88, ans:37, choices:[37,125,51],
+   tip:"Dieselbe 88 auf beiden Seiten — also ist die andere Zahl gleich."},
+  {l:["248","+","367"], lv:615, pre:["248","+"], post:[], base:248, ans:367, choices:[367,615,121],
+   tip:"Links und rechts steht 248. Also ist die andere Zahl auch gleich — ganz ohne Rechnen."},
+  {l:["199","+","56"], lv:255, pre:[], post:["+","56"], base:56, ans:199, choices:[199,255,143],
+   tip:"Beide Seiten haben „+ 56\". Vorne muss dieselbe Zahl wie links stehen."}
+];
+let ohneOrder=[], ohnePos=0, ohneItem=null, ohneDone=false;
+function ohneLoad(){
+  if(ohnePos>=ohneOrder.length){ ohneOrder=shuffleArr(OHNE.length); ohnePos=0; }
+  ohneItem=OHNE[ohneOrder[ohnePos]];
+  ohneDone=false; state.held=true;
+  $("ohneNext").style.display="none";
+  renderStrip([...ohneItem.l], [...ohneItem.pre, {blank:true,v:null}, ...ohneItem.post]);
+  setSides(ohneItem.lv, ohneItem.lv); // gehalten → eben
+  // Auswahlknöpfe
+  const box=$("ohneChoices"); box.innerHTML="";
+  ohneItem.choices.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="choice"; b.textContent=c;
+    b.onclick=()=>ohnePick(c,b);
+    box.appendChild(b);
+  });
+  setFeedback("Welche Zahl gehört ins Kästchen? Schau genau hin.","");
+}
+function ohnePick(val,btn){
+  if(ohneDone) return;
+  const ok=(val===ohneItem.ans);
+  const cls= ok?"good":"bad";
+  renderStrip([...ohneItem.l], [...ohneItem.pre, {blank:true,v:val,cls}, ...ohneItem.post]);
+  state.held=false;
+  setSides(ohneItem.lv, val+ohneItem.base);
+  if(ok){
+    ohneDone=true;
+    $("ohneChoices").querySelectorAll("button").forEach(b=>b.disabled=true);
+    btn.classList.add("good");
+    state.prog.ohne++; updateTabStats();
+    setFeedback("Richtig — und du musstest nicht rechnen! "+ohneItem.tip,"good");
+    pulseStrip(); ding(true);
+    $("ohneNext").style.display="";
+  }else{
+    btn.classList.add("bad");
+    setFeedback("Die Waage kippt. Tipp: "+ohneItem.tip,"think"); ding(false);
+    // nach kurzer Zeit zurück in den Halte-Zustand für neuen Versuch
+    setTimeout(()=>{ if(!ohneDone){ btn.classList.remove("bad"); state.held=true;
+      renderStrip([...ohneItem.l], [...ohneItem.pre, {blank:true,v:null}, ...ohneItem.post]);
+      setSides(ohneItem.lv,ohneItem.lv);} },1100);
+  }
+}
+
+/* ---- Erfolgs-Verteiler (Flanke aus setSides) ---- */
+function onBalancedDispatch(){
+  if(state.mode==="erkunden") erkundenBalanced();
+}
+// onBalanced umbiegen:
+onBalanced = onBalancedDispatch;
+// (setSides ruft onBalanced(); deshalb hier neu zuweisen)
+
+/* ============================================================
+   ZUFALL / Hilfen
+   ============================================================ */
+function shuffleArr(n){
+  const a=[...Array(n).keys()];
+  for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* ============================================================
+   MODUS-WECHSEL
+   ============================================================ */
+const HINTS={
+  erkunden:"<b>Erkunden:</b> Stell beide Seiten ein. Steht die Waage gerade, sind beide gleich viel wert.",
+  wf:"<b>Wahr oder falsch?</b> Manche sehen komisch aus — und stimmen trotzdem.",
+  finde:"<b>Gleichgewicht finden:</b> Beide Seiten zählen — nicht nur die linke.",
+  ohne:"<b>Ohne Rechnen:</b> Vergleiche die Zahlen, statt zu rechnen."
+};
+function setMode(m){
+  state.mode=m; state.held=false; state.wasBalanced=false; state.silent=true;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  $("balFlag").classList.remove("show");
+  setFeedback("","");
+  // Standard: Gewichte in Vergleichs-Modi aus, in Erkunden/Finde an
+  setValues(m==="erkunden"||m==="finde");
+  if(m==="erkunden") erkundenRender();
+  if(m==="wf"){ if(!wfOrder.length){wfOrder=shuffleArr(WF.length);} wfLoad(); }
+  if(m==="finde"){ if(!findeOrder.length){findeOrder=shuffleArr(FINDE.length);} findeLoad(); }
+  if(m==="ohne"){ if(!ohneOrder.length){ohneOrder=shuffleArr(OHNE.length);} ohneLoad(); }
+  state.silent=false;
+}
+function updateTabStats(){
+  document.querySelector('[data-mode="wf"] .st').textContent = state.prog.wf?("✓"+state.prog.wf):"";
+  document.querySelector('[data-mode="finde"] .st').textContent = state.prog.finde?("✓"+state.prog.finde):"";
+  document.querySelector('[data-mode="ohne"] .st').textContent = state.prog.ohne?("✓"+state.prog.ohne):"";
+}
+function setValues(on){
+  state.showValues=on;
+  $("tglValues").classList.toggle("on",on);
+  // neu anwenden
+  setSides(state.lv,state.rv);
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+// Erkunden-Stepper
+document.querySelectorAll('[data-s]').forEach(b=>{
+  b.onclick=()=>{
+    const k=b.dataset.s, d=parseInt(b.dataset.d,10);
+    state.s[k]=Math.max(0,Math.min(12,state.s[k]+d));
+    erkundenRender();
+  };
+});
+$("saveEq").onclick=()=>{
+  const {lA,lB,rA,rB}=state.s;
+  if(lA+lB!==rA+rB) return;
+  const txt=`${sideText(lA,lB)} = ${sideText(rA,rB)}`;
+  if(state.saved.includes(txt)) return;
+  state.saved.unshift(txt);
+  renderSaved();
+};
+function renderSaved(){
+  const ul=$("savedList"); ul.innerHTML="";
+  state.saved.slice(0,6).forEach(t=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="ok">✓</span>${t}`;
+    ul.appendChild(li);
+  });
+  if(state.saved.length){
+    const h=$("saveHint"); h.style.display="";
+    h.textContent="Gesammelt: "+state.saved.length+" wahre Gleichung"+(state.saved.length>1?"en":"")+".";
+  }
+}
+
+// WF
+$("judgeBtns").querySelectorAll("button").forEach(b=>b.onclick=()=>wfAnswer(b.dataset.ans==="true"));
+$("wfNext").onclick=()=>{ wfPos++; wfLoad(); };
+
+// Finde
+$("findeMinus").onclick=()=>findeStep(-1);
+$("findePlus").onclick=()=>findeStep(1);
+$("findeCheck").onclick=()=>findeCheck();
+$("findeNext").onclick=()=>{ findePos++; findeLoad(); };
+
+// Ohne
+$("ohneNext").onclick=()=>{ ohnePos++; ohneLoad(); };
+
+// Werkzeuge
+$("tglValues").onclick=()=>{ state.silent=true; setValues(!state.showValues); state.silent=false; };
+$("tglSound").onclick=()=>{ state.sound=!state.sound; $("tglSound").classList.toggle("on",state.sound);
+  if(state.sound) ding(true); };
+
+// Tastatur (Finde)
+document.addEventListener("keydown",e=>{
+  if(state.mode==="finde"){
+    if(e.key==="ArrowUp"||e.key==="ArrowRight"){findeStep(1);e.preventDefault();}
+    if(e.key==="ArrowDown"||e.key==="ArrowLeft"){findeStep(-1);e.preventDefault();}
+    if(e.key==="Enter"){findeCheck();e.preventDefault();}
+  }
+});
+
+/* ---- Start ---- */
+applyAngle(0);
+loop();
+setMode("erkunden");
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Term-Werkstatt — Variablen, Terme &amp; Gleichungen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .stats{display:flex;gap:8px;flex:none}
+  .chip{font-family:var(--mono);font-size:11.5px;color:#bcd0f0;background:#1b2740;border:1px solid var(--line);border-radius:20px;padding:3px 10px;white-space:nowrap}
+
+  /* Term-Anzeige */
+  .termbig{font-family:var(--mono);font-weight:600;letter-spacing:.5px;color:#eaf1ff}
+  sup{font-size:.7em}
+  .ctl{display:none}
+  .ctl.on{display:block}
+
+  /* Buttons */
+  .btn{font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 17px;cursor:pointer;transition:.14s}
+  .btn:hover{background:#284273}
+  .btn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .btn.ghost:hover{border-color:#3d4d70;color:#fff}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .row+.row{margin-top:12px}
+
+  /* Chips zum Termwählen */
+  .pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .pick button{font:inherit;font-family:var(--mono);font-size:14px;color:#cdd8ec;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;transition:.12s}
+  .pick button:hover{border-color:#3d4d70;color:#fff}
+  .pick button.on{background:#26365a;border-color:var(--accent);color:#fff}
+
+  /* MASCHINE */
+  .machine{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:18px 0}
+  .mbox{font-family:var(--mono);border:1px solid var(--line);border-radius:12px;padding:14px 18px;background:var(--panel2);text-align:center;min-width:74px}
+  .mbox .lbl{font-family:var(--sans);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .mbox .num{font-size:26px;font-weight:600;color:#fff}
+  .mbox.term{background:#192a47;border-color:#33507f;min-width:120px}
+  .mbox.term .num{font-size:20px;color:#bcd6ff}
+  .mbox.out .num{color:var(--good)}
+  .marrow{font-size:22px;color:var(--muted)}
+  .slider{display:flex;align-items:center;gap:14px;margin:8px 0 4px}
+  .slider .lab{font-family:var(--mono);font-size:15px;color:#fff;min-width:74px}
+  input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#dfe8f6;border:2px solid #4a597a;cursor:pointer;box-shadow:0 1px 4px #0006}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#dfe8f6;border:2px solid #4a597a;cursor:pointer}
+
+  /* Werte-Tabelle */
+  table.vt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin-top:14px}
+  table.vt th,table.vt td{border:1px solid var(--line);padding:7px 8px;text-align:center;color:#cdd8ec}
+  table.vt th{color:var(--muted);font-weight:500;background:#141d30;font-size:11.5px}
+  table.vt td.rowlab{text-align:left;color:#eaf1ff;white-space:nowrap}
+  table.vt td.cur{background:#21345c;color:#fff}
+  table.vt td.miss{background:var(--badDim);color:#ffb4b4}
+  table.vt td.match{background:var(--goodDim);color:#bff0d8}
+
+  .note{font-size:13px;color:var(--muted);margin-top:12px}
+  .note b{color:#d6e0f2}
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:6px}
+  .task.hit{border-color:#3f6f5c;background:#15281f;color:#bff0d8}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .task.hit .tlab,.tlab.ok{color:var(--good);border-color:#3f6f5c}
+
+  /* Vergleichszeile (Maschine) */
+  .cmp{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .cmpcell{flex:1 1 0;min-width:130px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .cmpcell .t{font-family:var(--mono);font-size:14px;color:#cdd8ec}
+  .cmpcell .v{font-family:var(--mono);font-size:22px;font-weight:600;color:#fff;margin-top:4px}
+  .cmpcell.diff{border-color:#7a4a4a}
+  .cmpcell.same{border-color:#3f6f5c}
+
+  /* STIMMT DAS? */
+  .twoterms{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:6px 0 2px}
+  .tcard{font-family:var(--mono);font-size:26px;font-weight:600;color:#eaf1ff;background:var(--panel2);
+    border:1.5px solid var(--line);border-radius:12px;padding:16px 20px}
+  .qmark{font-family:var(--mono);font-size:24px;color:#8ea2c4;font-weight:700}
+  .judge{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .judge button{font:inherit;font-size:16px;font-weight:680;border-radius:13px;padding:15px 10px;cursor:pointer;flex:1 1 0;min-width:150px;
+    transition:.14s;border:1.5px solid var(--line);background:var(--panel2);color:#e8edf6}
+  .judge button .ic{display:block;font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .judge button.t:hover{border-color:var(--good);background:#16302a}
+  .judge button.f:hover{border-color:var(--bad);background:#2e1c26}
+  .judge button:disabled{opacity:.5;cursor:default}
+
+  /* WARUM / FLÄCHE */
+  .areawrap{display:flex;flex-direction:column;align-items:center;margin:10px 0}
+  svg.area{width:100%;max-width:440px;height:auto;display:block}
+  .arealbl{font-family:var(--mono);font-size:14px;color:#cdd8ec;margin-top:10px;text-align:center}
+
+  /* WELCHE ZAHL */
+  .eqshow{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:28px;font-weight:600;margin:6px 0;color:#eaf1ff}
+  .sidev{font-family:var(--mono);font-size:14px;color:var(--muted)}
+  .eqsign{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;
+    background:#202b42;color:#8ea2c4;transition:.3s;font-weight:700}
+  .eqsign.bal{background:var(--goodDim);color:var(--good);box-shadow:0 0 0 1px #2f5f50,0 0 18px -2px #4fd6a055}
+  .eqsign.off{background:var(--badDim);color:var(--bad)}
+  .sides{display:flex;gap:14px;justify-content:center;margin:14px 0 2px}
+  .sidebox{flex:1 1 0;max-width:220px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;text-align:center}
+  .sidebox .sh{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .sidebox .sv{font-family:var(--mono);font-size:30px;font-weight:600;color:#fff;margin-top:5px}
+  .sidebox.heavy{border-color:#5a6a8c}
+  .stepper{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .stepper button{font:inherit;font-size:22px;font-weight:600;color:#dfe8f6;background:transparent;border:0;width:50px;height:50px;cursor:pointer}
+  .stepper button:hover{background:#26365a}
+  .stepper .val{font-family:var(--mono);font-size:22px;font-weight:600;min-width:56px;text-align:center;color:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line);height:50px;display:flex;align-items:center;justify-content:center}
+
+  .feedback{min-height:22px;text-align:center;font-size:14px;margin-top:14px;color:var(--muted);transition:.2s}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+
+  .tools{display:flex;gap:8px;align-items:center}
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+  .pulse{animation:pulse .5s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 7–9 · Variablen &amp; Terme</div>
+    <h1>Term-Werkstatt <span class="hl">x</span></h1>
+    <div class="sub">Ein Term ist kein Rätsel mit einer Lösung — er ist ein Rechenrezept.</div>
+  </header>
+
+  <div class="thesis">
+    Ein <b>Buchstabe</b> ist keine feste Zahl und kein Gegenstand — er steht für <b>jede</b> Zahl.
+    Ein <b>Term</b> ist ein Rezept: Du setzt eine Zahl ein, eine Zahl kommt heraus.
+    Zwei Terme sind <b>gleich</b>, wenn sie für <b>jede</b> Zahl dasselbe ergeben.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="maschine">Maschine</button>
+    <button class="tab" data-mode="stimmt">Stimmt das? <span class="st"></span></button>
+    <button class="tab" data-mode="warum">Warum? (Fläche)</button>
+    <button class="tab" data-mode="welche">Welche Zahl? <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <!-- ===================== MASCHINE ===================== -->
+    <div class="ctl on" id="ctl-maschine">
+      <div class="pick" id="machinePick"></div>
+      <div class="task" id="mTask"></div>
+      <div class="machine">
+        <div class="mbox"><div class="lbl">Eingabe x</div><div class="num" id="mIn">2</div></div>
+        <div class="marrow">→</div>
+        <div class="mbox term"><div class="lbl">Term</div><div class="num" id="mTerm">3·x + 2</div></div>
+        <div class="marrow">→</div>
+        <div class="mbox out"><div class="lbl">Ausgabe</div><div class="num" id="mOut">8</div></div>
+      </div>
+      <div class="slider">
+        <span class="lab" id="mLab">x = 2</span>
+        <input type="range" id="mSlider" min="-5" max="10" step="1" value="2">
+      </div>
+      <div class="cmp">
+        <div class="cmpcell" id="cmpA"><div class="t">2·x</div><div class="v" id="cmpAv">4</div></div>
+        <div class="cmpcell" id="cmpB"><div class="t">x·x  =  x<sup>2</sup></div><div class="v" id="cmpBv">4</div></div>
+      </div>
+      <div class="note" id="mNote"></div>
+      <table class="vt" id="mTable"></table>
+    </div>
+
+    <!-- ===================== STIMMT DAS? ===================== -->
+    <div class="ctl" id="ctl-stimmt">
+      <div class="twoterms">
+        <span class="tcard" id="stA">2a + 5b</span>
+        <span class="qmark">=?</span>
+        <span class="tcard" id="stB">7ab</span>
+      </div>
+      <div class="judge" id="stJudge">
+        <button class="t" data-ans="true"><span class="ic">immer dasselbe</span>IMMER GLEICH</button>
+        <button class="f" data-ans="false"><span class="ic">nicht für jede Zahl</span>NICHT GLEICH</button>
+      </div>
+      <div id="stResult"></div>
+      <div class="feedback" id="stFeedback"></div>
+      <div class="row" style="justify-content:center;margin-top:6px"><button class="btn ghost" id="stNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- ===================== WARUM / FLÄCHE ===================== -->
+    <div class="ctl" id="ctl-warum">
+      <div class="pick" id="areaPick"></div>
+      <div class="areawrap">
+        <svg class="area" id="areaSvg" viewBox="0 0 440 300" role="img" aria-label="Flächenmodell"></svg>
+        <div class="arealbl" id="areaLbl"></div>
+      </div>
+      <div class="row" style="justify-content:center">
+        <button class="btn" id="areaReveal">Felder aufdecken</button>
+        <button class="btn ghost" id="areaReset" style="display:none">Zurücksetzen</button>
+      </div>
+      <div class="feedback" id="areaFeedback"></div>
+    </div>
+
+    <!-- ===================== WELCHE ZAHL? ===================== -->
+    <div class="ctl" id="ctl-welche">
+      <div class="eqshow">
+        <span id="weLeft">3·x + 2</span>
+        <span class="eqsign" id="weSign">=</span>
+        <span id="weRight">14</span>
+      </div>
+      <div class="sides">
+        <div class="sidebox" id="weBoxL"><div class="sh">linke Seite</div><div class="sv" id="weValL">—</div></div>
+        <div class="sidebox" id="weBoxR"><div class="sh">rechte Seite</div><div class="sv" id="weValR">—</div></div>
+      </div>
+      <div class="row" style="justify-content:center;margin-top:14px">
+        <span class="lab" style="font-family:var(--mono);color:#fff">x =</span>
+        <div class="stepper"><button id="weMinus">−</button><span class="val" id="weVal">0</span><button id="wePlus">+</button></div>
+        <button class="btn ghost" id="weNext" style="display:none">Nächste →</button>
+      </div>
+      <div class="feedback" id="weFeedback"></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   TERM-WERKSTATT — Variablen, Terme, Termumformungen, Gleichungsbegriff
+   Kern: ehrlicher Einsetz-Rechner (eigener Parser, KEIN eval), komplett offline.
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+/* ---------- Mini-Parser / Auswerter (rekursiver Abstieg) ----------
+   Unterstützt: + - * /  ^  ( )  implizite Multiplikation (2x, 2(x+3), ab),
+   unäres Minus, ganzzahlige Variablen. Wirft bei Fehler → NaN.            */
+let VARS={};
+function prep(s){ return String(s).replace(/·/g,'*').replace(/×/g,'*').replace(/−/g,'-').replace(/\s+/g,''); }
+function tokenize(s){
+  const t=[]; let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(/[0-9.]/.test(c)){ let j=i+1; while(j<s.length&&/[0-9.]/.test(s[j]))j++; t.push({t:'num',v:parseFloat(s.slice(i,j))}); i=j; }
+    else if(/[a-zA-Z]/.test(c)){ t.push({t:'var',v:c}); i++; }
+    else if('+-*/^()'.indexOf(c)>=0){ t.push({t:c}); i++; }
+    else { i++; }
+  }
+  return t;
+}
+function evalTokens(tk){
+  let p=0;
+  const peek=()=>tk[p];
+  const startsFactor=x=>x&&(x.t==='num'||x.t==='var'||x.t==='(');
+  function expr(){ let v=term(); while(peek()&&(peek().t==='+'||peek().t==='-')){ const o=tk[p++].t; const r=term(); v=o==='+'?v+r:v-r; } return v; }
+  function term(){ let v=power(); while(peek()&&(peek().t==='*'||peek().t==='/'||startsFactor(peek()))){ let o='*'; if(peek().t==='*'||peek().t==='/'){o=tk[p++].t;} const r=power(); v=o==='/'?v/r:v*r; } return v; }
+  function power(){ let v=factor(); while(peek()&&peek().t==='^'){ p++; const e=factor(); v=Math.pow(v,e); } return v; }
+  function factor(){ const x=peek(); if(!x) throw 0;
+    if(x.t==='-'){p++; return -factor();}
+    if(x.t==='+'){p++; return factor();}
+    if(x.t==='('){p++; const v=expr(); if(!peek()||peek().t!==')')throw 0; p++; return v;}
+    if(x.t==='num'){p++; return x.v;}
+    if(x.t==='var'){p++; if(!(x.v in VARS)) throw 0; return VARS[x.v];}
+    throw 0;
+  }
+  const r=expr(); if(p<tk.length) throw 0; return r;
+}
+function ev(str,vars){ VARS=vars||{}; try{ const r=evalTokens(tokenize(prep(str))); return (isFinite(r)?r:NaN); }catch(e){ return NaN; } }
+function varsIn(str){ const set=new Set(); (prep(str).match(/[a-zA-Z]/g)||[]).forEach(c=>set.add(c)); return [...set]; }
+function fmt(n){ if(!isFinite(n))return '—'; const r=Math.round(n*1000)/1000; return Number.isInteger(r)?String(r):String(r); }
+function pretty(str){ return String(str).replace(/\*/g,'·').replace(/\^(\d+)/g,(m,d)=>'<sup>'+d+'</sup>'); }
+
+/* ---------- Ton (offline) ---------- */
+let actx=null, soundOn=false;
+function ding(ok){ if(!soundOn)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type='sine'; o.connect(g); g.connect(actx.destination);
+  const n=actx.currentTime; g.gain.value=0.0001; g.gain.exponentialRampToValueAtTime(0.12,n+0.02); g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+  o.frequency.setValueAtTime(ok?660:300,n); if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13); o.start(n); o.stop(n+0.32);
+}catch(e){} }
+
+const HINTS={
+  maschine:"<b>Maschine:</b> Schieb x — der Term spuckt für jede Zahl ein anderes Ergebnis aus. Der Buchstabe ist nicht fest.",
+  stimmt:"<b>Stimmt das?</b> Sind beide Terme <i>für jede Zahl</i> gleich? Entscheide, dann prüft der Rechner durch Einsetzen.",
+  warum:"<b>Warum? (Fläche):</b> Mal-nehmen heißt Fläche. So siehst du, warum kein Summand fehlen darf.",
+  welche:"<b>Welche Zahl?</b> Eine Gleichung lösen heißt: die Zahl finden, die beide Seiten gleich macht."
+};
+
+/* ==========================================================================
+   MODUS 1 — MASCHINE
+   ========================================================================== */
+const MACHINE_TERMS=["3x + 2","2x","x + x","x*x","x^2","2(x + 3)"];
+const MTARGET={"3x + 2":14,"2x":12,"x + x":14,"x*x":9,"x^2":16,"2(x + 3)":16};
+let mTerm="3x + 2", mX=2, mWasHit=false;
+function machineInit(){
+  const box=$("machinePick"); box.innerHTML="";
+  MACHINE_TERMS.forEach(t=>{ const b=document.createElement("button"); b.innerHTML=pretty(t);
+    b.className=(t===mTerm?"on":""); b.onclick=()=>{ mTerm=t; mX=0; mWasHit=false; machineInit(); machineRender(); }; box.appendChild(b); });
+}
+function machineRender(){
+  $("mTerm").innerHTML=pretty(mTerm);
+  $("mIn").textContent=mX;
+  $("mLab").textContent="x = "+mX;
+  $("mSlider").value=mX;
+  const out=ev(mTerm,{x:mX});
+  $("mOut").textContent=fmt(out);
+  // Ziel-Aufgabe: gibt der Maschine einen Zweck
+  const tgt=MTARGET[mTerm], hit=(out===tgt);
+  $("mTask").innerHTML = hit
+    ? "<span class='tlab ok'>geschafft</span> x = "+mX+" macht "+pretty(mTerm)+" = "+tgt+"."
+    : "<span class='tlab'>Ziel</span> "+pretty(mTerm)+" soll <b>"+tgt+"</b> ergeben — welches x stellst du ein?";
+  $("mTask").className="task"+(hit?" hit":"");
+  if(hit&&!mWasHit) ding(true);
+  mWasHit=hit;
+  // Vergleich 2x vs x^2 (gegen die a+a/a·a-Verwechslung)
+  const a=ev("2x",{x:mX}), b=ev("x^2",{x:mX});
+  $("cmpAv").textContent=fmt(a); $("cmpBv").textContent=fmt(b);
+  const same=(a===b);
+  $("cmpA").className="cmpcell "+(same?"same":"diff");
+  $("cmpB").className="cmpcell "+(same?"same":"diff");
+  $("mNote").innerHTML = same
+    ? "Bei <b>x = "+mX+"</b> sind <b>2·x</b> und <b>x²</b> zufällig gleich. Schieb weiter — gleich laufen sie auseinander."
+    : "<b>2·x</b> heißt: x zweimal <i>addiert</i>. <b>x²</b> heißt: x mit sich <i>multipliziert</i>. Das ist nicht dasselbe!";
+  // Wertetabelle
+  let html="<tr><th>x</th>"; const xs=[-2,-1,0,1,2,3,4,5];
+  xs.forEach(x=>html+="<th class='"+(x===mX?"cur":"")+"'>"+x+"</th>"); html+="</tr>";
+  html+="<tr><td class='rowlab'>"+pretty(mTerm)+"</td>";
+  xs.forEach(x=>html+="<td class='"+(x===mX?"cur":"")+"'>"+fmt(ev(mTerm,{x:x}))+"</td>"); html+="</tr>";
+  $("mTable").innerHTML=html;
+}
+
+/* ==========================================================================
+   MODUS 2 — STIMMT DAS?  (Äquivalenz durch Einsetzen)
+   ========================================================================== */
+/* Reihenfolge bewusst leicht → schwer (niedrige Einstiegsschwelle). */
+const STIMMT=[
+  {a:"x + x + x", b:"3x",           eq:true,  why:"Dreimal dieselbe Zahl addiert = 3·x. Gleichartige Glieder."},
+  {a:"x + x + x", b:"x^2",          eq:false, why:"Dreimal x <i>addiert</i> ist 3x. x² heißt x·x — das ist Malnehmen."},
+  {a:"x*x", b:"2x",                 eq:false, why:"x·x = x², nicht 2x. Malnehmen ist nicht Verdoppeln."},
+  {a:"2(x + 3)", b:"2x + 6",        eq:true,  why:"Jeder Summand mal 2: 2·x + 2·3 = 2x + 6."},
+  {a:"2(x + 3)", b:"2x + 3",        eq:false, why:"Die 2 gehört vor <i>beide</i> Summanden: 2·x UND 2·3. Der zweite wurde vergessen."},
+  {a:"a - (b + c)", b:"a - b - c",  eq:true,  why:"Das Minus gilt für die ganze Klammer: −b UND −c."},
+  {a:"a - (b + c)", b:"a - b + c",  eq:false, why:"Das Minus muss auch das c treffen: richtig ist a − b − c."},
+  {a:"2a + 5b", b:"7ab",            eq:false, why:"Ein Plus macht aus 2a und 5b kein 7ab. Verschiedene Sorten (a und b) kann man nicht zusammenfassen."},
+  {a:"x^2 * x^3", b:"x^5",          eq:true,  why:"x·x · x·x·x = fünf Faktoren x = x⁵. Die Hochzahlen werden addiert."},
+  {a:"x^2 * x^3", b:"x^6",          eq:false, why:"Beim Malnehmen werden die Hochzahlen <i>addiert</i> (2+3=5), nicht malgenommen."},
+  {a:"(2x)^2", b:"4x^2",            eq:true,  why:"(2x)² = 2x·2x = 4·x² = 4x²."},
+  {a:"(2x)^2", b:"2x^2",            eq:false, why:"Auch die 2 wird quadriert: (2x)² = 4x², nicht 2x²."},
+  {a:"(a + b)^2", b:"a^2 + 2ab + b^2", eq:true, why:"Genau: das Quadrat zerfällt in a², zweimal ab und b²."},
+  {a:"(a + b)^2", b:"a^2 + b^2",    eq:false, why:"(a+b)² = a² + 2ab + b². Die zwei gemischten Felder 2ab fehlen — sieh dir das Flächenmodell an."}
+];
+// Testpunkte: erst die „Zufallstreffer"-Falle, dann Brecher.
+const PTS1=[1,2,3,0,5,-2];
+const PTS2=[[1,1],[2,1],[2,3],[3,2],[0,4],[-1,2]];
+/* Test-Tupel: bindet ALLE vorkommenden Variablen (1, 2 oder 3+).
+   1 Var → PTS1, 2 Var → PTS2 (unverändert, damit die geprüften Items gleich bleiben);
+   3+ Var → erstes Tupel gleiche kleine Werte (Zufallstreffer-Falle), danach variiert. */
+function testTuples(n){
+  if(n<=1) return PTS1.map(v=>[v]);
+  if(n===2) return PTS2;
+  const seeds=[[1,1,1,1],[2,1,3,2],[1,2,2,3],[3,2,1,0],[0,4,1,2],[-1,2,1,3]];
+  return seeds.map(row=>Array.from({length:n},(_,k)=>row[k%row.length]));
+}
+let stOrder=[], stPos=0, stItem=null, stDone=false;
+function shuffle(n){ const a=[...Array(n).keys()]; for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function seq(n){ return [...Array(n).keys()]; }  // feste didaktische Reihenfolge
+function stLoad(){
+  if(stPos>=stOrder.length){ stOrder=seq(STIMMT.length); stPos=0; }
+  stItem=STIMMT[stOrder[stPos]]; stDone=false;
+  $("stA").innerHTML=pretty(stItem.a); $("stB").innerHTML=pretty(stItem.b);
+  $("stJudge").querySelectorAll("button").forEach(b=>b.disabled=false);
+  $("stResult").innerHTML=""; $("stFeedback").textContent=""; $("stFeedback").className="feedback";
+  $("stNext").style.display="none";
+}
+function stAnswer(saysEqual){
+  if(stDone) return; stDone=true;
+  $("stJudge").querySelectorAll("button").forEach(b=>b.disabled=true);
+  const vs=varsIn(stItem.a+stItem.b);
+  const names = vs.length?vs:["x"];
+  const pts = testTuples(names.length);     // Tupel der Länge = Variablenzahl → bindet ALLE Variablen
+  const tupLabel = pt => pt.join(", ");
+  const tupWhere = pt => names.map((nm,k)=>nm+"="+pt[k]).join(", ");
+  // Werte berechnen + erstes Gegenbeispiel finden
+  let firstMiss=-1; const rows=[];
+  pts.forEach((pt,i)=>{
+    const map={}; names.forEach((nm,k)=>{ map[nm]=pt[k]; });
+    const A=ev(stItem.a,map), B=ev(stItem.b,map);
+    const miss=Math.abs(A-B)>1e-9;
+    if(miss&&firstMiss<0)firstMiss=i;
+    rows.push({pt,A,B,miss});
+  });
+  // Tabelle
+  let h="<table class='vt'><tr><th>"+names.join(" , ")+"</th>";
+  rows.forEach(r=>h+="<th>"+tupLabel(r.pt)+"</th>"); h+="</tr>";
+  h+="<tr><td class='rowlab'>"+pretty(stItem.a)+"</td>"; rows.forEach(r=>h+="<td class='"+(r.miss?"miss":"match")+"'>"+fmt(r.A)+"</td>"); h+="</tr>";
+  h+="<tr><td class='rowlab'>"+pretty(stItem.b)+"</td>"; rows.forEach(r=>h+="<td class='"+(r.miss?"miss":"match")+"'>"+fmt(r.B)+"</td>"); h+="</tr>";
+  h+="</table>"; $("stResult").innerHTML=h;
+  const truth=stItem.eq;
+  const right=(saysEqual===truth);
+  if(truth){
+    if(right){ state_progStimmt(); $("stFeedback").innerHTML="Richtig — für jede getestete Zahl gleich. "+stItem.why; $("stFeedback").className="feedback good"; ding(true); }
+    else { $("stFeedback").innerHTML="Doch — die sind gleich. "+stItem.why; $("stFeedback").className="feedback think"; ding(false); }
+  } else {
+    // widerlegt — firstMiss>=0 ist garantiert (Gegenbeispiel existiert); Fallback rein defensiv
+    const r=rows[firstMiss>=0?firstMiss:0];
+    const cex = firstMiss>=0 ? (" Gegenbeispiel bei <b>"+tupWhere(r.pt)+"</b>: "+fmt(r.A)+" ≠ "+fmt(r.B)+".") : "";
+    if(right){ state_progStimmt(); $("stFeedback").innerHTML="Richtig — nicht für jede Zahl gleich!"+cex+" "+stItem.why; $("stFeedback").className="feedback good"; ding(true); }
+    else { $("stFeedback").innerHTML="Schau die Tabelle: sie laufen auseinander."+cex+" "+stItem.why; $("stFeedback").className="feedback bad"; ding(false); }
+  }
+  if(!truth && rows[0] && !rows[0].miss){
+    $("stFeedback").innerHTML += "<br><span style='color:var(--think)'>Achtung:</span> bei der ersten Zahl passt es zufällig — <b>ein</b> Beispiel beweist nichts. Erst weitere Werte zeigen die Wahrheit.";
+  }
+  $("stNext").style.display="";
+}
+let progStimmt=0;
+function state_progStimmt(){ progStimmt++; document.querySelector('[data-mode="stimmt"] .st').textContent="✓"+progStimmt; }
+
+/* ==========================================================================
+   MODUS 3 — WARUM? (Flächenmodell)
+   ========================================================================== */
+const AREA=[
+  {key:"2(x+3)", type:"factor", f:"2", p:"x", q:"3", parts:["2·x","2·3 = 6"], sum:"2x + 6",
+   tip:"Das Rechteck ist 2 hoch und (x + 3) breit. Es zerfällt in zwei Felder — keins darf fehlen."},
+  {key:"a(b+c)", type:"factor", f:"a", p:"b", q:"c", parts:["a·b","a·c"], sum:"ab + ac",
+   tip:"Höhe a, Breite (b + c): zwei Teilflächen ab und ac. Das ist das Distributivgesetz."},
+  {key:"(a+b)²", type:"square", a:"a", b:"b", parts:["a²","a·b","a·b","b²"], sum:"a² + 2ab + b²",
+   tip:"Ein Quadrat mit Seite (a+b) zerfällt in vier Felder: a², zweimal a·b und b². Die zwei ab-Felder sind der Grund, warum (a+b)² ≠ a² + b²."}
+];
+let areaIdx=0, areaRevealed=false;
+function areaInit(){
+  const box=$("areaPick"); box.innerHTML="";
+  AREA.forEach((it,i)=>{ const b=document.createElement("button"); b.innerHTML=pretty(it.key);
+    b.className=(i===areaIdx?"on":""); b.onclick=()=>{ areaIdx=i; areaRevealed=false; areaInit(); areaRender(); }; box.appendChild(b); });
+}
+function areaRender(){
+  const it=AREA[areaIdx]; const svg=$("areaSvg"); const R=areaRevealed;
+  const colA="#1f3a5f", colB="#2a4a3a", colC="#4a3a5a", colD="#5a4a2a";
+  const stroke="#4a597a", txt="#eaf1ff", sub="#9fb0c8";
+  let s="";
+  if(it.type==="factor"){
+    // Rechteck: Höhe f, Breite p|q  (Pixel: x0=70..400, y0=40..230)
+    const x0=70,x1=250,x2=400,y0=40,y1=230;
+    s+=rect(x0,y0,x2-x0,y1-y0,"none",stroke,2);
+    // Höhe-Label links
+    s+=tline(40,(y0+y1)/2,it.f,txt,18,"middle",true);
+    // Breite-Labels oben
+    s+=tline((x0+x1)/2,28,it.p,sub,15,"middle");
+    s+=tline((x1+x2)/2,28,it.q,sub,15,"middle");
+    s+=line(x1,y0,x1,y1,stroke,1.5,R?"0":"5 4");
+    if(R){
+      s+=rect(x0,y0,x1-x0,y1-y0,colA,stroke,1.5);
+      s+=rect(x1,y0,x2-x1,y1-y0,colB,stroke,1.5);
+      s+=tline((x0+x1)/2,(y0+y1)/2+6,prettyS(it.parts[0]),txt,17,"middle",true);
+      s+=tline((x1+x2)/2,(y0+y1)/2+6,prettyS(it.parts[1]),txt,17,"middle",true);
+    } else {
+      s+=tline((x0+x2)/2,(y0+y1)/2+6,"?",sub,28,"middle",true);
+    }
+  } else {
+    // Quadrat (a+b)²: 2x2 Raster, a-Anteil größer als b
+    const x0=70,xm=260,x2=380,y0=30,ym=220,y2=300;
+    s+=rect(x0,y0,x2-x0,y2-y0,"none",stroke,2);
+    s+=tline((x0+xm)/2,18,it.a,sub,15,"middle"); s+=tline((xm+x2)/2,18,it.b,sub,15,"middle");
+    s+=tline(40,(y0+ym)/2,it.a,sub,15,"middle"); s+=tline(40,(ym+y2)/2,it.b,sub,15,"middle");
+    s+=line(xm,y0,xm,y2,stroke,1.5,R?"0":"5 4");
+    s+=line(x0,ym,x2,ym,stroke,1.5,R?"0":"5 4");
+    if(R){
+      s+=rect(x0,y0,xm-x0,ym-y0,colA,stroke,1.5);
+      s+=rect(xm,y0,x2-xm,ym-y0,colC,stroke,1.5);
+      s+=rect(x0,ym,xm-x0,y2-ym,colC,stroke,1.5);
+      s+=rect(xm,ym,x2-xm,y2-ym,colD,stroke,1.5);
+      s+=tline((x0+xm)/2,(y0+ym)/2+6,prettyS(it.parts[0]),txt,18,"middle",true);
+      s+=tline((xm+x2)/2,(y0+ym)/2+6,prettyS(it.parts[1]),txt,15,"middle",true);
+      s+=tline((x0+xm)/2,(ym+y2)/2+6,prettyS(it.parts[2]),txt,15,"middle",true);
+      s+=tline((xm+x2)/2,(ym+y2)/2+6,prettyS(it.parts[3]),txt,15,"middle",true);
+    } else {
+      s+=tline((x0+x2)/2,(y0+y2)/2+6,"?",sub,28,"middle",true);
+    }
+  }
+  svg.innerHTML=s;
+  $("areaLbl").innerHTML = pretty(it.key) + (R? "  =  " + pretty(it.sum) : "  =  ?");
+  $("areaFeedback").innerHTML = R ? it.tip : "";
+  $("areaFeedback").className="feedback"+(R?" good":"");
+  $("areaReveal").style.display=R?"none":"";
+  $("areaReset").style.display=R?"":"none";
+}
+function rect(x,y,w,h,fill,stroke,sw){ return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; }
+function line(x1,y1,x2,y2,st,sw,dash){ return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${st}" stroke-width="${sw}" stroke-dasharray="${dash||'0'}"/>`; }
+function tline(x,y,t,fill,size,anchor,mono){ const f=mono?'ui-monospace,Menlo,Consolas,monospace':'var(--sans)'; return `<text x="${x}" y="${y}" fill="${fill}" font-size="${size}" text-anchor="${anchor}" font-family="${f}" font-weight="600">${t}</text>`; }
+function prettyS(s){ return String(s).replace(/\*/g,'·').replace(/²/g,'²'); }
+
+/* ==========================================================================
+   MODUS 4 — WELCHE ZAHL?  (Lösungsbegriff)
+   ========================================================================== */
+/* leicht → schwer; x auf beiden Seiten zuletzt. */
+const WELCHE=[
+  {l:"3x + 2", r:"14", ans:4},
+  {l:"2x - 1", r:"9",  ans:5},
+  {l:"x + x + 3", r:"11", ans:4},
+  {l:"2(x + 1)", r:"10", ans:4},
+  {l:"4x", r:"2x + 6", ans:3},
+  {l:"5x - 3", r:"2x + 9", ans:4}
+];
+let weOrder=[], wePos=0, weItem=null, weX=0, weDone=false, progWelche=0;
+function weLoad(){
+  if(wePos>=weOrder.length){ weOrder=seq(WELCHE.length); wePos=0; }
+  weItem=WELCHE[weOrder[wePos]]; weX=0; weDone=false;
+  $("weLeft").innerHTML=pretty(weItem.l); $("weRight").innerHTML=pretty(weItem.r);
+  $("weVal").textContent="0"; $("weNext").style.display="none";
+  $("weFeedback").textContent="Probier verschiedene Zahlen für x."; $("weFeedback").className="feedback";
+  weRender();
+}
+function weRender(){
+  const L=ev(weItem.l,{x:weX}), R=ev(weItem.r,{x:weX});
+  $("weVal").textContent=weX;
+  $("weValL").textContent=fmt(L); $("weValR").textContent=fmt(R);
+  const bal=Math.abs(L-R)<1e-9;
+  $("weSign").className="eqsign"+(bal?" bal":" off");
+  $("weBoxL").className="sidebox"+(L>R?" heavy":""); $("weBoxR").className="sidebox"+(R>L?" heavy":"");
+}
+function weStep(d){
+  if(weDone) return;
+  weX=Math.max(-9,Math.min(15,weX+d)); weRender();
+  const L=ev(weItem.l,{x:weX}), R=ev(weItem.r,{x:weX});
+  if(Math.abs(L-R)<1e-9){
+    weDone=true; progWelche++; document.querySelector('[data-mode="welche"] .st').textContent="✓"+progWelche;
+    $("weFeedback").innerHTML="Gelöst! <b>x = "+weX+"</b> macht beide Seiten gleich: "+fmt(L)+" = "+fmt(R)+".";
+    $("weFeedback").className="feedback good"; $("weNext").style.display=""; ding(true);
+  } else {
+    $("weFeedback").textContent = (L>R?"Linke Seite ist größer — probier weiter.":"Rechte Seite ist größer — probier weiter.");
+    $("weFeedback").className="feedback";
+  }
+}
+
+/* ==========================================================================
+   MODUS-WECHSEL + Events
+   ========================================================================== */
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  if(m==="maschine"){ machineInit(); machineRender(); }
+  if(m==="stimmt"){ if(!stOrder.length){stOrder=seq(STIMMT.length);} stLoad(); }
+  if(m==="warum"){ areaInit(); areaRender(); }
+  if(m==="welche"){ if(!weOrder.length){weOrder=seq(WELCHE.length);} weLoad(); }
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+// Maschine
+$("mSlider").oninput=e=>{ mX=parseInt(e.target.value,10); machineRender(); };
+// Stimmt
+$("stJudge").querySelectorAll("button").forEach(b=>b.onclick=()=>stAnswer(b.dataset.ans==="true"));
+$("stNext").onclick=()=>{ stPos++; stLoad(); };
+// Warum
+$("areaReveal").onclick=()=>{ areaRevealed=true; areaRender(); };
+$("areaReset").onclick=()=>{ areaRevealed=false; areaRender(); };
+// Welche
+$("weMinus").onclick=()=>weStep(-1); $("wePlus").onclick=()=>weStep(1);
+$("weNext").onclick=()=>{ wePos++; weLoad(); };
+document.addEventListener("keydown",e=>{
+  if($("ctl-welche").classList.contains("on")){
+    if(e.key==="ArrowUp"||e.key==="ArrowRight"){weStep(1);e.preventDefault();}
+    if(e.key==="ArrowDown"||e.key==="ArrowLeft"){weStep(-1);e.preventDefault();}
+  }
+});
+// Ton
+$("tglSound").onclick=()=>{ soundOn=!soundOn; $("tglSound").classList.toggle("on",soundOn); if(soundOn)ding(true); };
+
+/* ---- Start ---- */
+setMode("maschine");
+</script>
+</body>
+</html>
