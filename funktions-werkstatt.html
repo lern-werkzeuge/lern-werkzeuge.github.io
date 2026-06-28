@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Funktions-Werkstatt — Zuordnungen &amp; lineare Funktionen verstehen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:24px}
+  .modehint{font-size:13px;color:var(--muted);max-width:78%}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .tools{display:flex;gap:8px;align-items:center}
+  .toggle{font:inherit;font-size:12px;color:#c2cde2;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.12s}
+  .toggle:hover{border-color:#3d4d70}
+  .toggle .dot{width:9px;height:9px;border-radius:50%;background:#46506b;transition:.15s}
+  .toggle.on .dot{background:var(--good);box-shadow:0 0 8px -1px var(--good)}
+  .ctl{display:none}
+  .ctl.on{display:block}
+  .plotwrap{display:flex;flex-direction:column;align-items:center;margin:6px 0 4px}
+  svg.plot{width:100%;max-width:460px;height:auto;display:block;background:#0c1322;border:1px solid var(--line);border-radius:10px;touch-action:none}
+  .termbar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:24px;font-weight:600;color:#eaf1ff;margin:12px 0 4px}
+  .termbar .mv{color:var(--accent)}
+  .termbar .bv{color:var(--think)}
+  .slider{display:flex;align-items:center;gap:14px;margin:10px 0 2px}
+  .slider .lab{font-family:var(--mono);font-size:15px;color:#fff;min-width:96px}
+  .slider .lab .accv{color:var(--accent)}
+  .slider .lab .thv{color:var(--think)}
+  input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:#dfe8f6;border:2px solid #4a597a;cursor:pointer;box-shadow:0 1px 4px #0006}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#dfe8f6;border:2px solid #4a597a;cursor:pointer}
+  .btn{font:inherit;font-size:15px;font-weight:600;color:#fff;background:#21345c;border:1px solid var(--accent);
+    border-radius:11px;padding:11px 17px;cursor:pointer;transition:.14s}
+  .btn:hover{background:#284273}
+  .btn.ghost{background:var(--panel2);border-color:var(--line);color:#c2cde2}
+  .btn.ghost:hover{border-color:#3d4d70;color:#fff}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .row.center{justify-content:center}
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin:12px 0 4px}
+  .task.hit{border-color:#3f6f5c;background:#15281f;color:#bff0d8}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .task.hit .tlab,.tlab.ok{color:var(--good);border-color:#3f6f5c}
+  table.vt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin-top:14px}
+  table.vt th,table.vt td{border:1px solid var(--line);padding:7px 8px;text-align:center;color:#cdd8ec}
+  table.vt th{color:var(--muted);font-weight:500;background:#141d30;font-size:11.5px}
+  table.vt td.rowlab{text-align:left;color:#eaf1ff;white-space:nowrap}
+  table.vt td.cur{background:#21345c;color:#fff}
+  table.vt td.match{background:var(--goodDim);color:#bff0d8}
+  .note{font-size:13px;color:var(--muted);margin-top:12px}
+  .note b{color:#d6e0f2}
+  .judgehint{font-size:12.5px;color:var(--think);margin:10px 0 2px;text-align:center}
+  span.bonus{color:var(--think);font-size:12.5px;display:block;margin-top:6px}
+  .judge{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .judge button{font:inherit;font-size:15px;font-weight:680;border-radius:13px;padding:15px 10px;cursor:pointer;flex:1 1 0;min-width:150px;
+    transition:.14s;border:1.5px solid var(--line);background:var(--panel2);color:#e8edf6}
+  .judge button .ic{display:block;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .judge button.t:hover{border-color:var(--good);background:#16302a}
+  .judge button.f:hover{border-color:var(--bad);background:#2e1c26}
+  .judge button:disabled{opacity:.5;cursor:default}
+  .dtest{margin-top:12px;background:#141d30;border:1px solid var(--line);border-radius:11px;padding:13px 14px;display:none}
+  .dtest.on{display:block}
+  .dtest h4{margin:0 0 8px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .darrow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:15px;margin:6px 0}
+  .dcell{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 13px;text-align:center;min-width:96px}
+  .dcell .dl{font-family:var(--sans);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .dcell .dn{font-size:20px;font-weight:600;color:#fff}
+  .dcell.exp{border-color:#7a4a4a} .dcell.exp .dn{color:var(--bad)}
+  .dcell.real{border-color:#3f6f5c} .dcell.real .dn{color:var(--good)}
+  .dop{font-size:18px;color:var(--muted)}
+  .scene{font-size:14px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:6px}
+  .scene b{color:#fff}
+  .gopts{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .gopt{flex:1 1 0;min-width:130px;background:#0c1322;border:1.5px solid var(--line);border-radius:11px;padding:8px;cursor:pointer;transition:.14s}
+  .gopt:hover{border-color:#3d4d70}
+  .gopt.ok{border-color:var(--good);background:#13241d}
+  .gopt.no{border-color:var(--bad);background:#241620}
+  .gopt svg{width:100%;height:auto;display:block;border-radius:6px}
+  .gopt .glab{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:5px}
+  .gopt.ok .glab{color:var(--good)} .gopt.no .glab{color:var(--bad)}
+  .feedback{min-height:22px;text-align:center;font-size:14px;margin-top:14px;color:var(--muted);transition:.2s}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)} .feedback.think{color:var(--think)}
+  .feedback b{color:#fff}
+  footer{margin-top:24px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+  footer .mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kick">Mathematik · Klasse 7–8 · Zuordnungen &amp; lineare Funktionen</div>
+    <h1>Funktions-Werkstatt <span class="hl">/</span></h1>
+    <div class="sub">Eine Gerade ist kein Bild — sie zeigt, wie sich y verändert, wenn x sich verändert.</div>
+  </header>
+
+  <div class="thesis">
+    Die <b>Steigung m</b> ist keine Höhe, sondern eine Bewegung: <b>einen Schritt nach rechts — wie viele nach oben?</b>
+    Der <b>y-Achsenabschnitt b</b> ist der Startwert bei x = 0. Tabelle, Graph und der Term
+    <b>y = m·x + b</b> zeigen immer dasselbe — der Rechner rechnet jede Behauptung nach.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="mb">m &amp; b verstehen <span class="st"></span></button>
+    <button class="tab" data-mode="prop">Proportional — oder nicht? <span class="st"></span></button>
+    <button class="tab" data-mode="foto">Der Graph ist kein Foto <span class="st"></span></button>
+  </div>
+
+  <div class="stage">
+    <div class="statbar">
+      <div class="modehint" id="modehint"></div>
+      <div class="tools"><button class="toggle" id="tglSound"><span class="dot"></span>Ton</button></div>
+    </div>
+
+    <!-- MODUS 1 — m & b verstehen -->
+    <div class="ctl on" id="ctl-mb">
+      <div class="task" id="mbTask"></div>
+      <div class="plotwrap">
+        <svg class="plot" id="mbSvg" viewBox="0 0 460 360" role="img" aria-label="Koordinatensystem mit Gerade"></svg>
+      </div>
+      <div class="termbar">
+        y <span>=</span> <span class="mv" id="mbTm">2</span><span>·</span>x <span id="mbTsign">+</span> <span class="bv" id="mbTb">1</span>
+      </div>
+      <div class="slider">
+        <span class="lab">m = <span class="accv" id="mbMlab">2</span></span>
+        <input type="range" id="mbM" min="-3" max="3" step="0.5" value="2">
+      </div>
+      <div class="slider">
+        <span class="lab">b = <span class="thv" id="mbBlab">1</span></span>
+        <input type="range" id="mbB" min="-4" max="4" step="1" value="1">
+      </div>
+      <div class="note" id="mbNote"></div>
+      <table class="vt" id="mbTable"></table>
+    </div>
+
+    <!-- MODUS 2 — Proportional oder nicht? -->
+    <div class="ctl" id="ctl-prop">
+      <div class="scene" id="propScene"></div>
+      <div class="plotwrap">
+        <svg class="plot" id="propSvg" viewBox="0 0 460 360" role="img" aria-label="Graph der Zuordnung"></svg>
+      </div>
+      <table class="vt" id="propTable"></table>
+      <p class="judgehint">Geht die Linie durch (0|0)? Hat jedes x immer denselben Faktor zu y?</p>
+      <div class="judge" id="propJudge">
+        <button class="t" data-ans="true"><span class="ic">durch (0|0), gleicher Faktor</span>PROPORTIONAL</button>
+        <button class="f" data-ans="false"><span class="ic">Sockel oder kein fester Faktor</span>NICHT PROPORTIONAL</button>
+      </div>
+      <div class="dtest" id="propDtest">
+        <h4>Test: verdoppelt sich y, wenn x sich verdoppelt?</h4>
+        <div class="darrow">
+          <div class="dcell"><div class="dl">x</div><div class="dn" id="dx1">2</div></div>
+          <span class="dop">→ verdoppeln →</span>
+          <div class="dcell"><div class="dl">2·x</div><div class="dn" id="dx2">4</div></div>
+        </div>
+        <div class="darrow">
+          <div class="dcell"><div class="dl">y bei x</div><div class="dn" id="dy1">7</div></div>
+          <span class="dop">·2 wäre</span>
+          <div class="dcell exp"><div class="dl">verdoppelt</div><div class="dn" id="dyExp">14</div></div>
+          <span class="dop">— echt:</span>
+          <div class="dcell real"><div class="dl">y bei 2·x</div><div class="dn" id="dyReal">11</div></div>
+        </div>
+      </div>
+      <div class="feedback" id="propFeedback"></div>
+      <div class="row center" style="margin-top:6px"><button class="btn ghost" id="propNext" style="display:none">Nächste →</button></div>
+    </div>
+
+    <!-- MODUS 3 — Der Graph ist kein Foto -->
+    <div class="ctl" id="ctl-foto">
+      <div class="scene" id="fotoScene"></div>
+      <div class="gopts" id="fotoOpts"></div>
+      <div class="feedback" id="fotoFeedback"></div>
+      <div class="row center" style="margin-top:6px"><button class="btn ghost" id="fotoNext" style="display:none">Nächste →</button></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+    <span class="mono">Mathematik · IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   FUNKTIONS-WERKSTATT — Zuordnungen & lineare Funktionen (Jg. 7/8)
+   Fehlvorstellungen ZF1–ZF7 aus dem ReMa-Katalog. Kein eval, 0 externe Requests.
+   ========================================================================== */
+const $=id=>document.getElementById(id);
+
+function fy(m,b,x){ return m*x+b; }
+function yval(it,x){ return it.type==="anti" ? it.c/x : fy(it.m,it.b,x); }
+function fmt(n){
+  if(!isFinite(n))return "—";
+  const r=Math.round(n*100)/100;
+  return Number.isInteger(r)?String(r):String(r).replace(".",",");
+}
+
+let actx=null, soundOn=false;
+function ding(ok){
+  if(!soundOn)return;
+  try{
+    actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type="sine"; o.connect(g); g.connect(actx.destination);
+    const n=actx.currentTime;
+    g.gain.value=0.0001;
+    g.gain.exponentialRampToValueAtTime(0.12,n+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,n+0.3);
+    o.frequency.setValueAtTime(ok?660:300,n);
+    if(ok)o.frequency.exponentialRampToValueAtTime(990,n+0.13);
+    o.start(n); o.stop(n+0.32);
+  }catch(e){}
+}
+
+const HINTS={
+  mb:"<b>m &amp; b verstehen:</b> Schieb m und b. m ist die Steigung (Schritte nach oben pro 1 nach rechts), b der Schnittpunkt mit der y-Achse. Löse die Ziel-Aufgabe.",
+  prop:"<b>Proportional — oder nicht?</b> Urteile zuerst aus Tabelle und Graph. Dann prüft der Rechner: verdoppelt sich y wirklich, wenn x sich verdoppelt?",
+  foto:"<b>Der Graph ist kein Foto:</b> Lies zuerst die Achsen. Welcher Graph passt zur Situation — nicht welcher so <i>aussieht</i> wie die Szene?"
+};
+
+/* --- SVG-Hilfsfunktionen --- */
+const SVGNS="http://www.w3.org/2000/svg";
+function coord(opt){
+  const o=Object.assign({xmin:-1,xmax:8,ymin:-5,ymax:9,W:460,H:360,pad:34},opt);
+  const px=x=>o.pad+(x-o.xmin)/(o.xmax-o.xmin)*(o.W-2*o.pad);
+  const py=y=>(o.H-o.pad)-(y-o.ymin)/(o.ymax-o.ymin)*(o.H-2*o.pad);
+  return {o,px,py};
+}
+function el(name,attrs,inner){
+  const e=document.createElementNS(SVGNS,name);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(inner!=null)e.textContent=inner;
+  return e;
+}
+function drawGrid(svg,opt){
+  const {o,px,py}=coord(opt);
+  svg.setAttribute("viewBox","0 0 "+o.W+" "+o.H);
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  for(let x=Math.ceil(o.xmin);x<=Math.floor(o.xmax);x++)
+    svg.appendChild(el("line",{x1:px(x),y1:py(o.ymin),x2:px(x),y2:py(o.ymax),
+      stroke:x===0?"#3a4a68":"#1d2740","stroke-width":x===0?1.4:1}));
+  for(let y=Math.ceil(o.ymin);y<=Math.floor(o.ymax);y++)
+    svg.appendChild(el("line",{x1:px(o.xmin),y1:py(y),x2:px(o.xmax),y2:py(y),
+      stroke:y===0?"#3a4a68":"#1d2740","stroke-width":y===0?1.4:1}));
+  for(let x=Math.ceil(o.xmin);x<=Math.floor(o.xmax);x++){if(x===0)continue;
+    svg.appendChild(el("text",{x:px(x),y:py(0)+14,fill:"#5e6e8c","font-size":10,"text-anchor":"middle","font-family":"ui-monospace,Menlo,monospace"},String(x)));}
+  for(let y=Math.ceil(o.ymin);y<=Math.floor(o.ymax);y++){if(y===0)continue;
+    svg.appendChild(el("text",{x:px(0)-7,y:py(y)+4,fill:"#5e6e8c","font-size":10,"text-anchor":"end","font-family":"ui-monospace,Menlo,monospace"},String(y)));}
+  svg.appendChild(el("text",{x:px(o.xmax),y:py(0)-6,fill:"#8ea2c4","font-size":12,"text-anchor":"end","font-family":"var(--sans)"},opt&&opt.xlab||"x"));
+  svg.appendChild(el("text",{x:px(0)+8,y:py(o.ymax)+12,fill:"#8ea2c4","font-size":12,"text-anchor":"start","font-family":"var(--sans)"},opt&&opt.ylab||"y"));
+  return {px,py,o};
+}
+
+/* ==========================================================================
+   MODUS 1 — m & b verstehen  (ZF2, ZF3, ZF6)
+   ========================================================================== */
+const MB_TASKS=[
+  {m:1, b:0,  txt:"Stell eine Gerade ein, die durch den <b>Nullpunkt (0|0)</b> geht — ein Schritt nach rechts, ein Schritt nach oben.", done:"Diese Gerade heißt <b>Ursprungsgerade</b>."},
+  {m:2, b:3,  txt:"Die Gerade soll durch <b>(0|3)</b> gehen und <b>pro Schritt um 2</b> steigen."},
+  {m:-2,b:1,  txt:"Stell eine <b>fallende</b> Gerade ein: Schnittpunkt bei <b>1</b> auf der y-Achse. Die Steigung: ein Schritt nach rechts, zwei Schritte nach <b>unten</b>."},
+  {m:0.5,b:-2,txt:"Flach und tief: durch <b>(0|−2)</b>, Steigung <b>0,5</b> (zwei Schritte rechts, ein Schritt hoch)."}
+];
+let mbIdx=0, mbM=2, mbB=1, mbHit=false, mbFired=false, mbDone=0;
+
+function mbTaskBox(){
+  const t=MB_TASKS[mbIdx], hit=(mbM===t.m&&mbB===t.b);
+  const doneNote=t.done?" — "+t.done:"";
+  $("mbTask").innerHTML=hit
+    ?"<span class='tlab ok'>geschafft</span> "+t.txt+doneNote
+    :"<span class='tlab'>Ziel "+(mbIdx+1)+"/"+MB_TASKS.length+"</span> "+t.txt;
+  $("mbTask").className="task"+(hit?" hit":"");
+  if(hit&&!mbFired){
+    mbFired=true; mbDone++;
+    document.querySelector('[data-mode="mb"] .st').textContent="✓"+mbDone;
+    ding(true);
+    if(mbIdx<MB_TASKS.length-1){
+      setTimeout(()=>{ mbIdx++; mbFired=false; mbHit=false; mbRender(); },1100);
+    } else {
+      setTimeout(()=>{ $("mbTask").innerHTML="<span class='tlab ok'>alle</span> Alle Aufgaben geschafft — du beherrschst m und b!<span class='bonus'>Bonus: Stell m und b so ein, dass die Gerade durch (3|7) geht — nur durch Probieren.</span>"; },1200);
+    }
+  }
+  mbHit=hit;
+}
+
+function mbRender(){
+  $("mbTm").textContent=fmt(mbM);
+  $("mbMlab").textContent=fmt(mbM);
+  $("mbBlab").textContent=fmt(mbB);
+  $("mbTsign").textContent=mbB<0?"−":"+";
+  $("mbTb").textContent=fmt(Math.abs(mbB));
+  const svg=$("mbSvg");
+  const {px,py,o}=drawGrid(svg,{xmin:-1,xmax:8,ymin:-5,ymax:9});
+  // Gerade
+  svg.appendChild(el("line",{x1:px(o.xmin),y1:py(fy(mbM,mbB,o.xmin)),x2:px(o.xmax),y2:py(fy(mbM,mbB,o.xmax)),
+    stroke:"#5aa0ff","stroke-width":2.5,"stroke-linecap":"round"}));
+  // b-Punkt
+  svg.appendChild(el("circle",{cx:px(0),cy:py(mbB),r:5,fill:"#f4b740",stroke:"#0c1322","stroke-width":1.5}));
+  svg.appendChild(el("text",{x:px(0)-10,y:py(mbB)-9,fill:"#f4b740","font-size":12,"text-anchor":"end",
+    "font-family":"ui-monospace,Menlo,monospace","font-weight":600},"b="+fmt(mbB)));
+  // Steigungsdreieck
+  const cy=fy(mbM,mbB,1);
+  svg.appendChild(el("line",{x1:px(0),y1:py(mbB),x2:px(1),y2:py(mbB),stroke:"#4fd6a0","stroke-width":2,"stroke-dasharray":"4 3"}));
+  svg.appendChild(el("line",{x1:px(1),y1:py(mbB),x2:px(1),y2:py(cy),stroke:"#4fd6a0","stroke-width":2,"stroke-dasharray":"4 3"}));
+  const hLabY=(mbM>=0)?py(mbB)+15:py(mbB)-9;
+  svg.appendChild(el("text",{x:px(0.5),y:hLabY,fill:"#4fd6a0","font-size":10.5,"text-anchor":"middle",
+    "font-family":"ui-monospace,Menlo,monospace"},"1 rechts"));
+  const midY=(py(mbB)+py(cy))/2;
+  svg.appendChild(el("text",{x:px(1)+6,y:midY+4,fill:"#4fd6a0","font-size":10.5,"text-anchor":"start",
+    "font-family":"ui-monospace,Menlo,monospace"},(mbM>=0?"+":"−")+fmt(Math.abs(mbM))+" hoch"));
+  // Punkte
+  for(let x=0;x<=o.xmax;x++){const y=fy(mbM,mbB,x);if(y>=o.ymin&&y<=o.ymax)
+    svg.appendChild(el("circle",{cx:px(x),cy:py(y),r:3,fill:"#bcd6ff"}));}
+  // Hinweis-Text
+  $("mbNote").innerHTML=(mbM<0)
+    ?"Die Gerade <b>fällt</b>: ein Schritt nach rechts heißt hier "+fmt(mbM)+" nach <b>unten</b>. Darum ist m <b>negativ</b> — kein Betrag, sondern mit Vorzeichen."
+    :(mbM===0
+      ?"m = 0: die Gerade ist <b>waagerecht</b>. y ändert sich nicht, egal wie weit du nach rechts gehst."
+      :"Steigung ist <b>Höhe pro Schritt</b>, nicht Gesamthöhe: ein Schritt nach rechts → "+fmt(mbM)+" nach oben.");
+  // Wertetabelle
+  let html="<tr><th>x</th>";
+  [0,1,2,3,4].forEach(x=>html+="<th>"+x+"</th>"); html+="</tr>";
+  html+="<tr><td class='rowlab'>y = "+fmt(mbM)+"·x "+(mbB<0?"− "+fmt(Math.abs(mbB)):"+ "+fmt(mbB))+"</td>";
+  [0,1,2,3,4].forEach(x=>html+="<td"+(x===0?" class='cur'":"")+">"+fmt(fy(mbM,mbB,x))+"</td>"); html+="</tr>";
+  $("mbTable").innerHTML=html;
+  mbTaskBox();
+}
+
+/* ==========================================================================
+   MODUS 2 — Proportional oder nicht?  (ZF1, ZF5, ZF7)
+   ========================================================================== */
+const PROP=[
+  {m:3, b:0, x:2, prop:true,
+   scene:"<b>Äpfel:</b> 1 kg kostet 3 €. Die Tabelle zeigt kg → Preis.",
+   why:"Durch (0|0) und immer mal 3: y = 3·x. 0 kg kosten 0 €. Hier verdoppelt sich der Preis tatsächlich, wenn die Menge sich verdoppelt."},
+  {m:2, b:3, x:2, prop:false,
+   scene:"<b>Taxi:</b> 3 € Grundgebühr, dann 2 € pro km. Tabelle: km → Preis.",
+   why:"Bei 0 km zahlst du <b>3 €, nicht 0</b> — der Sockel b = 3. Darum verdoppelt sich der Preis nicht, wenn die Strecke sich verdoppelt. y = 2·x + 3 ist linear, aber nicht proportional."},
+  {m:0.5,b:0, x:4, prop:true,
+   scene:"<b>Stoff:</b> 2 m kosten 1 €, also 0,5 € pro Meter. Tabelle: m → Preis.",
+   why:"Durch (0|0), immer mal 0,5: y = 0,5·x. Doppelte Länge → doppelter Preis. Proportional, auch wenn der Faktor unter 1 liegt."},
+  {m:1.5,b:2, x:2, prop:false,
+   scene:"<b>Handytarif:</b> 2 € Grundgebühr, 1,50 € pro GB. Tabelle: GB → Preis.",
+   why:"Sockel b = 2 (Preis bei 0 GB). Verdoppeln von x verdoppelt y nur ohne Sockel — hier nicht. Achtung: nicht das Ergebnis verdoppeln, sondern x einsetzen! (ZF7)"},
+  {type:"anti", c:72, x:3, prop:false,
+   scene:"<b>Bauarbeiter:</b> 6 Arbeiter brauchen 12 Tage. 12 Arbeiter brauchen 6 Tage. Je mehr Arbeiter, desto weniger Tage — welcher Typ?",
+   why:"Das ist <b>antiproportional</b>: Arbeiter · Tage = 72 (konstantes Produkt, keine Gerade). Mehr Arbeiter → weniger Tage. Verdoppeln von x halbiert y hier sogar — das Gegenteil von proportional."}
+];
+let propOrder=[], propPos=0, propItem=null, propDone=false, progProp=0;
+function seq(n){return[...Array(n).keys()];}
+
+function propLoad(){
+  if(propPos>=propOrder.length){propOrder=seq(PROP.length);propPos=0;}
+  propItem=PROP[propOrder[propPos]]; propDone=false;
+  const it=propItem;
+  $("propScene").innerHTML=it.scene;
+  $("propJudge").querySelectorAll("button").forEach(b=>b.disabled=false);
+  $("propDtest").className="dtest";
+  $("propFeedback").textContent=""; $("propFeedback").className="feedback";
+  $("propNext").style.display="none";
+  const svg=$("propSvg");
+  if(it.type==="anti"){
+    // Hyperbel zeichnen (antiproportional)
+    const {px,py,o}=drawGrid(svg,{xmin:0,xmax:13,ymin:0,ymax:40,xlab:"Arbeiter",ylab:"Tage"});
+    const pts=[];
+    for(let x=2;x<=12;x+=0.4){const y=72/x;if(y<=40)pts.push(px(x)+" "+py(y));}
+    svg.appendChild(el("path",{d:"M"+pts.join("L"),fill:"none",stroke:"#5aa0ff",
+      "stroke-width":2.5,"stroke-linecap":"round","stroke-linejoin":"round"}));
+    [3,4,6,9,12].forEach(x=>{const y=72/x;
+      svg.appendChild(el("circle",{cx:px(x),cy:py(y),r:4,fill:"#bcd6ff"}));});
+    // Tabelle mit Produkt-Zeile
+    const axs=[3,4,6,9,12];
+    let html="<tr><th>Arbeiter</th>"; axs.forEach(x=>html+="<th>"+x+"</th>"); html+="</tr>";
+    html+="<tr><td class='rowlab'>Tage</td>"; axs.forEach(x=>html+="<td>"+fmt(72/x)+"</td>"); html+="</tr>";
+    html+="<tr><td class='rowlab'>Produkt</td>"; axs.forEach(()=>html+="<td class='match'>72</td>"); html+="</tr>";
+    $("propTable").innerHTML=html;
+  } else {
+    const xs=[0,1,2,3,4,5,6];
+    const ymax=Math.max(9,Math.ceil(fy(it.m,it.b,6)+1));
+    const {px,py,o}=drawGrid(svg,{xmin:-1,xmax:7,ymin:-2,ymax:ymax,xlab:"x",ylab:"y"});
+    svg.appendChild(el("line",{x1:px(o.xmin),y1:py(fy(it.m,it.b,o.xmin)),
+      x2:px(o.xmax),y2:py(fy(it.m,it.b,o.xmax)),stroke:"#5aa0ff","stroke-width":2.5,"stroke-linecap":"round"}));
+    svg.appendChild(el("circle",{cx:px(0),cy:py(it.b),r:5,
+      fill:it.b===0?"#4fd6a0":"#f4b740",stroke:"#0c1322","stroke-width":1.5}));
+    for(let x=0;x<=6;x++){const y=fy(it.m,it.b,x);if(y>=-2&&y<=ymax)
+      svg.appendChild(el("circle",{cx:px(x),cy:py(y),r:3,fill:"#bcd6ff"}));}
+    let html="<tr><th>x</th>"; xs.forEach(x=>html+="<th"+(x===0?" class='cur'":"")+">"+x+"</th>"); html+="</tr>";
+    html+="<tr><td class='rowlab'>y</td>"; xs.forEach(x=>html+="<td"+(x===0?" class='cur'":"")+">"+fmt(fy(it.m,it.b,x))+"</td>"); html+="</tr>";
+    $("propTable").innerHTML=html;
+  }
+}
+
+function propAnswer(saysProp){
+  if(propDone)return; propDone=true;
+  $("propJudge").querySelectorAll("button").forEach(b=>b.disabled=true);
+  const it=propItem;
+  const x=it.x, x2=2*x;
+  const yx=yval(it,x), yx2=yval(it,x2), yExp=2*yx;
+  $("dx1").textContent=fmt(x); $("dx2").textContent=fmt(x2);
+  $("dy1").textContent=fmt(yx); $("dyExp").textContent=fmt(yExp); $("dyReal").textContent=fmt(yx2);
+  $("propDtest").className="dtest on";
+  const right=(saysProp===it.prop);
+  let msg;
+  if(it.prop){
+    msg=(right?"Richtig — <b>proportional</b>. ":"Doch — das ist proportional. ")
+      +"Der Test bestätigt es: x von "+fmt(x)+" auf "+fmt(x2)+" verdoppelt → y geht von "+fmt(yx)+" auf "+fmt(yx2)+" — genau das Doppelte. "+it.why;
+  } else if(it.type==="anti"){
+    msg=(right?"Richtig — <b>nicht proportional</b>. ":"Schau den Test: nicht proportional! ")
+      +"x verdoppelt (von "+fmt(x)+" auf "+fmt(x2)+"): verdoppelt wäre y = "+fmt(yExp)
+      +", echt ist y = <b>"+fmt(yx2)+"</b>. Statt sich zu verdoppeln, halbiert sich y sogar — antiproportional. "+it.why;
+  } else {
+    msg=(right?"Richtig — <b>nicht proportional</b>. ":"Schau den Test: nicht proportional! ")
+      +"x verdoppelt (von "+fmt(x)+" auf "+fmt(x2)+"): verdoppelt wäre y = "+fmt(yExp)
+      +", echt ist y = <b>"+fmt(yx2)+"</b>. "+fmt(yExp)+" ≠ "+fmt(yx2)+" — die Verdopplung scheitert. "+it.why;
+  }
+  $("propFeedback").innerHTML=msg;
+  $("propFeedback").className="feedback "+(right?"good":"bad");
+  if(right){progProp++;document.querySelector('[data-mode="prop"] .st').textContent="✓"+progProp;}
+  ding(right);
+  $("propNext").style.display="";
+}
+
+/* ==========================================================================
+   MODUS 3 — Der Graph ist kein Foto  (ZF4)
+   ========================================================================== */
+function miniGraph(pts,xlab,ylab,opt){
+  const o=Object.assign({xmin:0,xmax:6,ymin:0,ymax:6,W:150,H:120,pad:18},opt);
+  const px=x=>o.pad+(x-o.xmin)/(o.xmax-o.xmin)*(o.W-2*o.pad);
+  const py=y=>(o.H-o.pad)-(y-o.ymin)/(o.ymax-o.ymin)*(o.H-2*o.pad);
+  let s='<svg viewBox="0 0 '+o.W+' '+o.H+'" xmlns="'+SVGNS+'">';
+  s+='<line x1="'+px(0)+'" y1="'+py(0)+'" x2="'+px(o.xmax)+'" y2="'+py(0)+'" stroke="#3a4a68" stroke-width="1.2"/>';
+  s+='<line x1="'+px(0)+'" y1="'+py(0)+'" x2="'+px(0)+'" y2="'+py(o.ymax)+'" stroke="#3a4a68" stroke-width="1.2"/>';
+  const d=pts.map((p,i)=>(i?"L":"M")+px(p[0])+" "+py(p[1])).join("");
+  s+='<path d="'+d+'" fill="none" stroke="#5aa0ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+  s+='<text x="'+(o.W-4)+'" y="'+(py(0)+13)+'" fill="#7e8ea8" font-size="9" text-anchor="end" font-family="ui-monospace,Menlo,monospace">'+xlab+'</text>';
+  s+='<text x="'+(px(0)+4)+'" y="'+(py(o.ymax)+2)+'" fill="#7e8ea8" font-size="9" text-anchor="start" font-family="ui-monospace,Menlo,monospace">'+ylab+'</text>';
+  s+='</svg>';
+  return s;
+}
+
+const FOTO=[
+  {
+    scene:"Ein Radfahrer fährt los, wird immer schneller und fährt dann mit gleicher Geschwindigkeit weiter. Der Graph zeigt die <b>Geschwindigkeit</b> (senkrecht) über die <b>Zeit</b> (waagerecht).",
+    xlab:"Zeit",ylab:"v",
+    opts:[
+      {pts:[[0,0],[3,5],[6,5]],lab:"steigt, dann waagerecht",correct:true},
+      {pts:[[0,1],[2,5],[4,1],[6,5]],lab:"Berg-Form",correct:false,
+       feed:"Das ist der <b>Graph-als-Bild</b>-Fehler (ZF4): die Zacken sehen aus wie eine Strecke mit Hügeln. Aber senkrecht steht die <b>Geschwindigkeit</b>, nicht die Höhe der Landschaft."},
+      {pts:[[0,5],[3,0],[6,0]],lab:"fällt, dann unten",correct:false,
+       feed:"Diese Linie <b>fällt</b> — das hieße: er wird langsamer. Er wird aber schneller. Lies die senkrechte Achse: Geschwindigkeit steigt zuerst."}
+    ]
+  },
+  {
+    scene:"Ein Auto steht an der Ampel, fährt dann los und fährt mit gleichbleibendem Tempo weiter. Der Graph zeigt die <b>Geschwindigkeit</b> über die <b>Zeit</b>.",
+    xlab:"Zeit",ylab:"v",
+    opts:[
+      {pts:[[0,0],[2,0],[4,5],[6,5]],lab:"unten, dann steigend, dann flach",correct:true},
+      {pts:[[0,0],[6,5]],lab:"gerade Straße bergauf",correct:false,
+       feed:"Die gerade Linie sieht aus wie eine <b>ansteigende Straße</b> — aber waagerecht ist Zeit, senkrecht Geschwindigkeit. An der Ampel ist v = 0; das fehlt hier."},
+      {pts:[[0,5],[2,5],[4,0],[6,0]],lab:"erst schnell, dann Stopp",correct:false,
+       feed:"Hier startet das Auto schon schnell und wird langsamer — umgekehrt zur Situation (es steht zuerst und fährt dann an)."}
+    ]
+  },
+  {
+    scene:"Wasser läuft in einen <b>geraden Eimer</b> — der Strahl bleibt gleich stark. Der Graph zeigt die <b>Füllhöhe</b> über die <b>Zeit</b>.",
+    xlab:"Zeit",ylab:"Höhe",
+    opts:[
+      {pts:[[0,0],[6,5]],lab:"gleichmäßig steigend",correct:true},
+      {pts:[[0,0],[1,1],[2,1],[3,2.5],[4,2.5],[5,4],[6,4]],lab:"Treppen-Form",correct:false,
+       feed:"Die Treppe sieht aus wie ein gezackter Behälter — ZF4. Bei gleichmäßigem Zulauf in einen geraden Eimer steigt die Höhe <b>gleichmäßig</b>, als gerade Linie."},
+      {pts:[[0,5],[6,0]],lab:"fallend",correct:false,
+       feed:"Fallend hieße: der Eimer wird leerer. Es läuft aber Wasser hinein — die Höhe nimmt zu."}
+    ]
+  }
+];
+let fotoOrder=[], fotoPos=0, fotoItem=null, fotoDone=false, progFoto=0;
+
+function fotoLoad(){
+  if(fotoPos>=fotoOrder.length){fotoOrder=seq(FOTO.length);fotoPos=0;}
+  fotoItem=FOTO[fotoOrder[fotoPos]]; fotoDone=false;
+  $("fotoScene").innerHTML=fotoItem.scene;
+  $("fotoFeedback").textContent=""; $("fotoFeedback").className="feedback";
+  $("fotoNext").style.display="none";
+  const box=$("fotoOpts"); box.innerHTML="";
+  fotoItem.opts.forEach((op,i)=>{
+    const div=document.createElement("div"); div.className="gopt";
+    div.innerHTML=miniGraph(op.pts,fotoItem.xlab,fotoItem.ylab)+"<div class='glab'>"+op.lab+"</div>";
+    div.onclick=()=>fotoPick(i);
+    box.appendChild(div);
+  });
+}
+
+function fotoPick(i){
+  if(fotoDone)return;
+  const op=fotoItem.opts[i];
+  const cards=$("fotoOpts").children;
+  if(op.correct){
+    fotoDone=true;
+    cards[i].className="gopt ok";
+    Array.from(cards).forEach((c,k)=>{if(k!==i)c.style.opacity="0.45";});
+    $("fotoFeedback").innerHTML="Richtig — dieser Graph passt zur Situation. Entscheidend ist die <b>Bedeutung der Achsen</b>, nicht ob die Linie wie die Szene <i>aussieht</i>.";
+    $("fotoFeedback").className="feedback good";
+    progFoto++; document.querySelector('[data-mode="foto"] .st').textContent="✓"+progFoto;
+    ding(true); $("fotoNext").style.display="";
+  } else {
+    cards[i].className="gopt no";
+    $("fotoFeedback").innerHTML=op.feed;
+    $("fotoFeedback").className="feedback bad";
+    ding(false);
+    setTimeout(()=>{if(!fotoDone)cards[i].className="gopt";},2600);
+  }
+}
+
+/* --- Modus-Wechsel + Events --- */
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  document.querySelectorAll(".ctl").forEach(c=>c.classList.remove("on"));
+  $("ctl-"+m).classList.add("on");
+  $("modehint").innerHTML=HINTS[m];
+  if(m==="mb"){mbRender();}
+  if(m==="prop"){if(!propOrder.length)propOrder=seq(PROP.length); propLoad();}
+  if(m==="foto"){if(!fotoOrder.length)fotoOrder=seq(FOTO.length); fotoLoad();}
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+$("mbM").oninput=e=>{mbM=parseFloat(e.target.value);mbRender();};
+$("mbB").oninput=e=>{mbB=parseInt(e.target.value,10);mbRender();};
+$("propJudge").querySelectorAll("button").forEach(b=>b.onclick=()=>propAnswer(b.dataset.ans==="true"));
+$("propNext").onclick=()=>{propPos++;propLoad();};
+$("fotoNext").onclick=()=>{fotoPos++;fotoLoad();};
+$("tglSound").onclick=()=>{soundOn=!soundOn;$("tglSound").classList.toggle("on",soundOn);if(soundOn)ding(true);};
+
+setMode("mb");
+</script>
+</body>
+</html>
