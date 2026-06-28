@@ -238,6 +238,7 @@
   .teacher-body .box .hl{color:var(--amber)}
   .teacher-body .box .hlv{color:var(--violet)}
 
+  .hint{font-size:11.5px;color:var(--dim);margin-top:8px;font-style:italic;line-height:1.45}
   footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
     color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
   .hidden{display:none!important}
@@ -311,7 +312,8 @@
         </div>
         <div class="ctrl" id="hCtrl">
           <div class="row"><span class="name">Abstand&nbsp; h</span><span class="val amber" id="hVal">2,00</span></div>
-          <input type="range" id="hSlider" class="amber" min="0.05" max="3" step="0.05" value="2">
+          <input type="range" id="hSlider" class="amber" min="-3" max="3" step="0.05" value="2">
+          <div class="hint hidden" id="hHint">Tipp: zieh h auch nach <b>links (negativ)</b> &#8212; <code style="font-family:var(--mono)">Q</code> springt auf die andere Seite von P. So siehst du die Ann&#228;herung von links.</div>
         </div>
         <div class="btn-row">
           <button class="b primary" id="shrinkBtn">&#9654; h &#8594; 0 laufen lassen</button>
@@ -568,6 +570,12 @@ function render(){
   /* Funktionsgraph f */
   svg+='<polyline points="'+curvePts(f,S)+'" fill="none" stroke="#22d3ee" stroke-width="3.5"/>';
 
+  /* Ziel-Tangente in Akt 1: dezent gestrichelt, die Grenzlage, in die die Sehne kippt */
+  if(curAct===1){
+    var TG=lineAcross(x0, fx0, m, S);
+    svg+='<line x1="'+TG.x1+'" y1="'+TG.y1+'" x2="'+TG.x2+'" y2="'+TG.y2+'" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6 5" opacity="0.4"/>';
+  }
+
   /* Sehne + Steigungsdreieck (Akt 1/2) */
   if(showSec){
     var L=lineAcross(x0, fx0, sec, S);
@@ -656,7 +664,10 @@ document.getElementById('xSlider').addEventListener('input',function(){
   stopAnim(); x0=parseFloat(this.value); render();
 });
 document.getElementById('hSlider').addEventListener('input',function(){
-  stopAnim(); h=parseFloat(this.value); render();
+  stopAnim();
+  var nv=parseFloat(this.value);
+  if(Math.abs(nv)<0.03){ nv = (h<0 ? -0.05 : 0.05); this.value=nv; }  // h=0 aussparen (0/0)
+  h=nv; render();
 });
 document.getElementById('resetBtn').addEventListener('click',function(){
   stopAnim(); var p=P(); x0=p.x0; h=p.h0;
@@ -668,10 +679,10 @@ document.getElementById('shrinkBtn').addEventListener('click',function(){
   if(animTimer){ stopAnim(); return; }
   this.innerHTML='&#10073;&#10073; Stopp';
   animTimer=setInterval(function(){
-    h = Math.max(0.05, h-0.045);
+    if(h>0){ h=Math.max(0.05, h-0.045); } else { h=Math.min(-0.05, h+0.045); }
     document.getElementById('hSlider').value=h;
     render();
-    if(h<=0.05){ stopAnim(); }
+    if(Math.abs(h)<=0.05){ stopAnim(); }
   }, 28);
 });
 function stopAnim(){
@@ -718,7 +729,8 @@ var ACTS={
        'ist <span class="hl">&#916;y/&#916;x</span> &#8212; die <b>mittlere</b> &#196;nderungsrate &#252;ber das St&#252;ck.</p>'+
        '<p><b>Probier es aus:</b> Zieh den Regler <code>h</code> kleiner &#8212; oder klick '+
        '&#8222;h &#8594; 0 laufen lassen&#8220;. <code>Q</code> rutscht auf <code>P</code> zu, und die Sehne '+
-       '<span class="hlv">kippt</span> in eine Grenzlage: die Tangente.</p>'+
+       '<span class="hlv">kippt</span> in eine Grenzlage: die Tangente &#8212; die '+
+       '<span class="hlv">gestrichelte violette Linie</span> zeigt sie schon.</p>'+
        '<p>Das ist der Kern: Die Steigung &#8222;im Punkt&#8220; ist <b>nicht</b> die Steigung &#252;ber ein '+
        'Intervall &#8212; sie ist der <span class="hlv">Grenzfall</span>, wenn das Intervall verschwindet.</p>',
   tasks:[
@@ -748,10 +760,12 @@ var ACTS={
     sol:'Beide n&#228;hern sich <span class="hlv">0,9</span> = f&#8242;(3). Von rechts etwas gr&#246;&#223;er, von links etwas kleiner &#8212; aber dieselbe Grenze. Genau das hei&#223;t: der Grenzwert existiert.'},
    {n:2,g:1,t:'Warum steht in der Tabelle bei h = 0 &#8222;0/0 &#8212; nicht definiert&#8220;? Was w&#228;re der Denkfehler, einfach h = 0 zu rechnen?',
     sol:'F&#252;r h=0 ist Z&#228;hler f(x)&#8722;f(x)=0 <b>und</b> Nenner 0 &#8212; <code>0/0</code> ist nicht definiert. Den Wert bekommt man nur als <span class="hlv">Grenzwert</span> (h beliebig nah an 0), nicht durch Einsetzen.'},
-   {n:3,e:1,t:'Stell x = 1,875 bei der Parabel ein (Tiefpunkt). Was zeigt f&#8242;(x)? Was bedeutet das f&#252;r die Tangente?',
+   {n:3,g:1,t:'Man kann den Bruch (f(x+h)&#8722;f(x))/h f&#252;r die Parabel zu <b>0,8x + 0,4h &#8722; 1,5</b> vereinfachen. Setz x = 3 ein und dann nacheinander h = 0,1, h = 0,01 und schlie&#223;lich h = 0. Welche Zahl bleibt &#8212; und steht sie in der Tabelle?',
+    sol:'h=0,1 &#8594; 0,8&#183;3+0,04&#8722;1,5 = <code>0,94</code>; &nbsp;h=0,01 &#8594; <code>0,904</code>; &nbsp;h=0 &#8594; der Teil <code>0,4h</code> f&#228;llt weg, &#252;brig bleibt 0,8&#183;3&#8722;1,5 = <span class="hlv">0,9</span>. Genau der Grenzwert unten in der Tabelle = f&#8242;(3). So <i>entsteht</i> der Grenzwert: der h-Teil verschwindet.'},
+   {n:4,e:1,t:'Stell x = 1,875 bei der Parabel ein (Tiefpunkt). Was zeigt f&#8242;(x)? Was bedeutet das f&#252;r die Tangente?',
     sol:'f&#8242;(1,875)=0,8&#183;1,875&#8722;1,5=<span class="hl">0</span>. Die Tangente ist <b>waagerecht</b> &#8212; genau das Kriterium f&#252;r einen Extrempunkt von f.'},
-   {n:4,e:1,t:'Berechne den Differenzenquotienten der Parabel allgemein mit f(x)=0,4x&#178;&#8722;1,5x+2,5 und lass h&#8594;0. Welche Formel f&#252;r f&#8242;(x) bekommst du?',
-    sol:'(f(x+h)&#8722;f(x))/h = (0,8x&#183;h+0,4h&#178;&#8722;1,5h)/h = 0,8x+0,4h&#8722;1,5. F&#252;r h&#8594;0: <span class="hlv">f&#8242;(x)=0,8x&#8722;1,5</span>. Genau die Zahl in der Tabelle &#8212; jetzt als Funktion.'}
+   {n:5,e:1,t:'Zeig selbst, dass sich (f(x+h)&#8722;f(x))/h mit f(x)=0,4x&#178;&#8722;1,5x+2,5 zu 0,8x+0,4h&#8722;1,5 vereinfacht, und lass h&#8594;0. Welche Formel f&#252;r f&#8242;(x) bekommst du?',
+    sol:'(f(x+h)&#8722;f(x))/h = (0,8x&#183;h+0,4h&#178;&#8722;1,5h)/h = 0,8x+0,4h&#8722;1,5. F&#252;r h&#8594;0: <span class="hlv">f&#8242;(x)=0,8x&#8722;1,5</span>. Genau die Zahl in der Tabelle &#8212; jetzt als Funktion (du hast den Term aus Aufgabe 3 jetzt selbst hergeleitet).'}
   ]},
 3:{ badge:'AKT 03', title:'Die Ableitungsfunktion entsteht',
   html:'<div class="callout">Klick rechts <span class="hlv">&#8222;f&#8242;-Kurve zeigen&#8220;</span>. '+
@@ -811,6 +825,8 @@ function applyAct(n){
   /* Vergleich + Grenzwert-Tabelle ab Akt 2 */
   document.getElementById('compareBox').classList.toggle('show', n>=2);
   document.getElementById('convPanel').classList.toggle('hidden', n<2);
+  /* h<0-Tipp nur in Akt 2 (dort ist die beidseitige Annäherung Thema) */
+  document.getElementById('hHint').classList.toggle('hidden', n!==2);
 
   /* Narrativ + Aufgaben */
   var A=ACTS[n];
@@ -821,7 +837,7 @@ function applyAct(n){
     return '<div class="task"><div class="num">'+t.n+'</div><div class="body">'+t.t+niv+sol+'</div></div>';
   }).join('');
   document.getElementById('actContent').innerHTML =
-    BEGRIFFE +
+    BEGRIFFE.replace('<details class="begriffe">','<details class="begriffe"'+(n===1?' open':'')+'>') +
     '<div class="narr"><h2><span class="badge">'+A.badge+'</span>'+A.title+'</h2>'+A.html+'</div>'+
     '<div class="tasks"><h3>Aufgaben</h3>'+taskHtml+'</div>';
 
