@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bruch-Labor — Brüche malnehmen und teilen</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1c2536; --ink:#e8edf6; --muted:#93a0b8;
+    --line:#283248; --accent:#5aa0ff;
+    --good:#4fd6a0; --goodDim:#1d3b33; --bad:#ff6f6f; --badDim:#3a2230; --think:#f4b740;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 640px at 72% -12%,#17243c 0,var(--bg) 56%);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 64px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:4px}
+  h1{font-size:27px;margin:0;letter-spacing:.2px;font-weight:680}
+  h1 .hl{color:var(--good)}
+  .sub{color:var(--muted);font-size:14px}
+  .thesis{margin:16px 0 20px;padding:13px 16px;
+    background:linear-gradient(90deg,#16203400,#1b2740 8%,#16203400);
+    border-left:2px solid var(--accent);border-radius:6px;font-size:14px;color:#c8d3e6}
+  .thesis b{color:#fff;font-weight:600}
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font:inherit;font-size:13.5px;font-weight:560;color:#c2cde2;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;
+    transition:.14s;display:flex;align-items:center;gap:8px}
+  .tab .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tab:hover{border-color:#3d4d70;color:#fff}
+  .tab.on{background:#21345c;border-color:var(--accent);color:#fff}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+  .statbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+  .modehint{font-size:13px;color:var(--muted)}
+  .modehint b{color:#d6e0f2;font-weight:600}
+  .ctl{display:none}
+  .ctl.on{display:block}
+  .plotwrap{display:flex;justify-content:center;margin:8px 0}
+  svg.plot{width:100%;max-width:340px;height:auto;display:block;border-radius:10px}
+  svg.plot2{width:100%;max-width:420px;height:auto;display:block;border-radius:10px}
+  .equation{display:flex;align-items:center;justify-content:center;gap:10px;
+    font-family:var(--mono);font-size:26px;font-weight:600;margin:10px 0 6px;flex-wrap:wrap;color:#eaf1ff}
+  .eq-frac{display:inline-flex;flex-direction:column;align-items:center;font-size:20px;line-height:1.15;vertical-align:middle}
+  .eq-frac span:first-child{border-bottom:2.5px solid currentColor;padding-bottom:1px;min-width:18px;text-align:center}
+  .eq-frac span:last-child{padding-top:2px;min-width:18px;text-align:center}
+  .eq-op{color:var(--muted);font-size:22px;font-weight:400}
+  .eq-q{color:var(--accent)}
+  .scene{font-size:14px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 14px;margin-bottom:8px}
+  .judge{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .judge button{font:inherit;font-size:15px;font-weight:680;border-radius:13px;
+    padding:13px 10px;cursor:pointer;flex:1 1 0;min-width:100px;
+    transition:.14s;border:1.5px solid var(--line);background:var(--panel2);
+    color:#e8edf6;font-family:var(--mono)}
+  .judge button:hover:not(:disabled){border-color:var(--accent);background:#182440}
+  .judge button:disabled{opacity:.45;cursor:default}
+  .judge button.correct{border-color:var(--good);background:var(--goodDim);color:#bff0d8}
+  .judge button.wrong{border-color:var(--bad);background:var(--badDim);color:#f0c0c0}
+  .kbtn{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .kbtn button{font:inherit;font-size:14px;font-weight:600;border-radius:11px;
+    padding:14px 13px;cursor:pointer;flex:1 1 0;min-width:130px;
+    border:1.5px solid var(--line);background:var(--panel2);color:#e8edf6;transition:.14s;text-align:center}
+  .kbtn button small{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-weight:400;font-family:var(--sans)}
+  .kbtn button:hover:not(:disabled){border-color:var(--accent);background:#182440}
+  .kbtn button:disabled{opacity:.45;cursor:default}
+  .kbtn button.correct{border-color:var(--good);background:var(--goodDim);color:#bff0d8}
+  .kbtn button.wrong{border-color:var(--bad);background:var(--badDim);color:#f0c0c0}
+  .feed{margin-top:12px;padding:11px 13px;border-radius:10px;font-size:13.5px;display:none;line-height:1.55}
+  .feed.ok{display:block;background:var(--goodDim);border:1px solid #3f6f5c;color:#bff0d8}
+  .feed.bad{display:block;background:var(--badDim);border:1px solid #6a3040;color:#f0c0c0}
+  .feed b{font-weight:600}
+  .task{font-size:13.5px;color:#c8d3e6;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 13px;margin:12px 0 4px}
+  .task.hit{border-color:#3f6f5c;background:#15281f;color:#bff0d8}
+  .task b{color:#fff}
+  .tlab{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-right:9px}
+  .task.hit .tlab,.tlab.ok{color:var(--good);border-color:#3f6f5c}
+  span.bonus{color:var(--think);font-size:12.5px;display:block;margin-top:6px}
+  .leg{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:2px 0 6px;font-size:11.5px;color:var(--muted)}
+  .legsw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:middle;margin-right:4px;position:relative;top:-1px}
+  footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  footer span{font-size:12px;color:var(--muted)}
+  footer .mono{font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kick">Mathematik · Klasse 6–7 · Brüche malnehmen und teilen</div>
+  <h1>Bruch-Labor <span class="hl">/</span></h1>
+  <span class="sub">Malnehmen macht kleiner. Teilen macht größer. Überzeug dich selbst.</span>
+</header>
+
+<div class="thesis">
+  <b>Malnehmen</b> bei Brüchen bedeutet: Anteil eines Anteils nehmen — das Ergebnis ist <b>kleiner</b> als beide Faktoren.
+  <b>Teilen</b> durch einen Bruch heißt: Wie oft passt er hinein? — das Ergebnis ist <b>größer</b>.
+  Beide Regeln gelten nicht bei ganzen Zahlen — sie sind eine Eigenheit der Brüche.
+</div>
+
+<div class="tabs">
+  <button class="tab on" data-mode="area" onclick="setMode('area')">Malnehmen — Fläche <span class="st" id="stArea"></span></button>
+  <button class="tab" data-mode="strip" onclick="setMode('strip')">Teilen — wie oft? <span class="st" id="stStrip"></span></button>
+  <button class="tab" data-mode="kehr" onclick="setMode('kehr')">Kehrwert — wer wird gestürzt? <span class="st" id="stKehr"></span></button>
+  <button class="tab" data-mode="sach" onclick="setMode('sach')">Sachaufgaben <span class="st" id="stSach"></span></button>
+</div>
+
+<div class="stage">
+
+  <!-- Modus 1: Flächenmodell -->
+  <div class="ctl on" id="ctlArea">
+    <div class="statbar">
+      <div class="modehint"><b>Malnehmen:</b> Das Rechteck zeigt das Produkt — der dunkle Bereich ist der Anteil vom Anteil. Wie groß ist er?</div>
+    </div>
+    <div class="equation" id="areaEq"></div>
+    <div class="plotwrap"><svg class="plot" id="areaSvg" viewBox="0 0 310 240" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="leg">
+      <span><span class="legsw" style="background:#162d4a;border:1px solid #283248"></span>Spalten = erster Bruch</span>
+      <span><span class="legsw" style="background:#162d4a;border:1px solid #283248"></span>Zeilen = zweiter Bruch</span>
+      <span><span class="legsw" style="background:#2a5cb8"></span>Überschneidung = Ergebnis</span>
+    </div>
+    <div class="task" id="areaTask"></div>
+    <div class="judge" id="areaJudge"></div>
+    <div class="feed" id="areaFeed"></div>
+  </div>
+
+  <!-- Modus 2: Bruchstreifen -->
+  <div class="ctl" id="ctlStrip">
+    <div class="statbar">
+      <div class="modehint"><b>Teilen:</b> Der grüne Streifen zeigt, wie viel du hast. Zähle, wie oft der blaue Streifen hineinpasst.</div>
+    </div>
+    <div class="equation" id="stripEq"></div>
+    <div class="plotwrap"><svg class="plot2" id="stripSvg" viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="task" id="stripTask"></div>
+    <div class="judge" id="stripJudge"></div>
+    <div class="feed" id="stripFeed"></div>
+  </div>
+
+  <!-- Modus 3: Kehrwert -->
+  <div class="ctl" id="ctlKehr">
+    <div class="statbar">
+      <div class="modehint"><b>Kehrwert:</b> Dividieren = mit dem Kehrwert malnehmen. Aber welcher Bruch wird umgedreht?</div>
+    </div>
+    <div class="equation" id="kehrEq"></div>
+    <div class="scene" id="kehrScene"></div>
+    <div class="kbtn" id="kehrBtns">
+      <button onclick="kehrChoose('erster')">Ersten umdrehen<small>z. B. ½ → 2</small></button>
+      <button onclick="kehrChoose('zweiter')">Zweiten umdrehen<small>z. B. ¼ → 4</small></button>
+      <button onclick="kehrChoose('beide')">Beide umdrehen<small>beide stürzen</small></button>
+    </div>
+    <div class="feed" id="kehrFeed"></div>
+    <div class="task" id="kehrTask"></div>
+  </div>
+
+  <!-- Modus 4: Sachaufgaben -->
+  <div class="ctl" id="ctlSach">
+    <div class="statbar">
+      <div class="modehint"><b>Sachaufgaben:</b> Lies genau — wird hier multipliziert oder dividiert, und in welcher Reihenfolge?</div>
+    </div>
+    <div class="scene" id="sachScene"></div>
+    <div class="judge" id="sachJudge"></div>
+    <div class="feed" id="sachFeed"></div>
+    <div class="task" id="sachTask"></div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Funktioniert ohne Internet · keine Daten werden gespeichert oder gesendet.</span>
+  <span class="mono">Mathematik · IGS Delmenhorst</span>
+</footer>
+</div>
+
+<script>
+"use strict";
+function $(id){return document.getElementById(id);}
+
+function ding(ok){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    if(ok){
+      o.frequency.value=660;g.gain.setValueAtTime(.22,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);
+      o.start();o.stop(ctx.currentTime+.4);
+    }else{
+      o.frequency.value=200;g.gain.setValueAtTime(.18,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.28);
+      o.start();o.stop(ctx.currentTime+.28);
+    }
+  }catch(e){}
+}
+
+function gcd(a,b){return b===0?a:gcd(b,a%b);}
+function simplify(z,n){const g=gcd(Math.abs(z),Math.abs(n));return[z/g,n/g];}
+function fracStr(z,n){
+  const[sz,sn]=simplify(z,n);
+  return sn===1?String(sz):sz+"/"+sn;
+}
+function fracHtml(z,n){
+  const[sz,sn]=simplify(z,n);
+  if(sn===1)return "<span style='font-family:var(--mono);font-size:24px;font-weight:600'>"+sz+"</span>";
+  return "<span class='eq-frac'><span>"+sz+"</span><span>"+sn+"</span></span>";
+}
+
+// ─── SVG helpers ──────────────────────────────────────────────────────────────
+
+function svgRect(x,y,w,h,attrs){
+  return "<rect x='"+x+"' y='"+y+"' width='"+w+"' height='"+h+"' "+attrs+"/>";
+}
+function svgLine(x1,y1,x2,y2,attrs){
+  return "<line x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' "+attrs+"/>";
+}
+function svgText(x,y,txt,attrs){
+  return "<text x='"+x+"' y='"+y+"' "+attrs+">"+txt+"</text>";
+}
+
+// ─── Modus 1: Flächenmodell ───────────────────────────────────────────────────
+
+// Distraktoren: err=null → korrekt; err-Codes für gezielte Rückmeldung
+const AREA_ITEMS=[
+  {z1:1,n1:2,z2:1,n2:2,
+   task:"<b>½ · ½</b> — du nimmst die Hälfte von einer halben Pizza. Was ist der dunkle Bereich des Rechtecks?",
+   choices:[
+     {lbl:"1",       rz:1,rn:1,   err:"M1"},
+     {lbl:"½",       rz:1,rn:2,   err:"halb"},
+     {lbl:"¼",       rz:1,rn:4,   err:null},
+     {lbl:"2",       rz:2,rn:1,   err:"M1b"}
+   ]},
+  {z1:2,n1:3,z2:1,n2:4,
+   task:"<b>⅔ · ¼</b> — kein gemeinsamer Nenner nötig. Zähler mal Zähler, Nenner mal Nenner. Was zeigt der dunkle Bereich?",
+   choices:[
+     {lbl:"2/7",     rz:2,rn:7,   err:"M2"},
+     {lbl:"⅙",       rz:1,rn:6,   err:null},
+     {lbl:"2/4",     rz:2,rn:4,   err:"M4"},
+     {lbl:"8/12",    rz:8,rn:12,  err:"nk"}
+   ]},
+  {z1:3,n1:4,z2:2,n2:3,
+   task:"<b>¾ · ⅔</b> — ist das Ergebnis kleiner als ¾? Und kleiner als ⅔?",
+   choices:[
+     {lbl:"¾",       rz:3,rn:4,   err:"same"},
+     {lbl:"1",       rz:1,rn:1,   err:"M1"},
+     {lbl:"½",       rz:1,rn:2,   err:null},
+     {lbl:"5/7",     rz:5,rn:7,   err:"M2"}
+   ]},
+  {z1:3,n1:4,z2:3,n2:4,
+   task:"<b>¾ · ¾</b> — beide Faktoren sind ¾. Wird das Ergebnis größer oder kleiner als ¾?",
+   choices:[
+     {lbl:"¾",       rz:3,rn:4,   err:"same"},
+     {lbl:"6/8",     rz:6,rn:8,   err:"M4"},
+     {lbl:"9/16",    rz:9,rn:16,  err:null},
+     {lbl:"1",       rz:1,rn:1,   err:"M1"}
+   ]}
+];
+
+const AREA_FEED={
+  "M1":"<b>Malnehmen macht bei Brüchen kleiner, nicht größer.</b> Du siehst es im Rechteck: der dunkle Bereich ist kleiner als beide hellen Streifen. Du nimmst einen Anteil <em>von einem Anteil</em> — das kann nicht mehr werden.",
+  "M1b":"<b>2 ist größer als beide Faktoren — das geht nicht.</b> Das Ergebnis muss kleiner als der kleinste Faktor sein. Zähl die Felder im dunklen Bereich.",
+  "halb":"<b>Du hast nur den ersten Faktor abgelesen.</b> ½ von ½ ist ein Viertel — nicht die Hälfte. Beide Faktoren wirken zusammen.",
+  "M2":"<b>Gemeinsamen Nenner brauchst du nur beim Addieren und Subtrahieren.</b> Beim Malnehmen gilt: Zähler mal Zähler, Nenner mal Nenner — fertig. Kein Kgv nötig.",
+  "M4":"<b>Nur den Zähler multipliziert, den Nenner vergessen.</b> Beide Ebenen müssen ran: (2·1)/(3·4) = 2/12 = ⅙.",
+  "nk":"<b>8/12 ist richtig — aber noch nicht fertig.</b> Tipp: kürzen! 8/12 ÷ 4 = 2/3 … warte, das stimmt nicht. Das Ergebnis ist 2·1 = 2 und 3·4 = 12, also 2/12 = ⅙.",
+  "same":"<b>Das wäre nur richtig, wenn du mit 1 malnimmst.</b> Du malnimmst mit einem Bruch kleiner als 1 — das Ergebnis schrumpft. Schau auf den dunklen Bereich im Rechteck."
+};
+
+let areaIdx=0,areaDone=0,areaLocked=false;
+
+function drawArea(z1,n1,z2,n2,showResult){
+  const W=260,H=190,ox=36,oy=18;
+  const cw=W/n1,ch=H/n2;
+  let h="";
+
+  // Hintergrund
+  h+=svgRect(ox,oy,W,H,"fill='#0c1322' rx='4'");
+
+  // Faktor-1-Streifen (Spalten z1/n1) — blau getönt
+  h+=svgRect(ox,oy,cw*z1,H,"fill='#162d4a' rx='0'");
+  // Faktor-2-Streifen (Zeilen z2/n2) — blau getönt
+  h+=svgRect(ox,oy,W,ch*z2,"fill='#162d4a' rx='0'");
+  // Produkt (Überschneidung) — kräftiges Blau
+  h+=svgRect(ox,oy,cw*z1,ch*z2,"fill='#2a5cb8' rx='0'");
+
+  // Gitternetz
+  for(let c=0;c<=n1;c++){
+    const sw=(c===0||c===n1)?"1.5":"0.6";
+    h+=svgLine(ox+c*cw,oy,ox+c*cw,oy+H,"stroke='#283248' stroke-width='"+sw+"'");
+  }
+  for(let r=0;r<=n2;r++){
+    const sw=(r===0||r===n2)?"1.5":"0.6";
+    h+=svgLine(ox,oy+r*ch,ox+W,oy+r*ch,"stroke='#283248' stroke-width='"+sw+"'");
+  }
+
+  // Rahmen
+  h+=svgRect(ox,oy,W,H,"fill='none' stroke='#283248' stroke-width='1.5' rx='4'");
+
+  // Label oben: Bruch 1
+  const[sz1,sn1]=simplify(z1,n1);
+  h+=svgText(ox+cw*z1/2,oy-5,sz1+"/"+sn1,
+    "fill='#5aa0ff' font-size='11' text-anchor='middle' font-family='monospace'");
+
+  // Label links: Bruch 2 (gedreht)
+  const[sz2,sn2]=simplify(z2,n2);
+  const lx=ox-16,ly=oy+ch*z2/2;
+  h+="<text x='"+lx+"' y='"+ly+"' fill='#5aa0ff' font-size='11' text-anchor='middle' "+
+     "font-family='monospace' dominant-baseline='central' "+
+     "transform='rotate(-90,"+lx+","+ly+")'>"+sz2+"/"+sn2+"</text>";
+
+  // Ergebnis-Label (erst nach korrekter Antwort)
+  if(showResult){
+    const[pz,pn]=simplify(z1*z2,n1*n2);
+    const px=ox+cw*z1/2,py=oy+ch*z2/2;
+    h+=svgRect(px-18,py-13,36,22,"fill='#0a1428' rx='4' opacity='.75'");
+    h+=svgText(px,py,(pn===1?String(pz):pz+"/"+pn),
+      "fill='#fff' font-size='13' font-weight='bold' text-anchor='middle' "+
+      "dominant-baseline='central' font-family='monospace'");
+  }
+
+  $("areaSvg").innerHTML=h;
+}
+
+function areaLoad(){
+  const it=AREA_ITEMS[areaIdx];
+  areaLocked=false;
+  $("areaEq").innerHTML=fracHtml(it.z1,it.n1)+
+    "<span class='eq-op'>·</span>"+fracHtml(it.z2,it.n2)+
+    "<span class='eq-op'>=</span><span class='eq-q'>?</span>";
+  drawArea(it.z1,it.n1,it.z2,it.n2,false);
+
+  const jd=$("areaJudge");
+  jd.innerHTML="";
+  it.choices.forEach(ch=>{
+    const b=document.createElement("button");
+    b.textContent=ch.lbl;
+    b.onclick=()=>areaAnswer(ch,b,it);
+    jd.appendChild(b);
+  });
+
+  $("areaTask").className="task";
+  $("areaTask").innerHTML="<span class='tlab'>Aufgabe "+(areaIdx+1)+"/"+AREA_ITEMS.length+"</span> "+it.task;
+  $("areaFeed").className="feed";
+}
+
+function areaAnswer(ch,btn,it){
+  if(areaLocked)return;
+  if(ch.err===null){
+    areaLocked=true;
+    $("areaJudge").querySelectorAll("button").forEach(b=>b.disabled=true);
+    btn.className="correct";
+    ding(true);
+    areaDone++;
+    $("stArea").textContent="✓"+areaDone;
+    drawArea(it.z1,it.n1,it.z2,it.n2,true);
+    $("areaFeed").className="feed ok";
+    $("areaFeed").innerHTML="<b>Richtig — "+fracStr(it.z1*it.z2,it.n1*it.n2)+".</b> Im Rechteck siehst du: der dunkle Bereich ist kleiner als beide hellen Streifen. Malnehmen macht bei Brüchen kleiner.";
+    if(areaIdx<AREA_ITEMS.length-1){
+      setTimeout(()=>{areaIdx++;areaLoad();},1300);
+    }else{
+      setTimeout(()=>{
+        $("areaTask").className="task hit";
+        $("areaTask").innerHTML="<span class='tlab ok'>alle</span> Alle Aufgaben geschafft — Malnehmen macht bei Brüchen immer kleiner!<span class='bonus'>Bonus: Kannst du eine Situation finden, bei der das Ergebnis gleich groß bleibt wie ein Faktor? (Tipp: einer der Faktoren muss 1 sein.)</span>";
+      },1400);
+    }
+  }else{
+    btn.className="wrong";
+    ding(false);
+    $("areaFeed").className="feed bad";
+    $("areaFeed").innerHTML=AREA_FEED[ch.err]||"<b>Schau auf das Rechteck:</b> Zähle die Felder im dunklen Bereich.";
+    setTimeout(()=>{btn.className="";btn.disabled=false;},1700);
+  }
+}
+
+// ─── Modus 2: Bruchstreifen ───────────────────────────────────────────────────
+
+const STRIP_ITEMS=[
+  {dz:3,dn:4,vz:1,vn:4,
+   task:"<b>¾ ÷ ¼</b> — du hast ¾ Meter Seil und schneidest Stücke von ¼ Meter ab. Wie viele Stücke?",
+   choices:[
+     {lbl:"¾",  rz:3,rn:4,  err:"D1"},
+     {lbl:"3",  rz:3,rn:1,  err:null},
+     {lbl:"3/16",rz:3,rn:16,err:"D2"},
+     {lbl:"½",  rz:1,rn:2,  err:"D1b"}
+   ]},
+  {dz:1,dn:1,vz:1,vn:2,
+   task:"<b>1 ÷ ½</b> — du schneidest ein ganzes Brötchen in halbe Portionen. Wie viele Hälften?",
+   choices:[
+     {lbl:"½",  rz:1,rn:2,  err:"D1"},
+     {lbl:"1",  rz:1,rn:1,  err:"D1c"},
+     {lbl:"1/2",rz:1,rn:2,  err:"D1"},
+     {lbl:"2",  rz:2,rn:1,  err:null}
+   ]},
+  {dz:2,dn:3,vz:1,vn:3,
+   task:"<b>⅔ ÷ ⅓</b> — du hast ⅔ Liter Saft und füllst Gläser zu je ⅓ Liter. Wie viele Gläser?",
+   choices:[
+     {lbl:"⅔",  rz:2,rn:3,  err:"D1"},
+     {lbl:"2/9",rz:2,rn:9,  err:"D2"},
+     {lbl:"2",  rz:2,rn:1,  err:null},
+     {lbl:"½",  rz:1,rn:2,  err:"D1b"}
+   ]},
+  {dz:3,dn:2,vz:1,vn:4,
+   task:"<b>1½ ÷ ¼</b> — du hast anderthalb Meter Schnur, Stücke à ¼ Meter. Wie viele?",
+   choices:[
+     {lbl:"⅜",  rz:3,rn:8,  err:"D2"},
+     {lbl:"3",  rz:3,rn:1,  err:"D1c"},
+     {lbl:"1½", rz:3,rn:2,  err:"D1"},
+     {lbl:"6",  rz:6,rn:1,  err:null}
+   ]}
+];
+
+const STRIP_FEED={
+  "D1":"<b>Teilen durch einen Bruch macht das Ergebnis größer, nicht kleiner!</b> Du fragst: wie oft passt der Teiler hinein? Wenn der Teiler klein ist, passt er viele Male rein — das Ergebnis ist größer als der Dividend.",
+  "D1b":"<b>Das Ergebnis ist kleiner als der Dividend — Denkfehler.</b> Teilen durch einen Bruch (kleiner als 1) liefert immer ein größeres Ergebnis als der Dividend.",
+  "D1c":"<b>Das wäre nur richtig, wenn du durch 1 teilst.</b> Du teilst durch etwas Kleineres als 1 — das Ergebnis muss größer werden.",
+  "D2":"<b>Zähler durch Zähler, Nenner durch Nenner — das ist die falsche Regel!</b> Sie kommt vom Malnehmen, funktioniert aber beim Teilen nicht zuverlässig. Schau auf die Streifen: wie oft passt der blaue in den grünen?"
+};
+
+let stripIdx=0,stripDone=0,stripLocked=false;
+
+function drawStrip(dz,dn,vz,vn){
+  const W=300,ox=20,oy=20;
+  // Skalierung: Dividend füllt W px
+  const dval=dz/dn;
+  const vval=vz/vn;
+  const divW=W;
+  const segW=W*(vval/dval);
+  const result=dval/vval; // wie oft passt Divisor in Dividend
+  const nFull=Math.floor(result+0.001);
+
+  let h="";
+
+  // Zeile 1: Dividend (grün)
+  h+=svgRect(ox,oy,divW,36,"fill='#1d3b33' rx='5'");
+  h+=svgRect(ox,oy,divW,36,"fill='none' stroke='#4fd6a0' stroke-width='1.5' rx='5'");
+  const[sdz,sdn]=simplify(dz,dn);
+  const dvLabel=sdn===1?String(sdz):sdz+"/"+sdn;
+  h+=svgText(ox+divW/2,oy+20,dvLabel,
+    "fill='#4fd6a0' font-size='14' font-weight='bold' text-anchor='middle' font-family='monospace'");
+
+  // Zeile 2: Divisor-Segmente (blau)
+  const y2=oy+52;
+  for(let i=0;i<nFull;i++){
+    const x=ox+i*segW;
+    const shade=i%2===0?"#162a4a":"#1a3060";
+    h+=svgRect(x+1,y2,segW-2,36,"fill='"+shade+"' rx='4'");
+    h+=svgRect(x+1,y2,segW-2,36,"fill='none' stroke='#5aa0ff' stroke-width='1.5' rx='4'");
+    h+=svgText(x+segW/2,y2+20,String(i+1),
+      "fill='#5aa0ff' font-size='12' text-anchor='middle' font-family='monospace'");
+  }
+  // Rest-Segment (falls Ergebnis nicht ganzzahlig)
+  if(result-nFull>0.01){
+    const rem=result-nFull;
+    const x=ox+nFull*segW;
+    h+=svgRect(x+1,y2,segW*rem-2,36,"fill='#1a2a40' rx='4' opacity='.5'");
+    h+=svgRect(x+1,y2,segW*rem-2,36,"fill='none' stroke='#5aa0ff' stroke-width='1' stroke-dasharray='4 3' rx='4'");
+  }
+
+  // Klammer + Ergebnis unter Segmenten
+  const totalSegW=result*segW;
+  h+=svgLine(ox,y2+40,ox+totalSegW,y2+40,"stroke='#93a0b8' stroke-width='1'");
+  h+=svgLine(ox,y2+36,ox,y2+44,"stroke='#93a0b8' stroke-width='1'");
+  h+=svgLine(ox+totalSegW,y2+36,ox+totalSegW,y2+44,"stroke='#93a0b8' stroke-width='1'");
+  const resLabel=Number.isInteger(result)?String(result):fracStr(dz*vn,dn*vz);
+  h+=svgText(ox+totalSegW/2,y2+54,"= "+resLabel,
+    "fill='#93a0b8' font-size='11' text-anchor='middle' font-family='monospace'");
+
+  // Divisor-Label
+  const[svz,svn]=simplify(vz,vn);
+  const dvl=svn===1?"je "+svz:"je "+svz+"/"+svn;
+  h+=svgText(ox+segW/2,y2+54,dvl,
+    "fill='#4a6aa0' font-size='10' text-anchor='middle' font-family='monospace'");
+
+  // Tick-Mark bei 1 (falls Dividend > 1)
+  if(dval>1){
+    const tick1=ox+(1/dval)*divW;
+    h+=svgLine(tick1,oy-8,tick1,oy+H,"stroke='#283248' stroke-width='1' stroke-dasharray='3 3'");
+    h+=svgText(tick1,oy-10,"1","fill='#93a0b8' font-size='10' text-anchor='middle' font-family='monospace'");
+  }
+  // Start-Label
+  h+=svgText(ox,oy-10,"0","fill='#93a0b8' font-size='10' text-anchor='middle' font-family='monospace'");
+
+  $("stripSvg").innerHTML=h;
+}
+
+function stripLoad(){
+  const it=STRIP_ITEMS[stripIdx];
+  stripLocked=false;
+  $("stripEq").innerHTML=fracHtml(it.dz,it.dn)+
+    "<span class='eq-op'>÷</span>"+fracHtml(it.vz,it.vn)+
+    "<span class='eq-op'>=</span><span class='eq-q'>?</span>";
+  drawStrip(it.dz,it.dn,it.vz,it.vn);
+
+  const jd=$("stripJudge");
+  jd.innerHTML="";
+  it.choices.forEach(ch=>{
+    const b=document.createElement("button");
+    b.textContent=ch.lbl;
+    b.onclick=()=>stripAnswer(ch,b,it);
+    jd.appendChild(b);
+  });
+
+  $("stripTask").className="task";
+  $("stripTask").innerHTML="<span class='tlab'>Aufgabe "+(stripIdx+1)+"/"+STRIP_ITEMS.length+"</span> "+it.task;
+  $("stripFeed").className="feed";
+}
+
+function stripAnswer(ch,btn,it){
+  if(stripLocked)return;
+  if(ch.err===null){
+    stripLocked=true;
+    $("stripJudge").querySelectorAll("button").forEach(b=>b.disabled=true);
+    btn.className="correct";
+    ding(true);
+    stripDone++;
+    $("stStrip").textContent="✓"+stripDone;
+    const res=fracStr(it.dz*it.vn,it.dn*it.vz);
+    $("stripFeed").className="feed ok";
+    $("stripFeed").innerHTML="<b>Richtig — "+res+".</b> Der blaue Streifen passt <b>"+res+"× </b>in den grünen. Das Ergebnis ist größer als "+fracStr(it.dz,it.dn)+" — Teilen durch einen Bruch macht immer größer.";
+    if(stripIdx<STRIP_ITEMS.length-1){
+      setTimeout(()=>{stripIdx++;stripLoad();},1300);
+    }else{
+      setTimeout(()=>{
+        $("stripTask").className="task hit";
+        $("stripTask").innerHTML="<span class='tlab ok'>alle</span> Alle Aufgaben geschafft — Teilen durch einen Bruch macht immer größer!";
+      },1400);
+    }
+  }else{
+    btn.className="wrong";
+    ding(false);
+    $("stripFeed").className="feed bad";
+    $("stripFeed").innerHTML=STRIP_FEED[ch.err]||"<b>Schau auf die Streifen:</b> Wie oft passt der blaue in den grünen?";
+    setTimeout(()=>{btn.className="";btn.disabled=false;},1700);
+  }
+}
+
+// ─── Modus 3: Kehrwert ────────────────────────────────────────────────────────
+
+const KEHR_ITEMS=[
+  {dz:1,dn:2,vz:1,vn:4,
+   scene:"Dividieren heißt: den <em>Teiler</em> umdrehen und malnehmen — Zähler und Nenner tauschen die Plätze. Welcher der beiden Brüche ist hier der Teiler?",
+   correct:"zweiter",
+   feedOk:"Genau: ½ ÷ ¼ = ½ · <b>4</b> = 2. ¼ ist der Teiler — sein Kehrwert ist 4. Der erste Bruch ½ bleibt stehen.",
+   feedErster:"<b>Falscher Bruch gestürzt.</b> Dann wäre es 2/1 · ¼ = ½ — aber das Ergebnis von ½ ÷ ¼ muss 2 sein (zwei Viertel passen in eine halbe). Nur der Teiler wird umgedreht.",
+   feedBeide:"<b>Beide umzudrehen liefert das falsche Ergebnis.</b> 2/1 · 4/1 = 8 ≠ 2. Nur der Teiler (der zweite Bruch) wird gestürzt."
+  },
+  {dz:2,dn:3,vz:4,vn:5,
+   scene:"Berechne ⅔ ÷ ⅘. Welcher Bruch ist der Teiler?",
+   correct:"zweiter",
+   feedOk:"Richtig: ⅔ ÷ ⅘ = ⅔ · <b>5/4</b> = 10/12 = <b>5/6</b>. Nur ⅘ (der Teiler) wird zu 5/4 umgedreht. ⅔ bleibt.",
+   feedErster:"<b>Ersten gestürzt: 3/2 · 4/5 = 12/10 = 6/5.</b> Das ist falsch. Prüfe: wie oft passt ⅘ in ⅔? Weniger als einmal — also unter 1. Nur der Teiler dreht sich um.",
+   feedBeide:"<b>Beide gestürzt: 3/2 · 5/4 = 15/8.</b> Das stimmt nicht. Nur den Teiler ⅘ zu 5/4 umdrehen."
+  },
+  {dz:3,dn:4,vz:1,vn:2,
+   scene:"Berechne ¾ ÷ ½. Wie oft passt ½ in ¾? Mehr oder weniger als einmal?",
+   correct:"zweiter",
+   feedOk:"Richtig: ¾ ÷ ½ = ¾ · <b>2</b> = 6/4 = <b>1½</b>. ½ passt einmal ganz und noch eine halbe Mal in ¾ — also 1½.",
+   feedErster:"<b>Ersten gestürzt: 4/3 · ½ = 4/6 = ⅔.</b> Das ist falsch. ⅔ < ¾, aber das Ergebnis muss größer als ¾ sein (Teilen durch einen echten Bruch macht immer größer).",
+   feedBeide:"<b>Beide gestürzt: 4/3 · 2/1 = 8/3 ≈ 2,7.</b> Zu groß. Nur ½ (der Teiler) wird zu 2 umgedreht."
+  }
+];
+
+let kehrIdx=0,kehrDone=0,kehrLocked=false;
+
+function kehrLoad(){
+  const it=KEHR_ITEMS[kehrIdx];
+  kehrLocked=false;
+  $("kehrEq").innerHTML=fracHtml(it.dz,it.dn)+
+    "<span class='eq-op'>÷</span>"+fracHtml(it.vz,it.vn)+
+    "<span class='eq-op'>=</span><span class='eq-q'>?</span>";
+  $("kehrScene").innerHTML=it.scene;
+  $("kehrBtns").querySelectorAll("button").forEach(b=>{b.disabled=false;b.className="";});
+  $("kehrFeed").className="feed";
+  $("kehrTask").className="task";
+  $("kehrTask").innerHTML="<span class='tlab'>Aufgabe "+(kehrIdx+1)+"/"+KEHR_ITEMS.length+"</span> Welcher Bruch wird umgedreht?";
+}
+
+function kehrChoose(which){
+  if(kehrLocked)return;
+  const it=KEHR_ITEMS[kehrIdx];
+  const btns=$("kehrBtns").querySelectorAll("button");
+  if(which===it.correct){
+    kehrLocked=true;
+    btns.forEach(b=>b.disabled=true);
+    btns[which==="erster"?0:which==="zweiter"?1:2].className="correct";
+    ding(true);
+    kehrDone++;
+    $("stKehr").textContent="✓"+kehrDone;
+    $("kehrFeed").className="feed ok";
+    $("kehrFeed").innerHTML="<b>Richtig!</b> "+it.feedOk;
+    if(kehrIdx<KEHR_ITEMS.length-1){
+      setTimeout(()=>{kehrIdx++;kehrLoad();},1400);
+    }else{
+      setTimeout(()=>{
+        $("kehrTask").className="task hit";
+        $("kehrTask").innerHTML="<span class='tlab ok'>alle</span> Alle Aufgaben geschafft — immer nur den Teiler (zweiten Bruch) umdrehen!";
+      },1500);
+    }
+  }else{
+    const bi=which==="erster"?0:which==="zweiter"?1:2;
+    btns[bi].className="wrong";
+    ding(false);
+    $("kehrFeed").className="feed bad";
+    const msg=which==="erster"?it.feedErster:it.feedBeide;
+    $("kehrFeed").innerHTML="<b>Nicht der richtige.</b> "+msg;
+    setTimeout(()=>{btns[bi].className="";btns[bi].disabled=false;},2000);
+  }
+}
+
+// ─── Modus 4: Sachaufgaben ────────────────────────────────────────────────────
+
+const SACH_ITEMS=[
+  {scene:"Emma hat <b>3 Brötchen</b>. Sie teilt sie in <b>halbe Portionen</b>. Wie viele Portionen bekommt sie?",
+   choices:[
+     {lbl:"3 · ½ = 1½",  err:"vom"},
+     {lbl:"3 ÷ ½ = 6",   err:null},
+     {lbl:"½ ÷ 3 = ⅙",  err:"D6"},
+     {lbl:"3 – ½ = 2½",  err:"sub"}
+   ],
+   feedOk:"Richtig — 3 ÷ ½ = 6. Teilen durch ½ fragt: wie oft passt eine halbe Portion in 3 ganze? Sechsmal. Das Ergebnis ist größer als der Dividend.",
+   feedVom:'<b>„Teilen in Portionen" ist nicht dasselbe wie „die Hälfte von".</b> 3 · ½ = 1½ wäre „die Hälfte von 3". Hier wird gefragt: wie viele Hälften passen in 3? Das ist 3 ÷ ½.',
+   feedD6:"<b>Dividend und Divisor vertauscht.</b> ½ ÷ 3 fragt: wie viele Dreier passen in eine halbe Portion? Das ist eine ganz andere Frage.",
+   feedSub:"<b>Subtrahieren ergibt eine Länge, keine Anzahl.</b> Die Frage ist wie viele — das ist Teilen."
+  },
+  {scene:"Du hast <b>¾ einer Pizza</b>. Davon isst du die <b>Hälfte</b>. Wie viel von der ganzen Pizza hast du gegessen?",
+   choices:[
+     {lbl:"¾ ÷ ½ = 1½",  err:"vonDiv"},
+     {lbl:"¾ + ½ = 5/4",  err:"add"},
+     {lbl:"¾ · ½ = ⅜",   err:null},
+     {lbl:"½ ÷ ¾ = ⅔",   err:"D6b"}
+   ],
+   feedOk:'Richtig — ¾ · ½ = ⅜. Das Wort <b>„von"</b> bei Brüchen bedeutet malnehmen: du nimmst einen Anteil eines Anteils. Das Ergebnis ist kleiner als beide Ausgangswerte.',
+   feedVonDiv:'<b>„Von" heißt hier malnehmen, nicht teilen.</b> ¾ ÷ ½ würde fragen: wie oft passt ½ in ¾? Das ist nicht gemeint. „Die Hälfte von ¾" = ½ · ¾ = ⅜.',
+   feedAdd:"<b>Addieren würde die Pizza größer machen als das Original.</b> Du nimmst einen Teil — das ist Malnehmen.",
+   feedD6b:'<b>Reihenfolge und Rechenart stimmen nicht.</b> ½ ÷ ¾ ist eine andere Frage. „Die Hälfte von ¾" = ½ · ¾ = ⅜.'
+  },
+  {scene:"Ein Seil ist <b>¾ Meter</b> lang. Du schneidest Stücke von <b>⅛ Meter</b>. Wie viele Stücke bekommst du?",
+   choices:[
+     {lbl:"¾ · ⅛ = 3/32", err:"D8"},
+     {lbl:"¾ ÷ ⅛ = 6",    err:null},
+     {lbl:"⅛ ÷ ¾ = ⅙",   err:"D6c"},
+     {lbl:"¾ + ⅛ = ⅞",   err:"addS"}
+   ],
+   feedOk:"Richtig — ¾ ÷ ⅛ = ¾ · 8 = 6. Sechs Achtel-Stücke passen in ¾ Meter.",
+   feedD8:"<b>Malnehmen statt Teilen.</b> ¾ · ⅛ = 3/32 — das wäre der Anteil, nicht die Anzahl. Hier wird gefragt: wie oft passt ⅛ in ¾?",
+   feedD6c:"<b>Dividend und Divisor vertauscht.</b> ⅛ ÷ ¾ fragt: wie oft passt ¾ in ⅛? Das Seil ist ¾ lang, nicht das Stück.",
+   feedAddS:"<b>Addieren ergibt eine Länge, keine Stückzahl.</b> Die Frage ist wie viele — das ist Teilen."
+  },
+  {scene:"Felix fährt <b>⅔ einer Stunde</b> Fahrrad. Davon radelt er <b>¾ der Zeit</b> bergauf. Wie viel der ganzen Stunde fährt er bergauf?",
+   choices:[
+     {lbl:"⅔ ÷ ¾ = 8/9",  err:"vonD2"},
+     {lbl:"⅔ · ¾ = ½",    err:null},
+     {lbl:"⅔ + ¾ = 17/12",err:"addF"},
+     {lbl:"¾ · ⅔ = ½",    err:null}
+   ],
+   feedOk:'Richtig — ⅔ · ¾ = 6/12 = ½. „¾ von ⅔" bedeutet malnehmen. (Übrigens: ⅔ · ¾ = ¾ · ⅔ — Malnehmen ist kommutativ!)',
+   feedVonD2:'<b>„Von" ist hier kein Teilen.</b> ⅔ ÷ ¾ würde fragen: wie oft passt ¾ in ⅔? Gemeint ist aber: ¾ als Anteil von ⅔ nehmen — das ist ¾ · ⅔.',
+   feedAddF:"<b>Addieren würde eine Zeit über 1 Stunde ergeben — das geht nicht.</b> Du nimmst einen Anteil — das ist Malnehmen."
+  }
+];
+
+let sachIdx=0,sachDone=0,sachLocked=false;
+
+function sachLoad(){
+  const it=SACH_ITEMS[sachIdx];
+  sachLocked=false;
+  $("sachScene").innerHTML="<span class='tlab'>Aufgabe "+(sachIdx+1)+"/"+SACH_ITEMS.length+"</span> "+it.scene;
+  const jd=$("sachJudge");
+  jd.innerHTML="";
+  it.choices.forEach(ch=>{
+    const b=document.createElement("button");
+    b.innerHTML=ch.lbl;
+    b.onclick=()=>sachAnswer(ch,b,it);
+    jd.appendChild(b);
+  });
+  $("sachFeed").className="feed";
+  $("sachTask").className="task";
+  $("sachTask").innerHTML="";
+}
+
+function sachAnswer(ch,btn,it){
+  if(sachLocked)return;
+  if(ch.err===null){
+    sachLocked=true;
+    // Alle Buttons sperren, alle korrekten grün markieren
+    const btns=$("sachJudge").querySelectorAll("button");
+    btns.forEach(b=>b.disabled=true);
+    it.choices.forEach((c,i)=>{if(c.err===null)btns[i].className="correct";});
+    ding(true);
+    sachDone++;
+    $("stSach").textContent="✓"+sachDone;
+    $("sachFeed").className="feed ok";
+    $("sachFeed").innerHTML=it.feedOk;
+    if(sachIdx<SACH_ITEMS.length-1){
+      setTimeout(()=>{sachIdx++;sachLoad();},1400);
+    }else{
+      setTimeout(()=>{
+        $("sachTask").className="task hit";
+        $("sachTask").innerHTML="<span class='tlab ok'>alle</span> Alle Aufgaben geschafft — du erkennst, wann multipliziert und wann dividiert wird!";
+      },1500);
+    }
+  }else{
+    btn.className="wrong";
+    ding(false);
+    const code=ch.err;
+    // Feed-Schlüssel aus dem Item holen
+    const feedKey="feed"+code[0].toUpperCase()+code.slice(1);
+    const msg=it[feedKey]||"<b>Schau nochmal:</b> Wird hier multipliziert oder dividiert, und in welcher Reihenfolge?";
+    $("sachFeed").className="feed bad";
+    $("sachFeed").innerHTML=msg;
+    setTimeout(()=>{btn.className="";btn.disabled=true;},1700);
+  }
+}
+
+// ─── Modus-Schalter ───────────────────────────────────────────────────────────
+
+function setMode(m){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.mode===m));
+  const ids={area:"ctlArea",strip:"ctlStrip",kehr:"ctlKehr",sach:"ctlSach"};
+  Object.entries(ids).forEach(([k,id])=>$(id).classList.toggle("on",k===m));
+  if(m==="area")areaLoad();
+  if(m==="strip")stripLoad();
+  if(m==="kehr")kehrLoad();
+  if(m==="sach")sachLoad();
+}
+
+// Init
+areaLoad();
+</script>
+</body>
+</html>
