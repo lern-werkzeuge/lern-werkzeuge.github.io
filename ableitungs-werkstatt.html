@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ableitungs-Werkstatt &#183; Von der Sehne zur Tangente</title>
+<style>
+  :root{
+    --bg:#0a0e16; --bg2:#0d1320; --panel:#121b2a; --panel2:#0f1825;
+    --line:#1e2c40; --line2:#27384f;
+    --text:#e7ecf4; --muted:#8a9bb4; --dim:#5d6f8a;
+    --cyan:#22d3ee; --cyan-d:#0e7490;
+    --amber:#f6a623; --amber-d:#a86a08;
+    --violet:#a78bfa;
+    --green:#34d399;
+    --red:#ff6f6f;
+    --mono:'JetBrains Mono','SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  body{
+    background:
+      radial-gradient(1100px 700px at 78% -8%, rgba(167,139,250,.10), transparent 60%),
+      radial-gradient(900px 600px at 8% 108%, rgba(34,211,238,.08), transparent 55%),
+      var(--bg);
+    min-height:100vh; padding:0 0 80px;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+
+  /* ---- Header ---- */
+  header{padding:36px 0 22px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--violet);display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--violet);
+    box-shadow:0 0 0 4px rgba(167,139,250,.14);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.12}
+  h1 .accent{color:var(--violet)}
+  .sub{color:var(--muted);font-size:15.5px;margin-top:10px;max-width:780px}
+  .sub code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  .formula-hero{margin-top:20px;display:inline-flex;align-items:center;gap:18px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:16px;background:var(--panel2);
+    border:1px solid var(--line2);border-radius:12px;padding:14px 20px}
+  .formula-hero .lhs{color:var(--violet)} .formula-hero .rhs{color:var(--amber)}
+  .formula-hero .imp{color:var(--cyan);font-size:20px}
+  .formula-hero .lbl{font-family:var(--sans);font-size:11px;color:var(--dim);
+    display:block;letter-spacing:.04em;margin-top:3px}
+
+  /* ---- Act tabs ---- */
+  .acts{display:flex;gap:10px;margin:26px 0 22px;flex-wrap:wrap}
+  .act-tab{flex:1;min-width:230px;text-align:left;cursor:pointer;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:15px 18px;transition:.18s;position:relative;overflow:hidden}
+  .act-tab:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .act-tab.on{border-color:var(--violet);background:linear-gradient(180deg,rgba(167,139,250,.10),rgba(167,139,250,.02))}
+  .act-tab .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim)}
+  .act-tab.on .n{color:var(--violet)}
+  .act-tab .t{font-size:16px;font-weight:700;margin-top:5px}
+  .act-tab .d{font-size:12.5px;color:var(--muted);margin-top:3px}
+
+  /* ---- Main grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .card-head .label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted)}
+  .card-head .label b{color:var(--text)}
+  #fnReadout{text-transform:none;letter-spacing:0;color:var(--cyan)}
+
+  /* SVG stage */
+  .stage{position:relative;background:var(--bg2)}
+  svg.plot{display:block;width:100%;height:auto}
+
+  .legend{display:flex;gap:18px;padding:11px 16px;flex-wrap:wrap;border-top:1px solid var(--line);
+    background:var(--panel2);font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:16px;height:3px;border-radius:2px;display:inline-block}
+  .legend .lg-sec{opacity:1}
+  .legend .lg-fp{opacity:.4}
+
+  /* control panel */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel + .panel{margin-top:16px}
+  .panel h3{font-size:12px;font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .panel h3::before{content:"";width:14px;height:2px;background:var(--violet);border-radius:2px}
+
+  .ctrl{margin-bottom:16px}
+  .ctrl:last-child{margin-bottom:0}
+  .ctrl .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .ctrl .name{font-size:13px;color:var(--muted)}
+  .ctrl .val{font-family:var(--mono);font-size:15px;color:var(--violet)}
+  .ctrl .val.amber{color:var(--amber)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;
+    background:var(--line2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;
+    border-radius:50%;background:var(--violet);cursor:pointer;border:3px solid var(--bg2);
+    box-shadow:0 0 0 1px var(--violet)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--violet);
+    cursor:pointer;border:3px solid var(--bg2);box-shadow:0 0 0 1px var(--violet)}
+  input[type=range].amber{background:var(--line2)}
+  input[type=range].amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+  input[type=range].amber::-moz-range-thumb{background:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  button.b{font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+    background:var(--panel2);color:var(--text);border:1px solid var(--line2);
+    border-radius:9px;padding:10px 13px;transition:.15s;min-height:42px}
+  button.b:hover{border-color:var(--violet);color:var(--violet)}
+  button.b.primary{background:linear-gradient(180deg,var(--violet),#7c5cf0);
+    color:#160a2e;border-color:transparent}
+  button.b.primary:hover{filter:brightness(1.08);color:#160a2e}
+  button.b:disabled{opacity:.5;cursor:default}
+
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .preset{font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;
+    background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;transition:.15s;min-height:44px}
+  .preset:hover{border-color:var(--cyan)}
+  .preset.on{border-color:var(--cyan);background:linear-gradient(180deg,rgba(34,211,238,.10),transparent)}
+  .preset .pn{color:var(--dim);font-size:10px;display:block;font-family:var(--sans);letter-spacing:.08em}
+
+  /* readouts */
+  .reads{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .read{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+  .read .k{font-size:11px;color:var(--dim);font-family:var(--mono);letter-spacing:.05em}
+  .read .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:4px}
+  .read.amber .v{color:var(--amber)} .read.violet .v{color:var(--violet)} .read.cyan .v{color:var(--cyan)}
+
+  /* compare */
+  .compare{display:none;margin-top:4px}
+  .compare.show{display:block}
+  .cmp-box{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line2);
+    border-radius:13px;padding:16px;text-align:center;margin-top:14px}
+  .cmp-rows{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+  .cmp-item{flex:1;min-width:120px}
+  .cmp-item .clbl{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.04em}
+  .cmp-item .cval{font-family:var(--mono);font-size:28px;font-weight:700;margin-top:4px}
+  .cmp-item.s .cval{color:var(--amber)} .cmp-item.t .cval{color:var(--violet)}
+  .cmp-eq{font-family:var(--mono);font-size:28px;color:var(--dim);transition:.2s}
+  .verdict{margin-top:13px;font-size:13px;font-weight:700;letter-spacing:.04em;
+    border-radius:8px;padding:8px;transition:.2s}
+  .verdict.eq{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+  .verdict.neq{background:rgba(246,166,35,.10);color:var(--amber);border:1px solid rgba(246,166,35,.28)}
+
+  /* convergence table (Akt 2) */
+  .why-calc{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+  table.conv{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.conv th{color:var(--dim);font-weight:500;text-align:right;padding:4px 6px;font-size:11px;
+    letter-spacing:.04em;border-bottom:1px solid var(--line2)}
+  table.conv td{text-align:right;padding:4px 6px;color:#cdd7e8}
+  table.conv td.h{color:var(--muted)}
+  table.conv tr.lim td{color:var(--violet);font-weight:700;border-top:1px solid var(--line2);font-size:14px}
+  table.conv tr.zero td{color:var(--red)}
+  .why-note{font-size:11.5px;color:var(--dim);margin-top:11px;line-height:1.5}
+  .why-note b{color:var(--amber)}
+
+  /* text blocks */
+  .narr{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);
+    border-radius:12px;padding:18px 20px;margin-top:18px}
+  .narr h2{font-size:18px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .narr h2 .badge{font-family:var(--mono);font-size:11px;background:rgba(167,139,250,.14);
+    color:var(--violet);padding:3px 9px;border-radius:6px;letter-spacing:.12em}
+  .narr p{color:#c3cee0;font-size:14.5px;margin-bottom:9px}
+  .narr p:last-child{margin-bottom:0}
+  .narr .hl{color:var(--amber);font-weight:600}
+  .narr .hlv{color:var(--violet);font-weight:600}
+  .narr .hlc{color:var(--cyan);font-weight:600}
+  .narr code{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;
+    font-size:13px;color:var(--cyan);border:1px solid var(--line)}
+  .narr .callout{background:rgba(34,211,238,.07);border:1px solid var(--line2);border-radius:9px;
+    padding:11px 13px;font-size:13.5px;margin-bottom:9px}
+
+  /* tasks */
+  .tasks{margin-top:18px}
+  .tasks h3{font-size:13px;font-family:var(--mono);letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:13px}
+  .task{display:flex;gap:13px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:14px 16px;margin-bottom:9px}
+  .task .num{font-family:var(--mono);font-size:13px;color:var(--violet);flex-shrink:0;
+    width:26px;height:26px;border-radius:7px;background:var(--panel2);border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center}
+  .task .body{font-size:14px;color:#cdd7e8}
+  .task .niv{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;margin-left:8px;
+    letter-spacing:.05em;vertical-align:middle}
+  .niv.g{background:rgba(52,211,153,.12);color:var(--green)}
+  .niv.e{background:rgba(167,139,250,.14);color:var(--violet)}
+
+  /* solution */
+  details.sol{margin-top:10px}
+  details.sol summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--green);list-style:none;display:inline-flex;align-items:center;gap:7px}
+  details.sol summary::-webkit-details-marker{display:none}
+  details.sol summary::before{content:"&#9656;";transition:.2s}
+  details.sol[open] summary::before{transform:rotate(90deg)}
+  .sol-body{margin-top:9px;padding:11px 13px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;font-size:13px;color:#b9c4d6;line-height:1.55}
+  .sol-body .hl{color:var(--amber);font-weight:600}
+  .sol-body .hlv{color:var(--violet);font-weight:600}
+  .sol-body .hlc{color:var(--cyan);font-weight:600}
+  .sol-body code{font-family:var(--mono);font-size:12px;color:var(--cyan);
+    background:var(--panel);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+
+  /* Begriffe */
+  details.begriffe{margin-top:18px;background:var(--panel);border:1px solid var(--line2);
+    border-left:3px solid var(--cyan);border-radius:12px}
+  details.begriffe summary{cursor:pointer;padding:14px 18px;font-size:14px;font-weight:700;
+    color:var(--text);list-style:none;display:flex;align-items:center;gap:10px}
+  details.begriffe summary::-webkit-details-marker{display:none}
+  details.begriffe summary::before{content:"&#9656;";transition:.2s;color:var(--cyan);font-size:13px}
+  details.begriffe[open] summary::before{transform:rotate(90deg)}
+  .begriffe-body{padding:2px 18px 18px}
+  .begriffe-body dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}
+  .begriffe-body dt{font-weight:700;color:var(--cyan);font-size:13.5px}
+  .begriffe-body dd{margin:0;font-size:13.5px;color:#c3cee0}
+  .begriffe-body dd code{font-family:var(--mono);font-size:12px;color:var(--violet);
+    background:var(--panel2);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  @media(max-width:560px){.begriffe-body dl{grid-template-columns:1fr;gap:3px 0}
+    .begriffe-body dt{margin-top:9px}}
+
+  /* teacher */
+  details.teacher{margin-top:26px;background:var(--panel2);border:1px solid var(--line2);border-radius:13px}
+  details.teacher summary{cursor:pointer;padding:16px 20px;font-family:var(--mono);font-size:12px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--amber);list-style:none;
+    display:flex;align-items:center;gap:10px}
+  details.teacher summary::-webkit-details-marker{display:none}
+  details.teacher summary::before{content:"&#9656;";transition:.2s;color:var(--amber)}
+  details.teacher[open] summary::before{transform:rotate(90deg)}
+  .teacher-body{padding:4px 24px 24px;border-top:1px solid var(--line)}
+  .teacher-body h4{font-size:14px;color:var(--text);margin:18px 0 8px}
+  .teacher-body p,.teacher-body li{font-size:13.5px;color:#b9c4d6;margin-bottom:6px}
+  .teacher-body ul{padding-left:20px}
+  .teacher-body .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin:10px 0;font-family:var(--mono);font-size:13px;color:#cdd7e8;line-height:1.7}
+  .teacher-body .box .hl{color:var(--amber)}
+  .teacher-body .box .hlv{color:var(--violet)}
+
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow"><span class="dot"></span>Analysis &#183; Oberstufe &#183; Interaktives Labor &#183; offline</div>
+    <h1>Die <span class="accent">Ableitungs</span>-Werkstatt</h1>
+    <p class="sub">Kein Vorwissen n&#246;tig zum Starten: Geh auf <b>Akt 1</b>, zieh am Regler
+      <code>h</code> und schau zu, wie die <span style="color:var(--amber)">Sehne</span> in die
+      <span style="color:var(--violet)">Tangente</span> kippt. Du entdeckst selbst, wie aus der
+      <i>mittleren</i> &#196;nderungsrate die <i>momentane</i> wird &#8212; und warum die Ableitung
+      eine ganz eigene Funktion ist. Das Gegenst&#252;ck zum Hauptsatz-Labor.</p>
+    <div class="formula-hero">
+      <span><span class="rhs">m&#771; = &#916;y / &#916;x = (f(x+h) &#8722; f(x)) / h</span>
+        <span class="lbl">mittlere Rate (Sehne)</span></span>
+      <span class="imp">&#10233;</span>
+      <span><span class="lhs">f&#8242;(x) = lim<sub>h&#8594;0</sub> &#8230;</span>
+        <span class="lbl">momentane Rate (Tangente)</span></span>
+    </div>
+  </header>
+
+  <!-- ACT TABS -->
+  <div class="acts">
+    <div class="act-tab on" data-act="1">
+      <div class="n">AKT 01</div>
+      <div class="t">Von der Sehne zur Tangente</div>
+      <div class="d">h kleiner machen &#8594; die Sehne kippt in die Tangente</div>
+    </div>
+    <div class="act-tab" data-act="2">
+      <div class="n">AKT 02</div>
+      <div class="t">Der Grenzwert</div>
+      <div class="d">Eine feste Zahl &#8212; nicht &#8222;ungef&#228;hr&#8220;, nicht 0/0</div>
+    </div>
+    <div class="act-tab" data-act="3">
+      <div class="n">AKT 03</div>
+      <div class="t">Die Ableitungsfunktion</div>
+      <div class="d">Aus jeder Steigung wird ein Punkt von f&#8242;</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: SVG stage -->
+    <div class="card">
+      <div class="card-head">
+        <span class="label">Instrument &#183; <b>eigenes SVG</b></span>
+        <span class="label" id="fnReadout">f(x) = 0,4x&#178; &#8722; 1,5x + 2,5</span>
+      </div>
+      <div class="stage">
+        <svg class="plot" id="plot" viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg"
+             role="img" aria-label="Funktionsgraph mit Sehne und Tangente"></svg>
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--cyan)"></span>f(x)</span>
+        <span class="lg-sec"><span class="swatch" style="background:var(--amber)"></span>Sehne (mittlere Rate)</span>
+        <span><span class="swatch" style="background:var(--violet)"></span>Tangente (momentane Rate)</span>
+        <span class="lg-fp" id="lgFp"><span class="swatch" style="background:var(--green)"></span>f&#8242;(x) &#8212; Ableitung</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: controls -->
+    <div>
+      <div class="panel">
+        <h3>Steuerung</h3>
+        <div class="ctrl">
+          <div class="row"><span class="name">Stelle&nbsp; x</span><span class="val" id="xVal">3,00</span></div>
+          <input type="range" id="xSlider" min="-3" max="6" step="0.05" value="3">
+        </div>
+        <div class="ctrl" id="hCtrl">
+          <div class="row"><span class="name">Abstand&nbsp; h</span><span class="val amber" id="hVal">2,00</span></div>
+          <input type="range" id="hSlider" class="amber" min="0.05" max="3" step="0.05" value="2">
+        </div>
+        <div class="btn-row">
+          <button class="b primary" id="shrinkBtn">&#9654; h &#8594; 0 laufen lassen</button>
+          <button class="b" id="resetBtn">Zur&#252;cksetzen</button>
+        </div>
+        <div class="btn-row hidden" id="fpRow" style="margin-top:8px">
+          <button class="b" id="traceBtn">f&#8242;-Kurve zeigen</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Funktion f w&#228;hlen</h3>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Messwerte</h3>
+        <div class="reads">
+          <div class="read amber"><div class="k">Sehnen-Steigung &#916;y/&#916;x</div><div class="v" id="rSec">&#8211;</div></div>
+          <div class="read violet"><div class="k">Tangenten-Steigung f&#8242;(x)</div><div class="v" id="rTan">&#8211;</div></div>
+        </div>
+
+        <div class="compare" id="compareBox">
+          <div class="cmp-box">
+            <div class="cmp-rows">
+              <div class="cmp-item s"><div class="clbl">mittlere Rate</div><div class="cval" id="cS">&#8211;</div>
+                <div class="clbl">&#916;y/&#916;x</div></div>
+              <div class="cmp-eq" id="cEq">&#8799;</div>
+              <div class="cmp-item t"><div class="clbl">momentane Rate</div><div class="cval" id="cT">&#8211;</div>
+                <div class="clbl">f&#8242;(x)</div></div>
+            </div>
+            <div class="verdict neq" id="verdict">Mach h kleiner und beobachte beide Zahlen</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grenzwert-Tabelle (Akt 2) -->
+      <div class="panel hidden" id="convPanel">
+        <h3>Grenzwert von beiden Seiten</h3>
+        <div class="why-calc">
+          <table class="conv" id="convTable"></table>
+          <p class="why-note">Von links (<b>h&lt;0</b>) und rechts (<b>h&gt;0</b>) l&#228;uft der
+            Bruch auf <span style="color:var(--violet)">dieselbe Zahl</span> zu. Bei
+            <b>h=0</b> selbst steht 0/0 &#8212; nicht einsetzbar. Der Grenzwert ist trotzdem
+            <span style="color:var(--violet)">exakt bestimmt</span>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NARRATIVE + TASKS -->
+  <div id="actContent"></div>
+
+  <!-- TEACHER -->
+  <details class="teacher">
+    <summary>Lehrer-Ebene &#183; Hintergrund &amp; Erwartungshorizont</summary>
+    <div class="teacher-body">
+      <h4>Der Begriff, pr&#228;zise</h4>
+      <div class="box">
+        Der <span class="hl">Differenzenquotient</span> &#916;y/&#916;x = (f(x+h)&#8722;f(x))/h ist die
+        <b>mittlere</b> &#196;nderungsrate &#252;ber [x, x+h] &#8212; die Steigung der <b>Sekante</b>.<br>
+        Der <span class="hlv">Differentialquotient</span>
+        f&#8242;(x) = lim<sub>h&#8594;0</sub> (f(x+h)&#8722;f(x))/h ist die <b>momentane</b> &#196;nderungsrate
+        &#8212; die Steigung der <b>Tangente</b>. Existiert der Grenzwert, hei&#223;t f an der Stelle
+        differenzierbar.
+      </div>
+
+      <h4>Adressierte Fehlvorstellungen</h4>
+      <ul>
+        <li><b>Mittlere = momentane Rate.</b> &#8222;Die Steigung bei x&#8220; wird als Steigung zwischen
+          zwei sichtbaren Punkten gelesen. &#8594; Akt 1 zeigt die Sehne sichtbar von der Tangente abweichen
+          und beim Verkleinern von h auf sie einkippen.</li>
+        <li><b>&#8222;h=0 einsetzen&#8220;</b> bzw. 0/0 &#8222;ist null&#8220;. &#8594; Akt 2 zeigt die 0/0-Zeile
+          rot als <i>nicht definiert</i> &#8212; der Grenzwert wird durch Ann&#228;herung bestimmt, nicht durch
+          Einsetzen.</li>
+        <li><b>&#8222;Wird nie genau erreicht.&#8220;</b> &#8594; Beide Seiten laufen auf <i>dieselbe</i> exakte
+          Zahl zu; der Grenzwert ist diese Zahl, kein &#8222;ungef&#228;hr&#8220;.</li>
+        <li><b>f&#8242; ist eine Zahl vs. eine Funktion.</b> f&#8242;(2) ist eine Zahl, f&#8242; ist eine Funktion.
+          &#8594; Akt 3 tr&#228;gt die Tangentensteigung an jeder Stelle gegen x auf &#8212; die Ableitungs<i>funktion</i>
+          entsteht als Spur.</li>
+        <li><b>Funktionswert vs. Steigung.</b> &#8222;Wo f gro&#223; ist, ist f&#8242; gro&#223;&#8220;. &#8594; Akt 3:
+          wo f f&#228;llt, ist f&#8242;&lt;0; an Extrema von f ist f&#8242;=0 &#8212; unabh&#228;ngig vom Funktionswert.</li>
+      </ul>
+
+      <h4>Didaktischer Ort</h4>
+      <ul>
+        <li>Einf&#252;hrung der Differentialrechnung, Jg. 11 (Einf&#252;hrungsphase), Niedersachsen KC
+          Mathematik &#8212; Leitidee &#8222;Funktionaler Zusammenhang / Analysis&#8220;.</li>
+        <li>Voraussetzung: Steigung einer Geraden, Funktionswerte ablesen. <b>Kein</b> Vorwissen zum
+          Grenzwert n&#246;tig &#8212; das Tool baut ihn anschaulich auf.</li>
+        <li>Einsatz am Beamer als Entdeckungs-Sequenz <i>oder</i> als Sch&#252;ler-Selbstlerngang am Ger&#228;t.
+          Gegenst&#252;ck zum Hauptsatz-Labor: hier wird abgeleitet, dort integriert.</li>
+      </ul>
+
+      <h4>Die zentrale Begr&#252;ndungs-Idee (Akt 2)</h4>
+      <div class="box">
+        Verkleinert man h, n&#228;hert sich die Sehne der Tangente &#8212; und der Differenzenquotient
+        <span class="hl">&#916;y/&#916;x</span> einer festen Zahl, dem Differentialquotienten
+        <span class="hlv">f&#8242;(x)</span>. Beidseitige Ann&#228;herung (h&gt;0 und h&lt;0) auf denselben Wert
+        ist das anschauliche Kriterium f&#252;r die Existenz des Grenzwerts.
+      </div>
+
+      <h4>Erwartungshorizont (Kurzform)</h4>
+      <ul>
+        <li><b>Linear (f=0,5x+1):</b> Die Sehne ist <i>schon</i> die Tangente &#8212; h &#228;ndert nichts.
+          f&#8242;=0,5 konstant. Wichtiger Kontrast: bei Geraden ist mittlere = momentane Rate.</li>
+        <li><b>Parabel:</b> f&#8242;(x)=0,8x&#8722;1,5. Scheitel/Tiefpunkt bei x&#8776;1,875, dort f&#8242;=0.</li>
+        <li><b>Sinus:</b> f&#8242;=cos. Bei x=0 ist f&#8242;=1 (steilster Anstieg), bei x=&#960;/2 ist f&#8242;=0
+          (Hochpunkt von f).</li>
+        <li><b>Kubisch (f=0,25x&#179;&#8722;0,25x&#178;&#8722;1,5x):</b> f&#8242;=0,75x&#178;&#8722;0,5x&#8722;1,5.
+          Nullstellen von f&#8242; &#8596; Extrema von f; wo f f&#228;llt, ist f&#8242;&lt;0.</li>
+      </ul>
+
+      <h4>Technik &amp; Hinweise</h4>
+      <ul>
+        <li><b>Komplett offline.</b> 0 externe Requests, kein CDN, eigenes Inline-SVG, keine Sch&#252;lerdaten.
+          L&#228;uft auf jedem Ger&#228;t ohne Netz &#8212; auch wenn die Leitung steht.</li>
+        <li>Tangentensteigung wird <i>exakt</i> aus der bekannten Ableitung gezeichnet (nicht numerisch);
+          die Sehne ist der echte Differenzenquotient. So weicht die Sehne bei gro&#223;em h <b>sichtbar</b> ab
+          und kippt erst f&#252;r kleines h auf die Tangente &#8212; die Fehlvorstellung scheitert sichtbar.</li>
+        <li>Differenzierung: <span style="color:var(--green);font-family:var(--mono)">[gA]</span> Grund-,
+          <span style="color:var(--violet);font-family:var(--mono)">[eA]</span> erh&#246;htes Niveau.</li>
+      </ul>
+    </div>
+  </details>
+
+  <footer>
+    <span>Ableitungs-Werkstatt &#183; Analysis Oberstufe</span>
+    <span style="font-family:var(--mono)">Funktioniert ohne Internet &#183; keine Daten &#183; Mathematik &#183; IGS Delmenhorst</span>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   Ableitungs-Werkstatt — eigenes SVG, komplett offline
+   Mechanik: Sehne (echter Differenzenquotient) vs. Tangente
+   (exakte Ableitung). Falsche "mittlere = momentane Rate"
+   scheitert sichtbar; Grenzwert als feste Zahl (Akt 2);
+   Ableitungsfunktion als Spur (Akt 3).
+   ============================================================ */
+
+/* --- Funktions-Presets: f, exakte Ableitung f', Anzeige, Ansicht --- */
+var PRESETS = [
+  { id:'parabel', name:'Parabel',
+    f:function(x){ return 0.4*x*x - 1.5*x + 2.5; },
+    df:function(x){ return 0.8*x - 1.5; },
+    disp:'0,4x&#178; &#8722; 1,5x + 2,5',
+    view:{xmin:-2.2, xmax:6.2, ymin:-2, ymax:10}, x0:3, h0:2 },
+  { id:'linear', name:'Linear',
+    f:function(x){ return 0.5*x + 1; },
+    df:function(x){ return 0.5; },
+    disp:'0,5x + 1',
+    view:{xmin:-2.2, xmax:6.2, ymin:-2, ymax:6}, x0:2, h0:2 },
+  { id:'sinus', name:'Sinus',
+    f:function(x){ return Math.sin(x); },
+    df:function(x){ return Math.cos(x); },
+    disp:'sin(x)',
+    view:{xmin:-3.4, xmax:6.6, ymin:-2.4, ymax:2.4}, x0:1, h0:2 },
+  { id:'kubisch', name:'Kubisch [eA]',
+    f:function(x){ return 0.25*x*x*x - 0.25*x*x - 1.5*x; },
+    df:function(x){ return 0.75*x*x - 0.5*x - 1.5; },
+    disp:'0,25x&#179; &#8722; 0,25x&#178; &#8722; 1,5x',
+    view:{xmin:-3.0, xmax:4.6, ymin:-4, ymax:5}, x0:1.6, h0:1.5 }
+];
+
+var W=760, H=520, PAD=42;
+var curIdx=0, curAct=1;
+var x0=3, h=2;
+var traceOn=false;       // f'-Kurve in Akt 3 gezeigt?
+var animTimer=null;
+
+function P(){ return PRESETS[curIdx]; }
+function fmt(x,d){ if(x===undefined||x===null||isNaN(x)||!isFinite(x)) return '&#8211;';
+  return x.toFixed(d===undefined?2:d).replace('.',','); }
+function fmtPlain(x,d){ if(x===undefined||x===null||isNaN(x)||!isFinite(x)) return '–';
+  return x.toFixed(d===undefined?2:d).replace('.',','); }
+
+/* --- Welt -> Bildschirm --- */
+function makeScales(){
+  var v=P().view;
+  var sx=function(x){ return PAD + (x-v.xmin)/(v.xmax-v.xmin)*(W-2*PAD); };
+  var sy=function(y){ return (H-PAD) - (y-v.ymin)/(v.ymax-v.ymin)*(H-2*PAD); };
+  return {sx:sx, sy:sy, v:v};
+}
+
+/* --- Polyline einer Funktion (numerisch geclippt durch clipPath) --- */
+function curvePts(fn, S){
+  var v=S.v, pts=[], N=240;
+  for(var i=0;i<=N;i++){
+    var x=v.xmin + (v.xmax-v.xmin)*i/N;
+    var y=fn(x);
+    if(isNaN(y)||!isFinite(y)){ continue; }
+    pts.push(S.sx(x).toFixed(1)+','+S.sy(y).toFixed(1));
+  }
+  return pts.join(' ');
+}
+
+/* --- Gerade y = y0 + m*(x - xp) quer durch die Ansicht --- */
+function lineAcross(xp, y0, m, S){
+  var v=S.v;
+  var xa=v.xmin, ya=y0+m*(xa-xp);
+  var xb=v.xmax, yb=y0+m*(xb-xp);
+  return {x1:S.sx(xa).toFixed(1), y1:S.sy(ya).toFixed(1),
+          x2:S.sx(xb).toFixed(1), y2:S.sy(yb).toFixed(1)};
+}
+
+function render(){
+  var p=P(), S=makeScales(), v=S.v;
+  var f=p.f, df=p.df;
+  var fx0=f(x0), m=df(x0);
+  var xq=x0+h, fxq=f(xq);
+  var sec=(fxq-fx0)/h;                 // Differenzenquotient (echte Sehne)
+  var showSec = (curAct<3);            // in Akt 3 Sehne ausblenden
+  var showTan = (curAct>=2);           // Tangente ab Akt 2
+
+  var svg='';
+
+  /* clipPath fürs Plot-Feld */
+  svg+='<defs><clipPath id="clip"><rect x="'+PAD+'" y="'+(PAD-6)+'" width="'+(W-2*PAD)+'" height="'+(H-2*PAD+12)+'"/></clipPath></defs>';
+
+  /* Gitter */
+  var gx;
+  for(gx=Math.ceil(v.xmin); gx<=Math.floor(v.xmax); gx++){
+    var X=S.sx(gx).toFixed(1);
+    svg+='<line x1="'+X+'" y1="'+PAD+'" x2="'+X+'" y2="'+(H-PAD)+'" stroke="#16233a" stroke-width="1"/>';
+  }
+  var gy;
+  for(gy=Math.ceil(v.ymin); gy<=Math.floor(v.ymax); gy++){
+    var Y=S.sy(gy).toFixed(1);
+    svg+='<line x1="'+PAD+'" y1="'+Y+'" x2="'+(W-PAD)+'" y2="'+Y+'" stroke="#16233a" stroke-width="1"/>';
+  }
+
+  /* Achsen */
+  var y0px=S.sy(0), x0px=S.sx(0);
+  if(v.ymin<0 && v.ymax>0)
+    svg+='<line x1="'+PAD+'" y1="'+y0px.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+y0px.toFixed(1)+'" stroke="#3a4d6b" stroke-width="1.5"/>';
+  if(v.xmin<0 && v.xmax>0)
+    svg+='<line x1="'+x0px.toFixed(1)+'" y1="'+PAD+'" x2="'+x0px.toFixed(1)+'" y2="'+(H-PAD)+'" stroke="#3a4d6b" stroke-width="1.5"/>';
+  /* Achsenbeschriftung (ganze x) */
+  for(gx=Math.ceil(v.xmin); gx<=Math.floor(v.xmax); gx++){
+    if(gx===0) continue;
+    var lx=S.sx(gx).toFixed(1);
+    var ly=(v.ymin<0&&v.ymax>0)? (y0px+15).toFixed(1) : (H-PAD+15).toFixed(1);
+    svg+='<text x="'+lx+'" y="'+ly+'" fill="#5d6f8a" font-size="10.5" font-family="monospace" text-anchor="middle">'+gx+'</text>';
+  }
+
+  svg+='<g clip-path="url(#clip)">';
+
+  /* f'-Kurve (Akt 3, getoggelt) */
+  if(curAct>=3 && traceOn){
+    svg+='<polyline points="'+curvePts(df,S)+'" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="1 0" opacity="0.95"/>';
+  }
+
+  /* Funktionsgraph f */
+  svg+='<polyline points="'+curvePts(f,S)+'" fill="none" stroke="#22d3ee" stroke-width="3.5"/>';
+
+  /* Sehne + Steigungsdreieck (Akt 1/2) */
+  if(showSec){
+    var L=lineAcross(x0, fx0, sec, S);
+    svg+='<line x1="'+L.x1+'" y1="'+L.y1+'" x2="'+L.x2+'" y2="'+L.y2+'" stroke="#f6a623" stroke-width="2.5"/>';
+    /* Steigungsdreieck: waagerecht P->(xq,fx0), senkrecht ->Q */
+    var pxP=S.sx(x0), pyP=S.sy(fx0), pxQ=S.sx(xq), pyQ=S.sy(fxq), pyF=S.sy(fx0);
+    svg+='<line x1="'+pxP.toFixed(1)+'" y1="'+pyF.toFixed(1)+'" x2="'+pxQ.toFixed(1)+'" y2="'+pyF.toFixed(1)+'" stroke="#a86a08" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    svg+='<line x1="'+pxQ.toFixed(1)+'" y1="'+pyF.toFixed(1)+'" x2="'+pxQ.toFixed(1)+'" y2="'+pyQ.toFixed(1)+'" stroke="#a86a08" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    /* Δx / Δy Labels */
+    var mxh=((pxP+pxQ)/2).toFixed(1);
+    svg+='<text x="'+mxh+'" y="'+(pyF+(fxq>=fx0?16:-8)).toFixed(1)+'" fill="#f6a623" font-size="11" font-family="monospace" text-anchor="middle">&#916;x=h</text>';
+    svg+='<text x="'+(pxQ+8).toFixed(1)+'" y="'+((pyF+pyQ)/2).toFixed(1)+'" fill="#f6a623" font-size="11" font-family="monospace">&#916;y</text>';
+  }
+
+  /* Tangente (Akt 2/3) */
+  if(showTan){
+    var T=lineAcross(x0, fx0, m, S);
+    svg+='<line x1="'+T.x1+'" y1="'+T.y1+'" x2="'+T.x2+'" y2="'+T.y2+'" stroke="#a78bfa" stroke-width="2.5"/>';
+  }
+
+  /* Punkt Q (Sehnen-Endpunkt) */
+  if(showSec){
+    svg+='<circle cx="'+S.sx(xq).toFixed(1)+'" cy="'+S.sy(fxq).toFixed(1)+'" r="5.5" fill="#f6a623" stroke="#0a0e16" stroke-width="2"/>';
+    svg+='<text x="'+(S.sx(xq)+9).toFixed(1)+'" y="'+(S.sy(fxq)-8).toFixed(1)+'" fill="#f6a623" font-size="12" font-family="monospace">Q</text>';
+  }
+
+  /* Punkt P (Berührstelle) */
+  svg+='<circle cx="'+S.sx(x0).toFixed(1)+'" cy="'+S.sy(fx0).toFixed(1)+'" r="6" fill="#22d3ee" stroke="#0a0e16" stroke-width="2"/>';
+  svg+='<text x="'+(S.sx(x0)+9).toFixed(1)+'" y="'+(S.sy(fx0)+18).toFixed(1)+'" fill="#22d3ee" font-size="12" font-family="monospace">P</text>';
+
+  /* f'-Punkt + Konnektor (Akt 3) */
+  if(curAct>=3 && traceOn){
+    var pfy=S.sy(m), pfx=S.sx(x0);
+    svg+='<line x1="'+pfx.toFixed(1)+'" y1="'+S.sy(fx0).toFixed(1)+'" x2="'+pfx.toFixed(1)+'" y2="'+pfy.toFixed(1)+'" stroke="#34d399" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.7"/>';
+    svg+='<circle cx="'+pfx.toFixed(1)+'" cy="'+pfy.toFixed(1)+'" r="6" fill="#34d399" stroke="#0a0e16" stroke-width="2"/>';
+    svg+='<text x="'+(pfx+9).toFixed(1)+'" y="'+(pfy-8).toFixed(1)+'" fill="#34d399" font-size="11.5" font-family="monospace">(x, f&#8242;(x))</text>';
+  }
+
+  svg+='</g>';
+
+  document.getElementById('plot').innerHTML=svg;
+
+  /* --- Readouts --- */
+  document.getElementById('rSec').innerHTML = (curAct>=3)? '&#8211;' : fmt(sec);
+  document.getElementById('rTan').innerHTML = (curAct>=2)? fmt(m) : '&#8211;';
+  document.getElementById('xVal').textContent = fmtPlain(x0);
+  document.getElementById('hVal').textContent = fmtPlain(h);
+  document.getElementById('fnReadout').innerHTML = 'f(x) = '+p.disp;
+
+  /* --- Vergleich (Akt 2) --- */
+  if(curAct>=2){
+    document.getElementById('cS').innerHTML = fmt(sec);
+    document.getElementById('cT').innerHTML = fmt(m);
+    var diff = Math.abs(sec-m);
+    var vd=document.getElementById('verdict'), eq=document.getElementById('cEq');
+    if(diff < 0.02){
+      vd.className='verdict eq'; vd.innerHTML='&#10003;&nbsp; Fast gleich &#8212; die Sehne ist zur Tangente geworden';
+      eq.textContent='&#8776;'; eq.style.color='var(--green)';
+    } else {
+      vd.className='verdict neq';
+      vd.innerHTML='Differenz '+fmt(diff)+' &#8212; die mittlere Rate ist noch nicht die momentane. Mach h kleiner.';
+      eq.innerHTML='&#8800;'; eq.style.color='var(--amber)';
+    }
+  }
+
+  /* --- Grenzwert-Tabelle (Akt 2) --- */
+  if(curAct>=2){ renderConvTable(); }
+}
+
+/* --- Tabelle: Differenzenquotient für h von beiden Seiten --- */
+function renderConvTable(){
+  var p=P(), f=p.f, df=p.df, fx0=f(x0), m=df(x0);
+  var hs=[-1,-0.5,-0.1,-0.01,0.01,0.1,0.5,1];
+  var rows='<tr><th>h</th><th>(f(x+h)&#8722;f(x)) / h</th></tr>';
+  hs.forEach(function(hh){
+    var q=(f(x0+hh)-fx0)/hh;
+    rows+='<tr><td class="h">'+fmt(hh,2)+'</td><td>'+fmt(q,4)+'</td></tr>';
+  });
+  rows+='<tr class="zero"><td class="h">0</td><td>0 / 0 &#8212; nicht def.</td></tr>';
+  rows+='<tr class="lim"><td>&#8594;0</td><td>'+fmt(m,4)+'&nbsp; = f&#8242;(x)</td></tr>';
+  document.getElementById('convTable').innerHTML=rows;
+}
+
+/* --- Steuerung --- */
+document.getElementById('xSlider').addEventListener('input',function(){
+  stopAnim(); x0=parseFloat(this.value); render();
+});
+document.getElementById('hSlider').addEventListener('input',function(){
+  stopAnim(); h=parseFloat(this.value); render();
+});
+document.getElementById('resetBtn').addEventListener('click',function(){
+  stopAnim(); var p=P(); x0=p.x0; h=p.h0;
+  document.getElementById('xSlider').value=x0;
+  document.getElementById('hSlider').value=h;
+  render();
+});
+document.getElementById('shrinkBtn').addEventListener('click',function(){
+  if(animTimer){ stopAnim(); return; }
+  this.innerHTML='&#10073;&#10073; Stopp';
+  animTimer=setInterval(function(){
+    h = Math.max(0.05, h-0.045);
+    document.getElementById('hSlider').value=h;
+    render();
+    if(h<=0.05){ stopAnim(); }
+  }, 28);
+});
+function stopAnim(){
+  if(animTimer){ clearInterval(animTimer); animTimer=null; }
+  document.getElementById('shrinkBtn').innerHTML='&#9654; h &#8594; 0 laufen lassen';
+}
+document.getElementById('traceBtn').addEventListener('click',function(){
+  traceOn=!traceOn;
+  this.classList.toggle('primary',traceOn);
+  this.textContent = traceOn ? 'f′-Kurve ausblenden' : 'f′-Kurve zeigen';
+  document.getElementById('lgFp').style.opacity = traceOn ? '1':'0.4';
+  render();
+});
+
+/* --- Presets --- */
+function buildPresets(){
+  var c=document.getElementById('presets');
+  PRESETS.forEach(function(p,i){
+    var b=document.createElement('button');
+    b.className='preset'+(i===curIdx?' on':'');
+    b.innerHTML='<span class="pn">'+p.name+'</span>'+p.disp;
+    b.addEventListener('click',function(){ setPreset(i); });
+    c.appendChild(b);
+  });
+}
+function setPreset(i){
+  stopAnim();
+  curIdx=i;
+  var p=P(); x0=p.x0; h=p.h0;
+  document.querySelectorAll('.preset').forEach(function(el,j){ el.classList.toggle('on', j===i); });
+  /* Slider-Grenzen an die Ansicht anpassen */
+  var xs=document.getElementById('xSlider');
+  xs.min=p.view.xmin.toFixed(2); xs.max=p.view.xmax.toFixed(2); xs.value=x0;
+  document.getElementById('hSlider').value=h;
+  render();
+}
+
+/* --- Akte (Narrativ + Aufgaben) --- */
+var ACTS={
+1:{ badge:'AKT 01', title:'Von der Sehne zur Tangente',
+  html:'<div class="callout"><b>Worum geht es?</b> Du willst die Steigung von f <span class="hlc">genau an der Stelle x</span> wissen &#8212; nicht zwischen zwei weit entfernten Punkten.</div>'+
+       '<p>Die <span class="hl">orange Sehne</span> (Fachwort: Sekante) verbindet den festen Punkt '+
+       '<code>P</code> mit einem zweiten Punkt <code>Q</code> im Abstand <code>h</code>. Ihre Steigung '+
+       'ist <span class="hl">&#916;y/&#916;x</span> &#8212; die <b>mittlere</b> &#196;nderungsrate &#252;ber das St&#252;ck.</p>'+
+       '<p><b>Probier es aus:</b> Zieh den Regler <code>h</code> kleiner &#8212; oder klick '+
+       '&#8222;h &#8594; 0 laufen lassen&#8220;. <code>Q</code> rutscht auf <code>P</code> zu, und die Sehne '+
+       '<span class="hlv">kippt</span> in eine Grenzlage: die Tangente.</p>'+
+       '<p>Das ist der Kern: Die Steigung &#8222;im Punkt&#8220; ist <b>nicht</b> die Steigung &#252;ber ein '+
+       'Intervall &#8212; sie ist der <span class="hlv">Grenzfall</span>, wenn das Intervall verschwindet.</p>',
+  tasks:[
+   {n:1,g:1,t:'Stell x = 3 und h = 2 ein (Parabel). Lies die Sehnen-Steigung &#916;y/&#916;x rechts ab. Mach dann h = 1, h = 0,5, h = 0,1. Was passiert mit der Zahl?',
+    sol:'Sie wird kleiner und n&#228;hert sich einem festen Wert. Bei der Parabel mit x=3: f&#8242;(3)=0,8&#183;3&#8722;1,5=<span class="hl">0,9</span>. Die Sehnen-Steigung l&#228;uft beim Verkleinern von h genau auf <code>0,9</code> zu.'},
+   {n:2,g:1,t:'Beschreibe in einem Satz, was die Sehne tut, w&#228;hrend h immer kleiner wird.',
+    sol:'Der zweite Punkt <code>Q</code> rutscht auf <code>P</code> zu, und die Sehne <span class="hlv">kippt in die Tangente</span> &#8212; aus der mittleren wird die momentane &#196;nderungsrate.'},
+   {n:3,g:1,t:'W&#228;hle &#8222;Linear&#8220; (f = 0,5x+1). &#196;ndere h. Warum &#228;ndert sich die Sehnen-Steigung hier <b>gar nicht</b>?',
+    sol:'Bei einer Geraden ist die Steigung &#252;berall gleich. Sehne und Tangente fallen <span class="hl">immer</span> zusammen &#8212; die mittlere Rate ist hier schon die momentane. <code>0,5</code> bei jedem h.'},
+   {n:4,e:1,t:'W&#228;hle &#8222;Sinus&#8220;, x = 0. Sch&#228;tze zuerst die Tangentensteigung, lass dann h gegen 0 laufen. Treffer?',
+    sol:'Bei x=0 ist die Steigung von sin am gr&#246;&#223;ten: f&#8242;(0)=cos(0)=<span class="hl">1</span>. Die Sehne l&#228;uft auf 1 zu. (An einem Hochpunkt, x=&#960;/2, w&#228;re sie 0.)'}
+  ]},
+2:{ badge:'AKT 02', title:'Der Grenzwert &#8212; eine feste Zahl',
+  html:'<div class="callout">Neu rechts: die <span class="hlv">Tangente</span> (violett) und das '+
+       'Vergleichsfeld &#8222;mittlere &#8799; momentane Rate&#8220; &#8212; plus eine Tabelle, die h von '+
+       '<b>beiden Seiten</b> auf 0 schickt.</div>'+
+       '<p>Schau in die Tabelle: f&#252;r <code>h = &#8722;1, &#8722;0,1, &#8230;</code> (von links) und '+
+       '<code>h = 1, 0,1, &#8230;</code> (von rechts) l&#228;uft der Bruch auf <span class="hlv">dieselbe Zahl</span> '+
+       'zu. Diese Zahl ist <span class="hlv">f&#8242;(x)</span> &#8212; der <b>Differentialquotient</b>.</p>'+
+       '<p><b>Achtung, h&#228;ufiger Fehler:</b> Man darf <span class="hl">nicht einfach h = 0 einsetzen</span>. '+
+       'Dann steht da <code>0/0</code> &#8212; nicht definiert (rote Zeile). Der Wert entsteht nur durch '+
+       '<b>Ann&#228;herung</b>, nicht durch Einsetzen.</p>'+
+       '<p>Und er ist <span class="hlv">exakt</span>, nicht &#8222;ungef&#228;hr&#8220;: weil beide Seiten auf '+
+       'genau denselben Wert zulaufen, ist dieser Grenzwert eine feste, eindeutige Zahl.</p>',
+  tasks:[
+   {n:1,g:1,t:'Parabel, x = 3. Vergleiche in der Tabelle h = 0,1 und h = &#8722;0,1. Auf welche gemeinsame Zahl laufen beide Seiten zu?',
+    sol:'Beide n&#228;hern sich <span class="hlv">0,9</span> = f&#8242;(3). Von rechts etwas gr&#246;&#223;er, von links etwas kleiner &#8212; aber dieselbe Grenze. Genau das hei&#223;t: der Grenzwert existiert.'},
+   {n:2,g:1,t:'Warum steht in der Tabelle bei h = 0 &#8222;0/0 &#8212; nicht definiert&#8220;? Was w&#228;re der Denkfehler, einfach h = 0 zu rechnen?',
+    sol:'F&#252;r h=0 ist Z&#228;hler f(x)&#8722;f(x)=0 <b>und</b> Nenner 0 &#8212; <code>0/0</code> ist nicht definiert. Den Wert bekommt man nur als <span class="hlv">Grenzwert</span> (h beliebig nah an 0), nicht durch Einsetzen.'},
+   {n:3,e:1,t:'Stell x = 1,875 bei der Parabel ein (Tiefpunkt). Was zeigt f&#8242;(x)? Was bedeutet das f&#252;r die Tangente?',
+    sol:'f&#8242;(1,875)=0,8&#183;1,875&#8722;1,5=<span class="hl">0</span>. Die Tangente ist <b>waagerecht</b> &#8212; genau das Kriterium f&#252;r einen Extrempunkt von f.'},
+   {n:4,e:1,t:'Berechne den Differenzenquotienten der Parabel allgemein mit f(x)=0,4x&#178;&#8722;1,5x+2,5 und lass h&#8594;0. Welche Formel f&#252;r f&#8242;(x) bekommst du?',
+    sol:'(f(x+h)&#8722;f(x))/h = (0,8x&#183;h+0,4h&#178;&#8722;1,5h)/h = 0,8x+0,4h&#8722;1,5. F&#252;r h&#8594;0: <span class="hlv">f&#8242;(x)=0,8x&#8722;1,5</span>. Genau die Zahl in der Tabelle &#8212; jetzt als Funktion.'}
+  ]},
+3:{ badge:'AKT 03', title:'Die Ableitungsfunktion entsteht',
+  html:'<div class="callout">Klick rechts <span class="hlv">&#8222;f&#8242;-Kurve zeigen&#8220;</span>. '+
+       'Schieb dann <code>x</code> langsam durch.</div>'+
+       '<p>An <b>jeder</b> Stelle x misst die Tangente eine Steigung. Tr&#228;gt man diese Steigung als '+
+       '<span style="color:var(--green);font-weight:600">H&#246;he</span> &#252;ber x auf, entsteht eine '+
+       '<span style="color:var(--green);font-weight:600">ganz neue Kurve</span>: die '+
+       '<b>Ableitungsfunktion f&#8242;</b>. Der gr&#252;ne Punkt zeigt, wie aus jeder Steigung ein '+
+       'Funktionswert von f&#8242; wird.</p>'+
+       '<p>Merke den Unterschied: <code>f&#8242;(2)</code> ist eine <span class="hl">Zahl</span> '+
+       '(die Steigung an der Stelle 2). <code>f&#8242;</code> ist eine <span class="hlv">Funktion</span> '+
+       '(die Steigung an <i>jeder</i> Stelle).</p>'+
+       '<p>Und nicht verwechseln: f&#8242; misst die <span class="hlv">Steigung</span> von f, nicht den '+
+       '<span class="hl">Wert</span> von f. Wo f f&#228;llt, ist f&#8242; <b>negativ</b> &#8212; auch wenn f dort '+
+       'noch gro&#223; ist.</p>',
+  tasks:[
+   {n:1,g:1,t:'Parabel, f&#8242;-Kurve zeigen. Schieb x durch. Welche Form hat die f&#8242;-Kurve &#8212; und passt das zur Formel f&#8242;(x)=0,8x&#8722;1,5?',
+    sol:'Die f&#8242;-Kurve ist eine <span class="hl">Gerade</span> &#8212; und 0,8x&#8722;1,5 ist genau eine Gerade. Aus Grad 2 (Parabel) wird Grad 1 (Gerade): Ableiten senkt den Grad um eins.'},
+   {n:2,g:1,t:'W&#228;hle &#8222;Kubisch&#8220;. Finde eine Stelle, wo f f&#228;llt. Was zeigt die gr&#252;ne f&#8242;-Kurve dort &#8212; oberhalb oder unterhalb der x-Achse?',
+    sol:'Wo f <span class="hl">f&#228;llt</span>, liegt f&#8242; <span style="color:#34d399">unter der x-Achse</span> (negativ). Steigung und Funktionswert sind verschiedene Dinge &#8212; f&#8242; misst die Steigung.'},
+   {n:3,e:1,t:'Kubisch: An welchen x-Stellen schneidet die f&#8242;-Kurve die x-Achse? Was haben diese Stellen mit f zu tun?',
+    sol:'Nullstellen von f&#8242; (0,75x&#178;&#8722;0,5x&#8722;1,5=0 &#8594; x&#8776;&#8722;1,12 und x&#8776;1,79) sind genau die <span class="hlv">Extrempunkte von f</span> &#8212; dort ist die Tangente waagerecht.'},
+   {n:4,e:1,t:'Sinus: Lass dir die f&#8242;-Kurve zeigen. Welche bekannte Funktion ist die Ableitung von sin? Begr&#252;nde &#252;ber die Steigungen.',
+    sol:'Es ist <span class="hlv">cos</span>. Bei x=0 ist sin am steilsten (Steigung 1 = cos 0); bei x=&#960;/2 ist sin am Hochpunkt (Steigung 0 = cos &#960;/2). Die Steigungen von sin zeichnen genau cos nach.'}
+  ]}
+};
+
+var BEGRIFFE=
+  '<details class="begriffe">'+
+  '<summary>Begriffe kurz erkl&#228;rt</summary>'+
+  '<div class="begriffe-body"><dl>'+
+  '<dt>Sehne / Sekante</dt><dd>Gerade durch <b>zwei</b> Punkte des Graphen (<code>P</code> und <code>Q</code>). '+
+    'Ihre Steigung ist die <b>mittlere</b> &#196;nderungsrate.</dd>'+
+  '<dt>Tangente</dt><dd>Die Grenzlage der Sehne, wenn <code>Q</code> auf <code>P</code> zur&#252;ckt. '+
+    'Ihre Steigung ist die <b>momentane</b> &#196;nderungsrate an der Stelle x.</dd>'+
+  '<dt>Differenzenquotient</dt><dd><code>&#916;y/&#916;x = (f(x+h)&#8722;f(x))/h</code> &#8212; eine Zahl, '+
+    'die Steigung der Sehne.</dd>'+
+  '<dt>Differentialquotient</dt><dd><code>f&#8242;(x) = lim<sub>h&#8594;0</sub> &#916;y/&#916;x</code> &#8212; '+
+    'der Grenzwert, die Steigung der Tangente.</dd>'+
+  '<dt>Ableitungsfunktion f&#8242;</dt><dd>Ordnet <b>jeder</b> Stelle x ihre Tangentensteigung zu &#8212; '+
+    'selbst eine Funktion. <code>f&#8242;(2)</code> ist dagegen nur eine Zahl.</dd>'+
+  '</dl></div></details>';
+
+function applyAct(n){
+  curAct=n;
+  document.querySelectorAll('.act-tab').forEach(function(el){
+    el.classList.toggle('on', el.getAttribute('data-act')==String(n));
+  });
+  /* Akt 3: Sehne weg, Trace-Knopf an; sonst Trace aus */
+  if(n<3){ traceOn=false; document.getElementById('lgFp').style.opacity='0.4';
+    var tb=document.getElementById('traceBtn'); tb.classList.remove('primary'); tb.textContent='f′-Kurve zeigen'; }
+  document.getElementById('fpRow').classList.toggle('hidden', n<3);
+  document.querySelector('.lg-sec').style.opacity = (n<3)? '1':'0.35';
+  /* Sehnen-Regler h in Akt 3 ausblenden (kein Q mehr) */
+  document.getElementById('hCtrl').style.opacity = (n<3)? '1':'0.4';
+  document.getElementById('shrinkBtn').style.opacity = (n<3)? '1':'0.4';
+  /* Vergleich + Grenzwert-Tabelle ab Akt 2 */
+  document.getElementById('compareBox').classList.toggle('show', n>=2);
+  document.getElementById('convPanel').classList.toggle('hidden', n<2);
+
+  /* Narrativ + Aufgaben */
+  var A=ACTS[n];
+  var taskHtml=A.tasks.map(function(t){
+    var niv = t.e ? '<span class="niv e">eA</span>' : '<span class="niv g">gA</span>';
+    var sol = '<details class="sol"><summary>L&#246;sung / Erwartung anzeigen</summary>'+
+              '<div class="sol-body">'+t.sol+'</div></details>';
+    return '<div class="task"><div class="num">'+t.n+'</div><div class="body">'+t.t+niv+sol+'</div></div>';
+  }).join('');
+  document.getElementById('actContent').innerHTML =
+    BEGRIFFE +
+    '<div class="narr"><h2><span class="badge">'+A.badge+'</span>'+A.title+'</h2>'+A.html+'</div>'+
+    '<div class="tasks"><h3>Aufgaben</h3>'+taskHtml+'</div>';
+
+  render();
+}
+
+document.querySelectorAll('.act-tab').forEach(function(el){
+  el.addEventListener('click',function(){ applyAct(parseInt(this.getAttribute('data-act'))); });
+});
+
+/* --- Init --- */
+buildPresets();
+setPreset(0);
+applyAct(1);
+</script>
+</body>
+</html>
