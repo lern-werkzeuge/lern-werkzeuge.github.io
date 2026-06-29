@@ -320,7 +320,7 @@
           <button class="b" id="resetBtn">Zur&#252;cksetzen</button>
         </div>
         <div class="btn-row hidden" id="fpRow" style="margin-top:8px">
-          <button class="b" id="traceBtn">f&#8242;-Kurve zeigen</button>
+          <button class="b" id="traceBtn">f&#8242; nachzeichnen</button>
         </div>
       </div>
 
@@ -483,6 +483,8 @@ var W=760, H=520, PAD=42;
 var curIdx=0, curAct=1;
 var x0=3, h=2;
 var traceOn=false;       // f'-Kurve in Akt 3 gezeigt?
+var traceVisited=[];     // besuchte x-Stellen -> f'-Spur waechst daraus
+var traceTimer=null;     // Auto-Nachzeichnen
 var animTimer=null;
 
 function P(){ return PRESETS[curIdx]; }
@@ -525,8 +527,9 @@ function render(){
   var f=p.f, df=p.df;
   var fx0=f(x0), m=df(x0);
   var xq=x0+h, fxq=f(xq);
+  var hZero = (Math.abs(h) < 0.03);    // h=0: Sehne nicht definiert -> 0/0 sichtbar machen
   var sec=(fxq-fx0)/h;                 // Differenzenquotient (echte Sehne)
-  var showSec = (curAct<3);            // in Akt 3 Sehne ausblenden
+  var showSec = (curAct<3) && !hZero;  // in Akt 3 keine Sehne; bei h=0 bricht sie zusammen
   var showTan = (curAct>=2);           // Tangente ab Akt 2
 
   var svg='';
@@ -562,9 +565,12 @@ function render(){
 
   svg+='<g clip-path="url(#clip)">';
 
-  /* f'-Kurve (Akt 3, getoggelt) */
-  if(curAct>=3 && traceOn){
-    svg+='<polyline points="'+curvePts(df,S)+'" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="1 0" opacity="0.95"/>';
+  /* f'-Kurve (Akt 3): waechst als Spur aus den besuchten Stellen — entsteht, statt fertig dazustehen */
+  if(curAct>=3 && traceOn && traceVisited.length>1){
+    var tv=traceVisited.slice().sort(function(a,b){return a-b;});
+    var tp=[];
+    for(var ti=0; ti<tv.length; ti++){ tp.push(S.sx(tv[ti]).toFixed(1)+','+S.sy(df(tv[ti])).toFixed(1)); }
+    svg+='<polyline points="'+tp.join(' ')+'" fill="none" stroke="#34d399" stroke-width="2.5" opacity="0.95"/>';
   }
 
   /* Funktionsgraph f */
@@ -606,6 +612,13 @@ function render(){
   svg+='<circle cx="'+S.sx(x0).toFixed(1)+'" cy="'+S.sy(fx0).toFixed(1)+'" r="6" fill="#22d3ee" stroke="#0a0e16" stroke-width="2"/>';
   svg+='<text x="'+(S.sx(x0)+9).toFixed(1)+'" y="'+(S.sy(fx0)+18).toFixed(1)+'" fill="#22d3ee" font-size="12" font-family="monospace">P</text>';
 
+  /* h = 0: Sehne bricht sichtbar zusammen (0/0) — selbst ausgeloestes productive failure */
+  if(hZero && curAct<3){
+    svg+='<circle cx="'+S.sx(x0).toFixed(1)+'" cy="'+S.sy(fx0).toFixed(1)+'" r="12" fill="none" stroke="#ff6f6f" stroke-width="2" stroke-dasharray="3 3"/>';
+    svg+='<text x="'+(W/2).toFixed(1)+'" y="'+(PAD+16).toFixed(1)+'" fill="#ff6f6f" font-size="13" font-weight="bold" font-family="monospace" text-anchor="middle">h = 0: Q liegt auf P &#8212; keine Sehne</text>';
+    svg+='<text x="'+(W/2).toFixed(1)+'" y="'+(PAD+34).toFixed(1)+'" fill="#ff6f6f" font-size="12" font-family="monospace" text-anchor="middle">&#916;y/&#916;x = 0/0 &#8212; nicht definiert. Darum: Grenzwert (h nah an 0), nicht h = 0.</text>';
+  }
+
   /* f'-Punkt + Konnektor (Akt 3) */
   if(curAct>=3 && traceOn){
     var pfy=S.sy(m), pfx=S.sx(x0);
@@ -619,7 +632,7 @@ function render(){
   document.getElementById('plot').innerHTML=svg;
 
   /* --- Readouts --- */
-  document.getElementById('rSec').innerHTML = (curAct>=3)? '&#8211;' : fmt(sec);
+  document.getElementById('rSec').innerHTML = (curAct>=3)? '&#8211;' : (hZero? '<span style="color:var(--red)">0/0</span>' : fmt(sec));
   document.getElementById('rTan').innerHTML = (curAct>=2)? fmt(m) : '&#8211;';
   document.getElementById('xVal').textContent = fmtPlain(x0);
   document.getElementById('hVal').textContent = fmtPlain(h);
@@ -627,17 +640,24 @@ function render(){
 
   /* --- Vergleich (Akt 2) --- */
   if(curAct>=2){
-    document.getElementById('cS').innerHTML = fmt(sec);
-    document.getElementById('cT').innerHTML = fmt(m);
-    var diff = Math.abs(sec-m);
     var vd=document.getElementById('verdict'), eq=document.getElementById('cEq');
-    if(diff < 0.02){
-      vd.className='verdict eq'; vd.innerHTML='&#10003;&nbsp; Fast gleich &#8212; die Sehne ist zur Tangente geworden';
-      eq.textContent='&#8776;'; eq.style.color='var(--green)';
-    } else {
+    document.getElementById('cT').innerHTML = fmt(m);
+    if(hZero){
+      document.getElementById('cS').innerHTML = '<span style="color:var(--red)">0/0</span>';
       vd.className='verdict neq';
-      vd.innerHTML='Differenz '+fmt(diff)+' &#8212; die mittlere Rate ist noch nicht die momentane. Mach h kleiner.';
-      eq.innerHTML='&#8800;'; eq.style.color='var(--amber)';
+      vd.innerHTML='Bei <b>h = 0</b> f&#228;llt Q auf P: Z&#228;hler 0, Nenner 0 &#8212; <b>0/0 ist nicht definiert</b>. Genau darum braucht es den <b>Grenzwert</b> (h nah an 0, nicht gleich 0).';
+      eq.innerHTML='&#8800;'; eq.style.color='var(--red)';
+    } else {
+      document.getElementById('cS').innerHTML = fmt(sec);
+      var diff = Math.abs(sec-m);
+      if(diff < 0.02){
+        vd.className='verdict eq'; vd.innerHTML='&#10003;&nbsp; Fast gleich &#8212; die Sehne ist zur Tangente geworden';
+        eq.textContent='&#8776;'; eq.style.color='var(--green)';
+      } else {
+        vd.className='verdict neq';
+        vd.innerHTML='Differenz '+fmt(diff)+' &#8212; die mittlere Rate ist noch nicht die momentane. Mach h kleiner.';
+        eq.innerHTML='&#8800;'; eq.style.color='var(--amber)';
+      }
     }
   }
 
@@ -661,19 +681,20 @@ function renderConvTable(){
 
 /* --- Steuerung --- */
 document.getElementById('xSlider').addEventListener('input',function(){
-  stopAnim(); x0=parseFloat(this.value); render();
+  stopAnim(); stopTrace(); x0=parseFloat(this.value);
+  if(traceOn){ traceVisited.push(x0); }   // beim Schieben waechst die f'-Spur mit
+  render();
 });
 document.getElementById('hSlider').addEventListener('input',function(){
   stopAnim();
-  var nv=parseFloat(this.value);
-  if(Math.abs(nv)<0.03){ nv = (h<0 ? -0.05 : 0.05); this.value=nv; }  // h=0 aussparen (0/0)
-  h=nv; render();
+  h=parseFloat(this.value); render();     // h=0 ZULASSEN -> 0/0 wird sichtbar (productive failure)
 });
 document.getElementById('resetBtn').addEventListener('click',function(){
-  stopAnim(); var p=P(); x0=p.x0; h=p.h0;
+  stopAnim(); stopTrace(); traceVisited=[]; var p=P(); x0=p.x0; h=p.h0;
   document.getElementById('xSlider').value=x0;
   document.getElementById('hSlider').value=h;
   render();
+  if(traceOn && curAct>=3){ startTrace(); }
 });
 document.getElementById('shrinkBtn').addEventListener('click',function(){
   if(animTimer){ stopAnim(); return; }
@@ -692,10 +713,24 @@ function stopAnim(){
 document.getElementById('traceBtn').addEventListener('click',function(){
   traceOn=!traceOn;
   this.classList.toggle('primary',traceOn);
-  this.textContent = traceOn ? 'f′-Kurve ausblenden' : 'f′-Kurve zeigen';
+  this.textContent = traceOn ? 'f′ ausblenden' : 'f′ nachzeichnen';
   document.getElementById('lgFp').style.opacity = traceOn ? '1':'0.4';
-  render();
+  if(traceOn){ startTrace(); } else { stopTrace(); traceVisited=[]; render(); }
 });
+/* Auto-Nachzeichnen: gruener Punkt wandert von links nach rechts und malt die f'-Kurve */
+function startTrace(){
+  stopTrace(); traceVisited=[];
+  var v=P().view, span=v.xmax-v.xmin;
+  x0=v.xmin; document.getElementById('xSlider').value=x0;
+  traceTimer=setInterval(function(){
+    traceVisited.push(x0);
+    render();
+    if(x0>=v.xmax-1e-6){ stopTrace(); return; }
+    x0=Math.min(v.xmax, x0 + span/90);
+    document.getElementById('xSlider').value=x0;
+  }, 26);
+}
+function stopTrace(){ if(traceTimer){ clearInterval(traceTimer); traceTimer=null; } }
 
 /* --- Presets --- */
 function buildPresets(){
@@ -709,7 +744,7 @@ function buildPresets(){
   });
 }
 function setPreset(i){
-  stopAnim();
+  stopAnim(); stopTrace(); traceVisited=[];
   curIdx=i;
   var p=P(); x0=p.x0; h=p.h0;
   document.querySelectorAll('.preset').forEach(function(el,j){ el.classList.toggle('on', j===i); });
@@ -718,6 +753,7 @@ function setPreset(i){
   xs.min=p.view.xmin.toFixed(2); xs.max=p.view.xmax.toFixed(2); xs.value=x0;
   document.getElementById('hSlider').value=h;
   render();
+  if(traceOn && curAct>=3){ startTrace(); }
 }
 
 /* --- Akte (Narrativ + Aufgaben) --- */
@@ -768,8 +804,8 @@ var ACTS={
     sol:'(f(x+h)&#8722;f(x))/h = (0,8x&#183;h+0,4h&#178;&#8722;1,5h)/h = 0,8x+0,4h&#8722;1,5. F&#252;r h&#8594;0: <span class="hlv">f&#8242;(x)=0,8x&#8722;1,5</span>. Genau die Zahl in der Tabelle &#8212; jetzt als Funktion (du hast den Term aus Aufgabe 3 jetzt selbst hergeleitet).'}
   ]},
 3:{ badge:'AKT 03', title:'Die Ableitungsfunktion entsteht',
-  html:'<div class="callout">Klick rechts <span class="hlv">&#8222;f&#8242;-Kurve zeigen&#8220;</span>. '+
-       'Schieb dann <code>x</code> langsam durch.</div>'+
+  html:'<div class="callout">Klick rechts <span class="hlv">&#8222;f&#8242; nachzeichnen&#8220;</span> &#8212; der '+
+       'gr&#252;ne Punkt wandert und <b>malt die Kurve Stelle f&#252;r Stelle</b>. Oder schieb <code>x</code> selbst durch.</div>'+
        '<p>An <b>jeder</b> Stelle x misst die Tangente eine Steigung. Tr&#228;gt man diese Steigung als '+
        '<span style="color:var(--green);font-weight:600">H&#246;he</span> &#252;ber x auf, entsteht eine '+
        '<span style="color:var(--green);font-weight:600">ganz neue Kurve</span>: die '+
@@ -801,8 +837,13 @@ var BEGRIFFE=
     'Ihre Steigung ist die <b>mittlere</b> &#196;nderungsrate.</dd>'+
   '<dt>Tangente</dt><dd>Die Grenzlage der Sehne, wenn <code>Q</code> auf <code>P</code> zur&#252;ckt. '+
     'Ihre Steigung ist die <b>momentane</b> &#196;nderungsrate an der Stelle x.</dd>'+
+  '<dt>&#916; (Delta)</dt><dd>&#8222;Differenz&#8220; (Unterschied). <code>&#916;y = f(x+h)&#8722;f(x)</code> ist der '+
+    'H&#246;henunterschied, <code>&#916;x = h</code> der waagerechte Abstand zwischen <code>P</code> und <code>Q</code>.</dd>'+
   '<dt>Differenzenquotient</dt><dd><code>&#916;y/&#916;x = (f(x+h)&#8722;f(x))/h</code> &#8212; eine Zahl, '+
     'die Steigung der Sehne.</dd>'+
+  '<dt>lim<sub>h&#8594;0</sub></dt><dd>&#8222;Grenzwert f&#252;r h gegen 0&#8220; &#8212; der Wert, dem sich der Bruch '+
+    'n&#228;hert, wenn <code>h</code> beliebig klein wird. <b>Nicht</b> das Einsetzen von <code>h=0</code> '+
+    '(das w&#228;re 0/0, nicht definiert).</dd>'+
   '<dt>Differentialquotient</dt><dd><code>f&#8242;(x) = lim<sub>h&#8594;0</sub> &#916;y/&#916;x</code> &#8212; '+
     'der Grenzwert, die Steigung der Tangente.</dd>'+
   '<dt>Ableitungsfunktion f&#8242;</dt><dd>Ordnet <b>jeder</b> Stelle x ihre Tangentensteigung zu &#8212; '+
@@ -815,8 +856,8 @@ function applyAct(n){
     el.classList.toggle('on', el.getAttribute('data-act')==String(n));
   });
   /* Akt 3: Sehne weg, Trace-Knopf an; sonst Trace aus */
-  if(n<3){ traceOn=false; document.getElementById('lgFp').style.opacity='0.4';
-    var tb=document.getElementById('traceBtn'); tb.classList.remove('primary'); tb.textContent='f′-Kurve zeigen'; }
+  if(n<3){ traceOn=false; stopTrace(); traceVisited=[]; document.getElementById('lgFp').style.opacity='0.4';
+    var tb=document.getElementById('traceBtn'); tb.classList.remove('primary'); tb.textContent='f′ nachzeichnen'; }
   document.getElementById('fpRow').classList.toggle('hidden', n<3);
   document.querySelector('.lg-sec').style.opacity = (n<3)? '1':'0.35';
   /* Sehnen-Regler h in Akt 3 ausblenden (kein Q mehr) */
